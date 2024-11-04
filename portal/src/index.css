@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #ff5556;
+    --color-secondary: #7e5bef;
+    --color-success: #13ce66;
+    --color-error: #ff49db;
+    --color-info: #ff7849;
+    --color-warning: #ffc82c;
+
+    --color-gray-dark: #273444;
+    --color-gray: #f2f2f2;
+    --color-gray-light: #6d6f70;
+    --color-bg: #ff5556;
+    --color-black: #474747;
+
+    --color-black: #ff006a28;
+  }
+}
+
+*,
+*:hover {
+  scrollbar-color: auto;
+  scrollbar-width: thin;
+}
+
+/* Modal css  */
+body.modal-open {
+  overflow: hidden !important;
+}
+.modal-scrollable {
+  overflow-y: auto;
+}
+
+body {
+  font-family: "Ubuntu";
+}
+
+@layer components {
+  .container {
+    @apply w-full max-w-screen-2xl mx-auto px-4;
+  }
+  .textSize {
+    @apply text-xs xl:text-base;
+  }
+  .bottom_nav .active {
+    @apply text-primaryColor bg-lightPrimaryColor border border-primaryColor px-5 rounded-md;
+  }
+  .sidebar .active {
+    @apply bg-lightPrimaryColor border-s-2 border-primaryColor !text-primaryColor font-semibold;
+  }
+  .mobile_sidebar .active {
+    @apply bg-primaryColor border border-primaryColor !text-white;
+  }
+  .navbar .active {
+    @apply bg-transparent !text-primaryColor;
+  }
+  .dropdownList .active {
+    @apply !bg-primaryColor !text-white;
+  }
+
+  .input_label {
+    @apply text-grayTextColor leading-[125%] text-xs lg:!text-[12px] 2xl:!text-[15px] font-semibold mb-[5px] 2xl:mb-[5px] ms-[2px] truncate;
+  }
+
+  .input_required {
+    @apply transform -translate-y-0.5 mx-1 text-redColor text-xs;
+  }
+
+  .custom_input {
+    @apply w-full relative rounded-lg px-3 2xl:px-4 box-border flex flex-row items-center justify-start border-[1px] border-borderColor bg-whiteColor !text-textColor py-[7px] 2xl:py-[9px] placeholder:!text-[12px] 2xl:!text-[14px] !text-[12px] 2xl:placeholder:!text-[14px] focus:border-[1px] focus:!border-primaryColor focus:shadow-none outline-none focus:outline-none focus:ring-0;
+  }
+
+  .default_option {
+    @apply !text-gray-500 !text-[11px] 2xl:!text-[14px];
+  }
+
+  .input_error {
+    @apply text-redColor leading-[125%] font-normal text-[10px] 2xl:text-[13px] mt-1 ms-[2px];
+  }
+
+  .main_btn {
+    @apply bg-primaryColor hover:bg-darkPrimaryColor text-white px-4 py-[7px] 2xl:py-[9px] rounded;
+  }
+
+  .cancel_btn {
+    @apply bg-gray-500 hover:bg-gray-600 text-white px-4 py-[7px] 2xl:py-[9px] rounded;
+  }
+}
+.category .scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.category .scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+details summary .icon {
+  transition: 0.3s ease-in-out;
+}
+
+details[open] summary .icon {
+  rotate: 90deg;
+}
+
+.asd {
+  color: #0b5468;
+}
+
+.highcharts-credits {
+  display: none;
+}
