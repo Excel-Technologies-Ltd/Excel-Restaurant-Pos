@@ -225,11 +225,10 @@ const AllCarts = ({
   return (
     <ItemsDrawer isOpen={isOpen} isLargeDevice={isLargeDevice}>
       <div
-        className={`overflow-y-auto p-4 z-50 ${
-          isLargeDevice
-            ? " max-h-[calc(100vh-100px)] pb-24"
-            : "max-h-[100vh] pb-20"
-        }`} //max-h-[calc(100vh-100px)]r
+        className={`overflow-y-auto p-4 z-50 ${isLargeDevice
+          ? " max-h-[calc(100vh-100px)] pb-24"
+          : "max-h-[100vh] pb-20"
+          }`} //max-h-[calc(100vh-100px)]r
       >
         <div className="flex justify-between border-b">
           <h2 className="font-semibold">
@@ -338,12 +337,10 @@ const AllCarts = ({
                 type="number"
                 value={discount}
                 onChange={handleDiscountChange}
-                className={`border rounded-md p-1 focus:outline-none px-3 w-full ${
-                  discountError ? "border-red-500" : ""
-                }`}
-                placeholder={`Enter ${
-                  discountType === "percentage" ? "percentage" : "flat amount"
-                }`}
+                className={`border rounded-md p-1 focus:outline-none px-3 w-full ${discountError ? "border-red-500" : ""
+                  }`}
+                placeholder={`Enter ${discountType === "percentage" ? "percentage" : "flat amount"
+                  }`}
               />
               {discountError && (
                 <p className="text-red-500 text-xs right-0 -bottom-5 pt-2 absolute">
@@ -378,9 +375,8 @@ const AllCarts = ({
 
       {carts.length !== 0 && (
         <div
-          className={`p-4 py-2 border bottom-0 absolute w-full bg-white ${
-            isLargeDevice ? "rounded-b-lg" : ""
-          }`}
+          className={`p-4 py-2 border bottom-0 absolute w-full bg-white ${isLargeDevice ? "rounded-b-lg" : ""
+            }`}
         >
           <div className="flex justify-between items-center">
             <p className="text-sm font-semibold">
@@ -406,14 +402,12 @@ const ItemsDrawer = ({ children, isOpen, isLargeDevice }: DrawerProps) => {
     return (
       <div
         style={{ zIndex: 999 }}
-        className={`fixed inset-0 z-50 flex items-center justify-center p-4  ${
-          isOpen ? "bg-black bg-opacity-50" : "hidden"
-        }`}
+        className={`fixed inset-0 z-50 flex items-center justify-center p-4  ${isOpen ? "bg-black bg-opacity-50" : "hidden"
+          }`}
       >
         <div
-          className={`bg-white rounded-lg shadow-lg transition-transform duration-500 ease-in-out ${
-            isOpen ? "scale-100" : "scale-0"
-          } md:max-w-lg w-full h-auto`}
+          className={`bg-white rounded-lg shadow-lg transition-transform duration-500 ease-in-out ${isOpen ? "scale-100" : "scale-0"
+            } md:max-w-lg w-full h-auto`}
         >
           {children}
         </div>
@@ -424,9 +418,8 @@ const ItemsDrawer = ({ children, isOpen, isLargeDevice }: DrawerProps) => {
       <div className="h-[100vh] w-full" style={{ zIndex: 999 }}>
         <div
           style={{ zIndex: 999 }}
-          className={`drawer-bottom bg-white shadow-lg transition-transform duration-500 ease-in-out z-50 ${
-            isOpen ? "translate-y-0" : "translate-y-full"
-          } fixed bottom-0 left-0 w-full min-h-full `} //min-h-[100%]
+          className={`drawer-bottom bg-white shadow-lg transition-transform duration-500 ease-in-out z-50 ${isOpen ? "translate-y-0" : "translate-y-full"
+            } fixed bottom-0 left-0 w-full min-h-full `} //min-h-[100%]
         >
           {children}
         </div>

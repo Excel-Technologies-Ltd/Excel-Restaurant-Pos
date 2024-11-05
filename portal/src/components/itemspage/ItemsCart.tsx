@@ -4,8 +4,9 @@ import { FaMinus } from "react-icons/fa";
 import { FiPlus } from "react-icons/fi";
 import { RxCross2 } from "react-icons/rx";
 import { useCartContext } from "../../context/cartContext";
-import { SelectCartProps, Variation } from "./ItemList";
+import { SelectCartProps } from "./ItemList";
 import { Food } from "../../data/items";
+import { LuMinus } from "react-icons/lu";
 
 type Props = {
   isOpen: boolean;
@@ -20,17 +21,59 @@ type DrawerProps = {
 };
 
 const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
+  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
   const [selectedVariation, setSelectedVariation] = useState(
     selectedItem?.Variation?.[0]?.name
   );
   const [quantity, setQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState("");
-  const [selectedItems, setSelectedItems] = useState<Partial<Food>[]>([]);
-  const [selectedAddOnsItems, setSelectedAddOnsItems] = useState<Variation[]>(
-    []
-  );
+  const [selectedItems, setSelectedItems] = useState<Food[]>([]);
+  // const [selectedAddOnsItems, setSelectedAddOnsItems] = useState<Food[]>(
+  //   []
+  // );
   const [showAll, setShowAll] = useState(false);
   const { updateCartCount } = useCartContext();
+
+  // Increment product quantity based on item ID
+  // const incrementAddOns = (id: number) => {
+  //   if (selectedAddOnsItems.find(item => item.id === id)?.quantity) {
+  //     setSelectedAddOnsItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! + 1 } : item))
+  //   }
+  //   else {
+  //     const foundItem = selectedAddOnsItems.find(item => item.id === id);
+  //     if (foundItem) {
+  //       setSelectedAddOnsItems(prev => [...prev, { ...foundItem, quantity: 1 }]);
+  //     }
+  //   }
+  //   // setQuantities((prevQuantities) => ({
+  //   //   ...prevQuantities,
+  //   //   [id]: (prevQuantities[id] || 0) + 1,
+  //   // }));
+  // };
+
+  // const setAddOnsQuantityNull = (id: number) => {
+  //   setSelectedAddOnsItems(prev => prev.filter(item => item.id !== id));
+  //   // setQuantities((prevQuantities) => ({
+  //   //   ...prevQuantities,
+  //   //   [id]: 0,
+  //   // }));
+  // }
+
+  // Decrement product quantity based on item ID
+  // const decrementAddOns = (id: number) => {
+  //   setSelectedAddOnsItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! - 1 } : item));
+  //   // setQuantities((prevQuantities) => ({
+  //   //   ...prevQuantities,
+  //   //   [id]: (prevQuantities[id] || 1) > 1 ? prevQuantities[id] - 1 : 1,
+  //   // }));
+  // };
+
+  const incrementAddOns = (id: number) => {
+    setSelectedItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! + 1 } : item))
+  }
+  const decrementAddOns = (id: number) => {
+    setSelectedItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! > 1 ? item.quantity! - 1 : 1 } : item))
+  }
 
   const increment = () => {
     setQuantity((prevQuantity) => prevQuantity + 1);
@@ -50,16 +93,21 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
     0;
 
   const total = selectedVariationPrice * quantity;
-  const addOns = selectedAddOnsItems?.reduce(
-    (total, addOn) => total + addOn?.price,
-    0
-  );
+  // const addOns = selectedAddOnsItems?.reduce(
+  //   (total, addOn) => total + (addOn?.sellPrice),
+  //   0
+  // );
+
+
   const another = selectedItems?.reduce(
-    (total, item) => total + (item.sellPrice as number),
+    (total, item) => total + (item.sellPrice),
     0
   );
-  const totalPrice = total + addOns;
-  const subTotalPrice = total + addOns + another;
+  // const totalPrice = total + addOns;
+  // const subTotalPrice = total + addOns + another;
+
+  const totalPrice = total;
+  const subTotalPrice = total + another;
 
   const [isLargeDevice, setIsLargeDevice] = useState(window.innerWidth > 768);
 
@@ -117,7 +165,7 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
     }
 
     setQuantity(1);
-    setSelectedAddOnsItems([]);
+    // setSelectedAddOnsItems([]);
     setSelectedVariation("Half");
     setSpecialInstructions("");
     setSelectedItems([]);
@@ -132,7 +180,7 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
     toggleDrawer();
   };
 
-  const handleRelatedItems = (item: Partial<Food>) => {
+  const handleRelatedItems = (item: Food) => {
     if (selectedItems.some((selectedItem) => selectedItem.id === item.id)) {
       // Remove the item if it already exists
       setSelectedItems(
@@ -144,13 +192,14 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
     }
   };
 
-  const handleAddOnsChange = (selectedAddOn: Variation) => {
-    if (selectedAddOnsItems.some((item) => item.id === selectedAddOn.id)) {
-      setSelectedAddOnsItems(
-        selectedAddOnsItems.filter((item) => item.id !== selectedAddOn.id)
+  const handleAddOnsChange = (selectedAddOn: Food) => {
+    if (selectedItems.some((item) => item.id === selectedAddOn.id)) {
+      setSelectedItems(
+        selectedItems.filter((item) => item.id !== selectedAddOn.id)
       );
     } else {
-      setSelectedAddOnsItems([...selectedAddOnsItems, selectedAddOn]);
+      incrementAddOns(selectedAddOn.id as number);
+      setSelectedItems([...selectedItems, { ...selectedAddOn, quantity: 1 }]);
     }
   };
 
@@ -264,18 +313,18 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
               <p>Add Ons </p>
               <p className="text-gray-500 text-xs">(Optional)</p>
             </h2>
-            <p className="mb-3 mt-1 text-xs">Select up to 5</p>
+            <p className="mb-3 mt-1 text-xs">Select add ons</p>
             {selectedItem?.addOns?.slice(0, 5)?.map((item, index) => {
               return (
-                <label
+                <div
                   key={index}
-                  className="p-3 flex flex-row justify-between items-center border rounded-md relative mt-2 cursor-pointer z-10"
+                  className="p-3 flex flex-row items-center border rounded-md relative mt-2 z-10"
                 >
                   {/* Checkbox before image */}
-                  <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer flex-1">
                     <input
                       type="checkbox"
-                      checked={selectedAddOnsItems.some(
+                      checked={selectedItems.some(
                         (selectedItem) => selectedItem.id === item.id
                       )}
                       onChange={() => handleAddOnsChange(item)}
@@ -284,11 +333,47 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
                     <p className="text-xs font-semibold text-gray-800">
                       {item?.name}
                     </p>
+                  </label>
+                  <div className="w-4/12 flex justify-between">
+                    {
+                      selectedItems?.some(
+                        (selectedItem) => selectedItem?.id === item?.id
+                      ) &&
+                      <div className="flex items-center rounded-md h-fit ">
+                        {selectedItems.find(item => item.id === item.id)?.quantity === 1 ? (
+                          <button
+                            onClick={() => decrementAddOns(item.id as number)}
+                            className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 cursor-not-allowed h-fit py-1 border"
+                          >
+                            <LuMinus className="text-[10px]" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => decrementAddOns(item.id as number)}
+                            className="px-2 rounded-md rounded-e-none text-sm bg-gray-200 h-fit py-1 border"
+                          >
+                            <LuMinus className="text-[10px]" />
+                          </button>
+                        )}
+                        <span className="px-2 text-[10px] h-full flex items-center border py-[1.5px]">
+                          {/* {quantities[item.id] || item.quantity} */}
+                          {selectedItems.find(item => item.id === item.id)?.quantity}
+                        </span>
+                        {/* {quantities[item.id] > 0 && ( */}
+                        <button
+                          onClick={() => incrementAddOns(item.id)}
+                          className="px-2 rounded-md rounded-s-none bg-gray-200 h-fit py-1 border"
+                        >
+                          <FiPlus className="text-[10px]" />
+                        </button>
+                        {/* )} */}
+                      </div>
+                    }
+                    <p className="text-xs lg:text-base font-medium text-textColor flex ml-auto items-center">
+                      <FiPlus /> ৳{item?.sellPrice}
+                    </p>
                   </div>
-                  <p className="text-xs lg:text-base font-medium text-textColor">
-                    + ৳{item?.price}
-                  </p>
-                </label>
+                </div>
               );
             })}
 
