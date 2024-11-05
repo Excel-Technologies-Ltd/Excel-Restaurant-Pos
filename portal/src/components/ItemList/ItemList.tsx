@@ -1,24 +1,25 @@
 import { useState } from "react";
-
 import { useCartContext } from "../../context/cartContext";
 import { Food } from "../../data/items";
 import TruncateText from "../common/TruncateText";
-import ItemsCart from "./ItemsCart";
+import SingleItemModal from "../SingleItemModal/SingleItemModal";
 import { useFrappeGetDocList } from "frappe-react-sdk";
 
 
 export type SelectCartProps = {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   regularPrice?: number;
   sellPrice: number;
-  image: string;
+  image?: string;
   quantity?: number;
-  Variation?: Variation[];
+  variation?: Variation;
   addOns?: Food[];
   relatedItems?: Food[];
   categoryId?: number;
+  specialInstructions?: string;
+  totalPrice?: number;
 };
 export interface Variation {
   id: number;
@@ -37,9 +38,7 @@ const ItemList = ({
 }) => {
 
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<SelectCartProps | null>(
-    null
-  );
+  const [selectedItem, setSelectedItem] = useState<Food | null>(null);
 
   const { data, isLoading, error } = useFrappeGetDocList("Item", {
     fields: ["item_code", 'item_name', 'item_group', 'allow_alternative_item', 'has_variants', 'image', 'description', 'variant_of', 'customer', 'sales_uom', 'is_sales_item', 'standard_rate'],
@@ -60,7 +59,7 @@ const ItemList = ({
     setIsOpen(!isOpen);
   };
   // Handle item click and set the selected item
-  const handleItemClick = (item: any) => {
+  const handleItemClick = (item: Food) => {
     setSelectedItem(item);
     toggleDrawer();
   };
@@ -118,7 +117,7 @@ const ItemList = ({
             </div>
           </div>
         ))}
-        <ItemsCart
+        <SingleItemModal
           selectedItem={selectedItem}
           toggleDrawer={toggleDrawer}
           isOpen={isOpen}

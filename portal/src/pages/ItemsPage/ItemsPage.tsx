@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { IoFastFoodOutline } from "react-icons/io5";
 import ItemsPageBottom from "../../components/header/ItemsPageBottom";
-import ItemList from "../../components/itemspage/ItemList";
+import ItemList from "../../components/ItemList/ItemList";
 
 type FoodCategory = {
   id: number;

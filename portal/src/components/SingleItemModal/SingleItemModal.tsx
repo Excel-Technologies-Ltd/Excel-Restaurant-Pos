@@ -4,14 +4,14 @@ import { FaMinus } from "react-icons/fa";
 import { FiPlus } from "react-icons/fi";
 import { RxCross2 } from "react-icons/rx";
 import { useCartContext } from "../../context/cartContext";
-import { SelectCartProps } from "./ItemList";
+import { SelectCartProps } from "../ItemList/ItemList";
 import { Food } from "../../data/items";
-import { LuMinus } from "react-icons/lu";
+import AddOnsItemCard from "./components/AddOnsItemCard";
 
 type Props = {
   isOpen: boolean;
   toggleDrawer: () => void;
-  selectedItem: SelectCartProps | null;
+  selectedItem: Food | null;
 };
 
 type DrawerProps = {
@@ -20,56 +20,23 @@ type DrawerProps = {
   children: React.ReactNode;
 };
 
-const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
+const SingleItemModal = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
+  console.log("selectedItem", selectedItem);
   const [selectedVariation, setSelectedVariation] = useState(
-    selectedItem?.Variation?.[0]?.name
+    selectedItem?.variation?.[0]
   );
   const [quantity, setQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [selectedItems, setSelectedItems] = useState<Food[]>([]);
-  // const [selectedAddOnsItems, setSelectedAddOnsItems] = useState<Food[]>(
-  //   []
-  // );
   const [showAll, setShowAll] = useState(false);
   const { updateCartCount } = useCartContext();
 
-  // Increment product quantity based on item ID
-  // const incrementAddOns = (id: number) => {
-  //   if (selectedAddOnsItems.find(item => item.id === id)?.quantity) {
-  //     setSelectedAddOnsItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! + 1 } : item))
-  //   }
-  //   else {
-  //     const foundItem = selectedAddOnsItems.find(item => item.id === id);
-  //     if (foundItem) {
-  //       setSelectedAddOnsItems(prev => [...prev, { ...foundItem, quantity: 1 }]);
-  //     }
-  //   }
-  //   // setQuantities((prevQuantities) => ({
-  //   //   ...prevQuantities,
-  //   //   [id]: (prevQuantities[id] || 0) + 1,
-  //   // }));
-  // };
 
-  // const setAddOnsQuantityNull = (id: number) => {
-  //   setSelectedAddOnsItems(prev => prev.filter(item => item.id !== id));
-  //   // setQuantities((prevQuantities) => ({
-  //   //   ...prevQuantities,
-  //   //   [id]: 0,
-  //   // }));
-  // }
-
-  // Decrement product quantity based on item ID
-  // const decrementAddOns = (id: number) => {
-  //   setSelectedAddOnsItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! - 1 } : item));
-  //   // setQuantities((prevQuantities) => ({
-  //   //   ...prevQuantities,
-  //   //   [id]: (prevQuantities[id] || 1) > 1 ? prevQuantities[id] - 1 : 1,
-  //   // }));
-  // };
 
   const incrementAddOns = (id: number) => {
+    console.log(id);
     setSelectedItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! + 1 } : item))
+    console.log(selectedItems);
   }
   const decrementAddOns = (id: number) => {
     setSelectedItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! > 1 ? item.quantity! - 1 : 1 } : item))
@@ -85,14 +52,10 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
     }
   };
 
-  const selectedVariationPrice =
-    selectedItem?.Variation?.find(
-      (variation) => variation?.name === selectedVariation
-    )?.price ||
-    selectedItem?.sellPrice ||
-    0;
+  const selectedVariationPrice = selectedVariation?.price || 0;
 
-  const total = selectedVariationPrice * quantity;
+
+  const total = selectedVariationPrice * quantity
   // const addOns = selectedAddOnsItems?.reduce(
   //   (total, addOn) => total + (addOn?.sellPrice),
   //   0
@@ -100,7 +63,7 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
 
 
   const another = selectedItems?.reduce(
-    (total, item) => total + (item.sellPrice),
+    (total, item) => total + (item.sellPrice * (item?.quantity || 1)),
     0
   );
   // const totalPrice = total + addOns;
@@ -124,20 +87,21 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
 
   // Function to add the item to localStorage
   const addToCart = () => {
-    const cartItem = {
-      id: selectedItem?.id,
-      name: selectedItem?.name,
-      variation: selectedVariation,
+    if (!selectedItem) return;
+    const cartItem: SelectCartProps = {
+      id: selectedItem.id,
+      name: selectedItem.name,
+      variation: selectedVariation ? selectedVariation : selectedItem.variation?.[0],
       quantity,
-      price: selectedVariationPrice,
+      sellPrice: selectedVariationPrice,
       totalPrice,
       specialInstructions,
       image: selectedItem?.image,
     };
 
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const cart: SelectCartProps[] = JSON.parse(localStorage.getItem("cart") || "[]");
     const itemExists = cart.some(
-      (item: any) =>
+      (item: SelectCartProps) =>
         item.id === selectedItem?.id && item.variation === selectedVariation
     );
 
@@ -147,11 +111,11 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
       cart.push(cartItem);
       if (selectedItems?.length > 0) {
         selectedItems.forEach((item) => {
-          const cartItems = {
+          const cartItems: SelectCartProps = {
             id: item?.id,
             name: item?.name,
             quantity: 1,
-            price: item?.sellPrice,
+            sellPrice: item?.sellPrice,
             image: item?.image,
           };
           cart.push(cartItems);
@@ -166,7 +130,7 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
 
     setQuantity(1);
     // setSelectedAddOnsItems([]);
-    setSelectedVariation("Half");
+    setSelectedVariation(selectedItem?.variation?.[0]);
     setSpecialInstructions("");
     setSelectedItems([]);
     toggleDrawer();
@@ -174,7 +138,7 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
 
   const closeHandler = () => {
     setQuantity(1);
-    setSelectedVariation("Half");
+    setSelectedVariation(selectedItem?.variation?.[0]);
     setSpecialInstructions("");
     setSelectedItems([]);
     toggleDrawer();
@@ -193,6 +157,7 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
   };
 
   const handleAddOnsChange = (selectedAddOn: Food) => {
+    console.log(selectedAddOn);
     if (selectedItems.some((item) => item.id === selectedAddOn.id)) {
       setSelectedItems(
         selectedItems.filter((item) => item.id !== selectedAddOn.id)
@@ -284,10 +249,10 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
             </div>
 
             {/* Variation */}
-            {selectedItem?.Variation && (
+            {selectedItem?.variation && (
               <div className="border shadow p-2 rounded-md mt-4">
                 <h2 className="mb-3 text-xs font-semibold">Variation</h2>
-                {selectedItem?.Variation.map((variation) => (
+                {selectedItem?.variation.map((variation) => (
                   <label
                     key={variation.name}
                     className="flex justify-between mb-3 text-xs capitalize"
@@ -296,8 +261,8 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
                       <input
                         type="radio"
                         value={variation.name}
-                        checked={selectedVariation === variation.name}
-                        onChange={() => setSelectedVariation(variation.name)}
+                        checked={selectedVariation?.name === variation.name}
+                        onChange={() => setSelectedVariation(variation)}
                         className="mr-2"
                       />
                       {variation.name}
@@ -316,64 +281,7 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
             <p className="mb-3 mt-1 text-xs">Select add ons</p>
             {selectedItem?.addOns?.slice(0, 5)?.map((item, index) => {
               return (
-                <div
-                  key={index}
-                  className="p-3 flex flex-row items-center border rounded-md relative mt-2 z-10"
-                >
-                  {/* Checkbox before image */}
-                  <label className="flex items-center gap-2 cursor-pointer flex-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.some(
-                        (selectedItem) => selectedItem.id === item.id
-                      )}
-                      onChange={() => handleAddOnsChange(item)}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <p className="text-xs font-semibold text-gray-800">
-                      {item?.name}
-                    </p>
-                  </label>
-                  <div className="w-4/12 flex justify-between">
-                    {
-                      selectedItems?.some(
-                        (selectedItem) => selectedItem?.id === item?.id
-                      ) &&
-                      <div className="flex items-center rounded-md h-fit ">
-                        {selectedItems.find(item => item.id === item.id)?.quantity === 1 ? (
-                          <button
-                            onClick={() => decrementAddOns(item.id as number)}
-                            className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 cursor-not-allowed h-fit py-1 border"
-                          >
-                            <LuMinus className="text-[10px]" />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => decrementAddOns(item.id as number)}
-                            className="px-2 rounded-md rounded-e-none text-sm bg-gray-200 h-fit py-1 border"
-                          >
-                            <LuMinus className="text-[10px]" />
-                          </button>
-                        )}
-                        <span className="px-2 text-[10px] h-full flex items-center border py-[1.5px]">
-                          {/* {quantities[item.id] || item.quantity} */}
-                          {selectedItems.find(item => item.id === item.id)?.quantity}
-                        </span>
-                        {/* {quantities[item.id] > 0 && ( */}
-                        <button
-                          onClick={() => incrementAddOns(item.id)}
-                          className="px-2 rounded-md rounded-s-none bg-gray-200 h-fit py-1 border"
-                        >
-                          <FiPlus className="text-[10px]" />
-                        </button>
-                        {/* )} */}
-                      </div>
-                    }
-                    <p className="text-xs lg:text-base font-medium text-textColor flex ml-auto items-center">
-                      <FiPlus /> ৳{item?.sellPrice}
-                    </p>
-                  </div>
-                </div>
+                <AddOnsItemCard item={item} key={index} handleAddOnsChange={handleAddOnsChange} selectedItems={selectedItems} decrementAddOns={decrementAddOns} incrementAddOns={incrementAddOns} />
               );
             })}
 
@@ -433,7 +341,10 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
             {/* Special Instructions */}
             <label className="form-control w-full mt-2">
               <div className="label">
-                <h2 className="font-semibold text-xs">Special instructions</h2>
+                <h2 className="font-semibold text-xs" onClick={() => {
+                  console.log("Selected Item", selectedItem);
+                  console.log("Selected Items", selectedItems);
+                }}>Special instructions</h2>
               </div>
               <textarea
                 value={specialInstructions}
@@ -482,7 +393,7 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
   );
 };
 
-export default ItemsCart;
+export default SingleItemModal;
 
 const ItemsDrawer = ({ children, isOpen, isLargeDevice }: DrawerProps) => {
   if (isLargeDevice) {

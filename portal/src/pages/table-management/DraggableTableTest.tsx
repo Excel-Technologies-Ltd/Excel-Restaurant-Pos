@@ -7,7 +7,7 @@ import { RxCross2 } from "react-icons/rx";
 import { useLocation, useNavigate } from "react-router-dom";
 import Select from "../../components/form-elements/Select";
 import { styles } from "../../utilities/cn";
-import Foods from "../foods/Foods";
+import Pos from "../Admin/Pos/Pos";
 import CreateFloor from "./CreateFloor";
 import DraggableTableCreate from "./DraggableTableCreate";
 import DraggableTableDetails from "./DraggableTableDetails";
@@ -127,10 +127,10 @@ const DraggableTableTest: React.FC = () => {
         prev.map((t) =>
           t.id === id
             ? {
-                ...t,
-                width: table.shape === "circle" ? newWidth : newWidth,
-                height: table.shape === "circle" ? newWidth : newHeight,
-              }
+              ...t,
+              width: table.shape === "circle" ? newWidth : newWidth,
+              height: table.shape === "circle" ? newWidth : newHeight,
+            }
             : t
         )
       );
@@ -219,11 +219,11 @@ const DraggableTableTest: React.FC = () => {
         prev.map((table) =>
           table.id === selectedTable.id
             ? {
-                ...table,
-                seat: newTableData.seat,
-                tableNo: newTableData.tableNo,
-                bgColor: newTableData.bgColor,
-              }
+              ...table,
+              seat: newTableData.seat,
+              tableNo: newTableData.tableNo,
+              bgColor: newTableData.bgColor,
+            }
             : table
         )
       );
@@ -294,8 +294,7 @@ const DraggableTableTest: React.FC = () => {
                               key={i}
                               className={styles(
                                 "w-10 h-3 bg-primaryColor rounded-t",
-                                `bg[${
-                                  table?.isBooked ? "bg-" + bookedColor : ""
+                                `bg[${table?.isBooked ? "bg-" + bookedColor : ""
                                 }]`
                               )}
                             ></div>
@@ -316,8 +315,7 @@ const DraggableTableTest: React.FC = () => {
                               key={i}
                               className={styles(
                                 "w-10 h-3 bg-primaryColor rounded-b",
-                                `bg[${
-                                  table?.isBooked ? "bg-" + bookedColor : ""
+                                `bg[${table?.isBooked ? "bg-" + bookedColor : ""
                                 }]`
                               )}
                             ></div>
@@ -339,8 +337,7 @@ const DraggableTableTest: React.FC = () => {
                               key={i}
                               className={styles(
                                 "w-3 h-10 bg-primaryColor rounded-e",
-                                `bg[${
-                                  table?.isBooked ? "bg-" + bookedColor : ""
+                                `bg[${table?.isBooked ? "bg-" + bookedColor : ""
                                 }]`
                               )}
                             ></div>
@@ -361,8 +358,7 @@ const DraggableTableTest: React.FC = () => {
                               key={i}
                               className={styles(
                                 "w-3 h-10 bg-primaryColor rounded-s",
-                                `bg[${
-                                  table?.isBooked ? "bg-" + bookedColor : ""
+                                `bg[${table?.isBooked ? "bg-" + bookedColor : ""
                                 }]`
                               )}
                             ></div>
@@ -492,7 +488,7 @@ const DraggableTableTest: React.FC = () => {
         setRightModalOpen={setRightModalOpen}
         handleCloseModal={handleCloseModal}
       >
-        <Foods />
+        <Pos />
       </ModalRightToLeft>
     </div>
   );

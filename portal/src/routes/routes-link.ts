@@ -6,5 +6,5 @@ export const URLCategories = (): string => "/admin/categories";
 export const URLDashboard = (): string => "/admin/dashboard";
 export const URLUsers = (): string => "/admin/users";
 export const URLTableManagement = (): string => "/admin/table";
-export const URLFoods = (): string => "/admin/foods";
+export const URLAdminPos = (): string => "/admin/pos";
 export const URLLogin = (): string => "/login";

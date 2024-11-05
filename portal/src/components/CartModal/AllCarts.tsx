@@ -24,7 +24,7 @@ type CartItem = {
   id: number;
   name: string;
   description: string;
-  price: number;
+  sellPrice: number;
   quantity: number;
   totalPrice: number;
 };
@@ -48,13 +48,14 @@ const AllCarts = ({
   console.log({ cartCount });
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
+    console.log({ storedCart });
 
     if (storedCart.length > 0) {
       setCartItems(storedCart);
 
       // Set the initial quantities based on the items in the cart
       const initialQuantities = storedCart.reduce(
-        (acc: any, item: CartItem) => {
+        (acc: { [key: number]: number }, item: CartItem) => {
           acc[item.id] = item.quantity;
           return acc;
         },
@@ -95,7 +96,7 @@ const AllCarts = ({
 
   // Calculate the subtotal price based on items and their quantities
   const subtotal = cartItems.reduce(
-    (acc, item) => acc + item.price * (quantities[item.id] || item.quantity),
+    (acc, item) => acc + item.sellPrice * (quantities[item.id] || item.quantity),
     0
   );
 
@@ -262,7 +263,7 @@ const AllCarts = ({
                       {item.name}
                     </p>
                     <p className="text-xs lg:text-base font-medium text-primaryColor">
-                      ৳{item.price}
+                      ৳{item.sellPrice}
                     </p>
                   </div>
                 </div>

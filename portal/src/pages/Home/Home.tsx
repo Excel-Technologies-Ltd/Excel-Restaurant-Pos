@@ -1,7 +1,7 @@
 import BottomNav from "../../components/common/BottomNav";
-import Hero from "../../components/homepage/Hero";
+import Hero from "./components/Hero";
 
-const HomePage = () => {
+const Home = () => {
   return (
     <div>
       <Hero />
@@ -10,4 +10,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default Home;
