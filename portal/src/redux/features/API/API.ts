@@ -1,6 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { cookieManager } from "../../../utilities/cookie-manager";
-import apiTags from "./tags";
 
 export interface TokenResponse {
   statusCode: number;
@@ -29,5 +28,5 @@ export const API = createApi({
   reducerPath: "api",
   baseQuery: baseQuery,
   endpoints: () => ({}),
-  tagTypes: [...apiTags],
+  // tagTypes: [...apiTags],
 });
