@@ -1,5 +1,5 @@
 
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, RouteObject } from "react-router-dom";
 import DashboardLayout from "../layout/DashboardLayout";
 import MainLayout from "../layout/MainLayout";
 import {
@@ -32,6 +32,7 @@ const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
+    errorElement: <Error />,
     children: [
       {
         path: "/",
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    errorElement: <Error />,
     element: <DashboardLayout />,
     children: [
       {
@@ -80,8 +82,8 @@ export const router = createBrowserRouter([
     path: URLLogin(),
     element: <Login />,
   },
-  {
-    path: "*",
-    element: <Error />,
-  },
+  // {
+  //   path: "*",
+  //   element: <Error />,
+  // },
 ], { basename: '/restaurant' });

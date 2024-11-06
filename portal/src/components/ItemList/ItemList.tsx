@@ -48,9 +48,7 @@ const ItemList = ({
     limit: 30,
   });
 
-  console.log(isLoading);
-  console.log(error);
-  console.log(data);
+
 
   const { cartItems } = useCartContext();
 

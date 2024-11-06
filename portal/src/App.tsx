@@ -4,10 +4,10 @@ import "@fontsource/ubuntu/400.css";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes/router.js";
 import { FrappeProvider } from "frappe-react-sdk";
-import React from "react";
+
 export default function App() {
   return (
-    <FrappeProvider>
+    <FrappeProvider siteName="localhost:8000" enableSocket={true}>
       <RouterProvider router={router} />
     </FrappeProvider>
 

@@ -1,8 +1,11 @@
 import { useRef, useState } from "react";
 import ChartOption from "./charts/chart-option/ChartOption.js";
 import LineChart from "./charts/chart-option/LineChart.js";
+import { useFrappeAuth } from "frappe-react-sdk";
 
 const Dashboard = () => {
+  const { isLoading, currentUser } = useFrappeAuth();
+  console.log(isLoading, currentUser);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);

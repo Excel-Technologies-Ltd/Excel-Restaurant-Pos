@@ -11,6 +11,7 @@ type FoodCategory = {
 
 const ItemsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("0");
+  const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="h-screen">
       <div className="h-screen flex">

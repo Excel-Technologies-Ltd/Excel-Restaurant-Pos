@@ -13,7 +13,7 @@ type Props = {
   isAdmin?: boolean;
 };
 
-type DrawerProps = {
+export type DrawerProps = {
   isOpen: boolean;
   isLargeDevice: boolean;
   children: React.ReactNode;
