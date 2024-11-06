@@ -1,0 +1,18 @@
+[
+ {
+  "default_value": null,
+  "doc_type": "Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocType",
+  "field_name": null,
+  "is_system_generated": 0,
+  "modified": "2024-11-06 15:30:50.044237",
+  "module": null,
+  "name": "Item-main-quick_entry",
+  "property": "quick_entry",
+  "property_type": "Check",
+  "row_name": null,
+  "value": "0"
+ }
+]

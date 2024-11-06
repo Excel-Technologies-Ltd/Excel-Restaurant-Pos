@@ -26,6 +26,13 @@ fixtures = [
                 "Item-frequently_bought_items"
             ]
         ]
+    ]},
+    {"dt": "Property Setter", "filters": [
+        [
+            "name", "in", [
+                "Item-main-quick_entry",
+            ]
+        ]
     ]}
 ]
 # include js, css files in header of desk.html
