@@ -8,6 +8,26 @@ app_license = "MIT"
 # Includes in <head>
 # ------------------
 
+fixtures = [
+    # {"dt": "DocType", "filters": [
+    #     [
+    #         "name", "in", [
+    #             "Doctype1Name",
+    #             "Doctype2Name"
+    #         ]
+    #     ]
+    # ]},
+    {"dt": "Custom Field", "filters": [
+        [
+            "name", "in", [
+                "Item-add_ons_item",
+                "Item-add_ons_item_list",
+                "Item-frequently_bought_item_list",
+                "Item-frequently_bought_items"
+            ]
+        ]
+    ]}
+]
 # include js, css files in header of desk.html
 # app_include_css = "/assets/excel_restaurant_pos/css/excel_restaurant_pos.css"
 # app_include_js = "/assets/excel_restaurant_pos/js/excel_restaurant_pos.js"

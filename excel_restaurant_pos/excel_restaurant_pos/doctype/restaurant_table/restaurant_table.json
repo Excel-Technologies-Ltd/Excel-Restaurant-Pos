@@ -1,0 +1,100 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:Table-{###}",
+ "creation": "2024-11-06 01:07:50.381416",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "room",
+  "seat",
+  "type",
+  "bg_color",
+  "position",
+  "width",
+  "breadth"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "room",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Room ",
+   "options": "Restaurant Room",
+   "reqd": 1
+  },
+  {
+   "fieldname": "seat",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Seat",
+   "reqd": 1
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "\nRectangle\nCircle\nRoad",
+   "reqd": 1
+  },
+  {
+   "fieldname": "bg_color",
+   "fieldtype": "Data",
+   "label": "Bg Color"
+  },
+  {
+   "fieldname": "position",
+   "fieldtype": "JSON",
+   "label": "Position",
+   "reqd": 1
+  },
+  {
+   "fieldname": "width",
+   "fieldtype": "Data",
+   "label": "Width",
+   "reqd": 1
+  },
+  {
+   "fieldname": "breadth",
+   "fieldtype": "Data",
+   "label": "Breadth",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-11-06 10:25:55.752721",
+ "modified_by": "Administrator",
+ "module": "Excel Restaurant Pos",
+ "name": "Restaurant Table",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
