@@ -1,6 +1,5 @@
 {
  "actions": [],
- "allow_rename": 1,
  "autoname": "format:Table-{###}",
  "creation": "2024-11-06 01:07:50.381416",
  "default_view": "List",
@@ -9,13 +8,14 @@
  "engine": "InnoDB",
  "field_order": [
   "company",
-  "room",
+  "restaurant_floor",
   "seat",
   "type",
   "bg_color",
   "position",
   "width",
-  "breadth"
+  "breadth",
+  "file_path"
  ],
  "fields": [
   {
@@ -24,14 +24,6 @@
    "in_list_view": 1,
    "label": "Company",
    "options": "Company",
-   "reqd": 1
-  },
-  {
-   "fieldname": "room",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Room ",
-   "options": "Restaurant Room",
    "reqd": 1
   },
   {
@@ -70,11 +62,23 @@
    "fieldtype": "Data",
    "label": "Breadth",
    "reqd": 1
+  },
+  {
+   "fieldname": "restaurant_floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Restaurant Floor",
+   "reqd": 1
+  },
+  {
+   "fieldname": "file_path",
+   "fieldtype": "Data",
+   "label": "File Path"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-06 10:25:55.752721",
+ "modified": "2024-11-06 15:18:48.522088",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",
