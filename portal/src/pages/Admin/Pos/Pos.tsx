@@ -5,19 +5,20 @@ import { FaRegTrashCan } from "react-icons/fa6";
 import { FiPlus } from "react-icons/fi";
 import { IoFastFoodOutline } from "react-icons/io5";
 import { LuMinus } from "react-icons/lu";
-import CheckoutPopup from "../../components/alert/CheckoutPopup";
-import TruncateText from "../../components/common/TruncateText";
-import Textarea from "../../components/form-elements/Textarea";
-import AllCarts from "../../components/itemspage/AllCarts";
-import { SelectCartProps } from "../../components/itemspage/ItemList";
-import ItemsCart from "../../components/itemspage/ItemsCart";
-import { useCartContext } from "../../context/cartContext";
-import { items } from "../../data/items";
-import useWindowWidth from "../../hook/useWindowWidth";
-import { styles } from "../../utilities/cn";
-import { foodCategories } from "../ItemsPage/ItemsPage";
+import AllCarts from "../../../components/CartModal/AllCarts";
+import SingleItemModal from "../../../components/SingleItemModal/SingleItemModal";
+import CheckoutPopup from "../../../components/alert/CheckoutPopup";
+import { styles } from "../../../utilities/cn";
+import Textarea from "../../../components/form-elements/Textarea";
+import TruncateText from "../../../components/common/TruncateText";
+import { foodCategories } from "../../ItemsPage/ItemsPage";
+import { Food, items } from "../../../data/items";
+import { useCartContext } from "../../../context/cartContext";
+import useWindowWidth from "../../../hook/useWindowWidth";
+import { SelectCartProps } from "../../../components/ItemList/ItemList";
 
-const Foods = () => {
+
+const Pos = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -35,7 +36,7 @@ const Foods = () => {
 
   // Toggle drawer visibility
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<SelectCartProps | null>(
+  const [selectedItem, setSelectedItem] = useState<Food | null>(
     null
   );
 
@@ -176,7 +177,7 @@ const Foods = () => {
   ) => {
     setDiscountType(e.target.value as "flat" | "percentage");
     setDiscount("");
-    setDiscountError(""); 
+    setDiscountError("");
   };
 
   // Handle checkout
@@ -270,7 +271,7 @@ const Foods = () => {
                       ৳{item?.sellPrice}
                     </p>
                     <div className="text-xs lg:text-sm text-gray-500">
-                      <TruncateText content={item?.description} length={100} />
+                      <TruncateText content={item?.description || ""} length={100} />
                     </div>
                   </div>
                   {getItemQuantity(item?.id) > 0 && (
@@ -379,14 +380,12 @@ const Foods = () => {
                     type="number"
                     value={discount}
                     onChange={handleDiscountChange}
-                    className={`border rounded-md p-1 focus:outline-none px-3 w-full ${
-                      discountError ? "border-red-500" : ""
-                    }`}
-                    placeholder={`Enter ${
-                      discountType === "percentage"
-                        ? "percentage"
-                        : "flat amount"
-                    }`}
+                    className={`border rounded-md p-1 focus:outline-none px-3 w-full ${discountError ? "border-red-500" : ""
+                      }`}
+                    placeholder={`Enter ${discountType === "percentage"
+                      ? "percentage"
+                      : "flat amount"
+                      }`}
                   />
                   {discountError && (
                     <p className="text-red-500 text-xs right-0 -bottom-5 pt-2 absolute">
@@ -439,7 +438,7 @@ const Foods = () => {
         </button>
       )}
       {isOpen && (
-        <ItemsCart
+        <SingleItemModal
           selectedItem={selectedItem}
           toggleDrawer={toggleDrawer}
           isOpen={isOpen}
@@ -460,7 +459,7 @@ const Foods = () => {
   );
 };
 
-export default Foods;
+export default Pos;
 
 type TypeCategoryCard = {
   title: string;

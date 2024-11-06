@@ -1,27 +1,32 @@
 import { useState } from "react";
-
 import { useCartContext } from "../../context/cartContext";
-import { Food, items } from "../../data/items";
+import { Food } from "../../data/items";
 import TruncateText from "../common/TruncateText";
-import ItemsCart from "./ItemsCart";
+import SingleItemModal from "../SingleItemModal/SingleItemModal";
+import { useFrappeGetDocList } from "frappe-react-sdk";
+
 
 export type SelectCartProps = {
   id: number;
   name: string;
-  description: string;
-  regularPrice: number;
+  description?: string;
+  regularPrice?: number;
   sellPrice: number;
-  image: string;
-  Variation: Variation[];
-  addOns: Variation[];
-  relatedItems: Partial<Food>[];
-  categoryId: number;
+  image?: string;
+  quantity?: number;
+  variation?: Variation;
+  addOns?: Food[];
+  relatedItems?: Food[];
+  categoryId?: number;
+  specialInstructions?: string;
+  totalPrice?: number;
 };
 export interface Variation {
   id: number;
   name: string;
   price: number;
   image?: string;
+  quantity?: number;
 }
 
 const ItemList = ({
@@ -31,10 +36,21 @@ const ItemList = ({
   className?: string;
   selectedCategory?: string;
 }) => {
+
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<SelectCartProps | null>(
-    null
-  );
+  const [selectedItem, setSelectedItem] = useState<Food | null>(null);
+
+  const { data, isLoading, error } = useFrappeGetDocList("Item", {
+    fields: ["item_code", 'item_name', 'item_group', 'allow_alternative_item', 'has_variants', 'image', 'description', 'variant_of', 'customer', 'sales_uom', 'is_sales_item', 'standard_rate'],
+    filters: [
+      ['variant_of', '=', '']
+    ],
+    limit: 30,
+  });
+
+  console.log(isLoading);
+  console.log(error);
+  console.log(data);
 
   const { cartItems } = useCartContext();
 
@@ -43,7 +59,7 @@ const ItemList = ({
     setIsOpen(!isOpen);
   };
   // Handle item click and set the selected item
-  const handleItemClick = (item: any) => {
+  const handleItemClick = (item: Food) => {
     setSelectedItem(item);
     toggleDrawer();
   };
@@ -53,19 +69,19 @@ const ItemList = ({
     return cartItem ? cartItem.quantity : 0;
   };
 
-  const filteredItems = items?.filter((item) => {
-    if (selectedCategory == "0") {
-      return true;
-    } else {
-      return item.categoryId == Number(selectedCategory);
-    }
-  });
+  // const filteredItems = items?.filter((item) => {
+  //   if (selectedCategory == "0") {
+  //     return true;
+  //   } else {
+  //     return item.categoryId == Number(selectedCategory);
+  //   }
+  // });
 
   return (
     <div className={`${className}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:xl:grid-cols-4 gap-3 py-4 px-2">
         {" "}
-        {filteredItems?.map((item) => (
+        {data?.map((item) => (
           <div
             onClick={() => handleItemClick(item)}
             key={item?.id}
@@ -93,7 +109,7 @@ const ItemList = ({
                 {item?.name}
               </p>
               <p className="text-xs lg:text-base font-medium text-primaryColor">
-                ৳{item?.sellPrice}
+                ৳{item?.sell_price || 0}
               </p>
               <div className="text-xs lg:text-base text-gray-500">
                 <TruncateText content={item?.description} length={25} />{" "}
@@ -101,7 +117,7 @@ const ItemList = ({
             </div>
           </div>
         ))}
-        <ItemsCart
+        <SingleItemModal
           selectedItem={selectedItem}
           toggleDrawer={toggleDrawer}
           isOpen={isOpen}

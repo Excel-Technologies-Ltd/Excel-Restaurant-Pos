@@ -7,7 +7,7 @@ import { useCartContext } from "../../context/cartContext";
 import { URLItems } from "../../routes/routes-link";
 import { styles } from "../../utilities/cn";
 import CheckoutPopup from "../alert/CheckoutPopup";
-import AllCarts from "../itemspage/AllCarts";
+import AllCarts from "../CartModal/AllCarts";
 
 const BottomNav = ({ className }: { className?: string }) => {
   const [showCart, setShowCart] = useState(false);
@@ -42,9 +42,8 @@ const BottomNav = ({ className }: { className?: string }) => {
             onClick={() => {
               setShowCart(true);
             }}
-            className={`flex flex-col justify-center items-center p-2 cursor-pointer ${
-              showCart ? "active" : ""
-            }`}
+            className={`flex flex-col justify-center items-center p-2 cursor-pointer ${showCart ? "active" : ""
+              }`}
           >
             <BsCartCheck size={15} />
             <p className="text-xs text-gray-light">Cart</p>

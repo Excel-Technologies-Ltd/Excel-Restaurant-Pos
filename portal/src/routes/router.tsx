@@ -5,7 +5,7 @@ import MainLayout from "../layout/MainLayout";
 import {
   URLCategories,
   URLDashboard,
-  URLFoods,
+  URLAdminPos,
   URLItem,
   URLItems,
   URLOrders,
@@ -20,13 +20,13 @@ import DraggableTable from "../pages/table-management/DraggableTable.js";
 // import Orders from "../pages/orders/Orders.js";
 import Login from "../pages/login/Login.js";
 import { lazy } from "react";
-const HomePage = lazy(() => import("../pages/HomePage/HomePage"));
+const Home = lazy(() => import("../pages/Home/Home.js"));
 const ItemsPage = lazy(() => import("../pages/ItemsPage/ItemsPage"));
 // const DraggableTable = lazy(
 //   () => import("../pages/table-management/DraggableTable")
 // );
 const Orders = lazy(() => import("../pages/orders/Orders"));
-const Foods = lazy(() => import("../pages/foods/Foods"));
+const Pos = lazy(() => import("../pages/Admin/Pos/Pos"));
 const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
 // const Login = lazy(() => import("../pages/login/Login"));
 export const router = createBrowserRouter([
@@ -35,7 +35,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <HomePage />,
+        element: <Home />,
       },
       {
         path: URLItems(),
@@ -59,8 +59,8 @@ export const router = createBrowserRouter([
         element: <DraggableTable />,
       },
       {
-        path: URLFoods(),
-        element: <Foods />,
+        path: URLAdminPos(),
+        element: <Pos />,
       },
       {
         path: URLOrders(),

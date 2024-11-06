@@ -15,7 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { zIndex } from "../../data/zIndex";
 import useWindowWidth from "../../hook/useWindowWidth";
-import Foods from "../../pages/foods/Foods";
+import Pos from "../../pages/Admin/Pos/Pos";
 import ModalRightToLeft from "../../pages/table-management/ModalRightToLeft";
 import { closeRightModal } from "../../redux/features/modal/foodsModal";
 import { setSidebarOpen } from "../../redux/features/sidebar/sidebar";
@@ -193,11 +193,10 @@ const Sidebar = ({ children }: Props) => {
                       onChange={() => handleMenuClick(index)}
                     />
                     <ul
-                      className={`pl-5 space-y-2 ${
-                        submenuUrl(menuItem?.submenu)?.includes(routeArray[1])
-                          ? "block"
-                          : "hidden"
-                      }`}
+                      className={`pl-5 space-y-2 ${submenuUrl(menuItem?.submenu)?.includes(routeArray[1])
+                        ? "block"
+                        : "hidden"
+                        }`}
                     >
                       {menuItem?.submenu?.map((subMenuItem, subIndex) => (
                         <li key={subIndex} className=" first:mt-2">
@@ -269,7 +268,7 @@ const Sidebar = ({ children }: Props) => {
           rightModalOpen={rightModalOpen}
           handleCloseModal={handleCloseModal}
         >
-          <Foods />
+          <Pos />
         </ModalRightToLeft>
       )}
     </>

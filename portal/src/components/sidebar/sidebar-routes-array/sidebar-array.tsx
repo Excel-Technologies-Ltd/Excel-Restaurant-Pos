@@ -13,14 +13,8 @@ import { MdOutlineTableRestaurant } from "react-icons/md";
 import { PiListChecksFill } from "react-icons/pi";
 import { RiFileUserFill } from "react-icons/ri";
 import { TbCategoryFilled } from "react-icons/tb";
-import {
-  URLCategories,
-  URLDashboard,
-  URLFoods,
-  URLOrders,
-  URLTableManagement,
-  URLUsers,
-} from "../../../routes/routes-link";
+import { URLAdminPos, URLCategories, URLDashboard, URLOrders, URLTableManagement, URLUsers } from "../../../routes/routes-link";
+
 
 interface MenuItem {
   label: string;
@@ -48,7 +42,7 @@ export const GetMenuItems = () => {
     },
     {
       label: "Pos",
-      url: URLFoods(),
+      url: URLAdminPos(),
       icon: <IoFastFoodSharp size={19} />,
       isModuleAccess: true,
     },

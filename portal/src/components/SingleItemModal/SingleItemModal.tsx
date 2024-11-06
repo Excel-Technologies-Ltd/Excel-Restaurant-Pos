@@ -4,13 +4,14 @@ import { FaMinus } from "react-icons/fa";
 import { FiPlus } from "react-icons/fi";
 import { RxCross2 } from "react-icons/rx";
 import { useCartContext } from "../../context/cartContext";
-import { SelectCartProps, Variation } from "./ItemList";
+import { SelectCartProps } from "../ItemList/ItemList";
 import { Food } from "../../data/items";
+import AddOnsItemCard from "./components/AddOnsItemCard";
 
 type Props = {
   isOpen: boolean;
   toggleDrawer: () => void;
-  selectedItem: SelectCartProps | null;
+  selectedItem: Food | null;
 };
 
 type DrawerProps = {
@@ -19,18 +20,27 @@ type DrawerProps = {
   children: React.ReactNode;
 };
 
-const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
+const SingleItemModal = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
+  console.log("selectedItem", selectedItem);
   const [selectedVariation, setSelectedVariation] = useState(
-    selectedItem?.Variation?.[0]?.name
+    selectedItem?.variation?.[0]
   );
   const [quantity, setQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState("");
-  const [selectedItems, setSelectedItems] = useState<Partial<Food>[]>([]);
-  const [selectedAddOnsItems, setSelectedAddOnsItems] = useState<Variation[]>(
-    []
-  );
+  const [selectedItems, setSelectedItems] = useState<Food[]>([]);
   const [showAll, setShowAll] = useState(false);
   const { updateCartCount } = useCartContext();
+
+
+
+  const incrementAddOns = (id: number) => {
+    console.log(id);
+    setSelectedItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! + 1 } : item))
+    console.log(selectedItems);
+  }
+  const decrementAddOns = (id: number) => {
+    setSelectedItems(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity! > 1 ? item.quantity! - 1 : 1 } : item))
+  }
 
   const increment = () => {
     setQuantity((prevQuantity) => prevQuantity + 1);
@@ -42,24 +52,25 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
     }
   };
 
-  const selectedVariationPrice =
-    selectedItem?.Variation?.find(
-      (variation) => variation?.name === selectedVariation
-    )?.price ||
-    selectedItem?.sellPrice ||
-    0;
+  const selectedVariationPrice = selectedVariation?.price || 0;
 
-  const total = selectedVariationPrice * quantity;
-  const addOns = selectedAddOnsItems?.reduce(
-    (total, addOn) => total + addOn?.price,
-    0
-  );
+
+  const total = selectedVariationPrice * quantity
+  // const addOns = selectedAddOnsItems?.reduce(
+  //   (total, addOn) => total + (addOn?.sellPrice),
+  //   0
+  // );
+
+
   const another = selectedItems?.reduce(
-    (total, item) => total + (item.sellPrice as number),
+    (total, item) => total + (item.sellPrice * (item?.quantity || 1)),
     0
   );
-  const totalPrice = total + addOns;
-  const subTotalPrice = total + addOns + another;
+  // const totalPrice = total + addOns;
+  // const subTotalPrice = total + addOns + another;
+
+  const totalPrice = total;
+  const subTotalPrice = total + another;
 
   const [isLargeDevice, setIsLargeDevice] = useState(window.innerWidth > 768);
 
@@ -76,20 +87,21 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
 
   // Function to add the item to localStorage
   const addToCart = () => {
-    const cartItem = {
-      id: selectedItem?.id,
-      name: selectedItem?.name,
-      variation: selectedVariation,
+    if (!selectedItem) return;
+    const cartItem: SelectCartProps = {
+      id: selectedItem.id,
+      name: selectedItem.name,
+      variation: selectedVariation ? selectedVariation : selectedItem.variation?.[0],
       quantity,
-      price: selectedVariationPrice,
+      sellPrice: selectedVariationPrice,
       totalPrice,
       specialInstructions,
       image: selectedItem?.image,
     };
 
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const cart: SelectCartProps[] = JSON.parse(localStorage.getItem("cart") || "[]");
     const itemExists = cart.some(
-      (item: any) =>
+      (item: SelectCartProps) =>
         item.id === selectedItem?.id && item.variation === selectedVariation
     );
 
@@ -99,11 +111,11 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
       cart.push(cartItem);
       if (selectedItems?.length > 0) {
         selectedItems.forEach((item) => {
-          const cartItems = {
+          const cartItems: SelectCartProps = {
             id: item?.id,
             name: item?.name,
             quantity: 1,
-            price: item?.sellPrice,
+            sellPrice: item?.sellPrice,
             image: item?.image,
           };
           cart.push(cartItems);
@@ -117,8 +129,8 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
     }
 
     setQuantity(1);
-    setSelectedAddOnsItems([]);
-    setSelectedVariation("Half");
+    // setSelectedAddOnsItems([]);
+    setSelectedVariation(selectedItem?.variation?.[0]);
     setSpecialInstructions("");
     setSelectedItems([]);
     toggleDrawer();
@@ -126,13 +138,13 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
 
   const closeHandler = () => {
     setQuantity(1);
-    setSelectedVariation("Half");
+    setSelectedVariation(selectedItem?.variation?.[0]);
     setSpecialInstructions("");
     setSelectedItems([]);
     toggleDrawer();
   };
 
-  const handleRelatedItems = (item: Partial<Food>) => {
+  const handleRelatedItems = (item: Food) => {
     if (selectedItems.some((selectedItem) => selectedItem.id === item.id)) {
       // Remove the item if it already exists
       setSelectedItems(
@@ -144,13 +156,15 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
     }
   };
 
-  const handleAddOnsChange = (selectedAddOn: Variation) => {
-    if (selectedAddOnsItems.some((item) => item.id === selectedAddOn.id)) {
-      setSelectedAddOnsItems(
-        selectedAddOnsItems.filter((item) => item.id !== selectedAddOn.id)
+  const handleAddOnsChange = (selectedAddOn: Food) => {
+    console.log(selectedAddOn);
+    if (selectedItems.some((item) => item.id === selectedAddOn.id)) {
+      setSelectedItems(
+        selectedItems.filter((item) => item.id !== selectedAddOn.id)
       );
     } else {
-      setSelectedAddOnsItems([...selectedAddOnsItems, selectedAddOn]);
+      incrementAddOns(selectedAddOn.id as number);
+      setSelectedItems([...selectedItems, { ...selectedAddOn, quantity: 1 }]);
     }
   };
 
@@ -235,10 +249,10 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
             </div>
 
             {/* Variation */}
-            {selectedItem?.Variation && (
+            {selectedItem?.variation && (
               <div className="border shadow p-2 rounded-md mt-4">
                 <h2 className="mb-3 text-xs font-semibold">Variation</h2>
-                {selectedItem?.Variation.map((variation) => (
+                {selectedItem?.variation.map((variation) => (
                   <label
                     key={variation.name}
                     className="flex justify-between mb-3 text-xs capitalize"
@@ -247,8 +261,8 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
                       <input
                         type="radio"
                         value={variation.name}
-                        checked={selectedVariation === variation.name}
-                        onChange={() => setSelectedVariation(variation.name)}
+                        checked={selectedVariation?.name === variation.name}
+                        onChange={() => setSelectedVariation(variation)}
                         className="mr-2"
                       />
                       {variation.name}
@@ -264,31 +278,10 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
               <p>Add Ons </p>
               <p className="text-gray-500 text-xs">(Optional)</p>
             </h2>
-            <p className="mb-3 mt-1 text-xs">Select up to 5</p>
+            <p className="mb-3 mt-1 text-xs">Select add ons</p>
             {selectedItem?.addOns?.slice(0, 5)?.map((item, index) => {
               return (
-                <label
-                  key={index}
-                  className="p-3 flex flex-row justify-between items-center border rounded-md relative mt-2 cursor-pointer z-10"
-                >
-                  {/* Checkbox before image */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedAddOnsItems.some(
-                        (selectedItem) => selectedItem.id === item.id
-                      )}
-                      onChange={() => handleAddOnsChange(item)}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <p className="text-xs font-semibold text-gray-800">
-                      {item?.name}
-                    </p>
-                  </div>
-                  <p className="text-xs lg:text-base font-medium text-textColor">
-                    + ৳{item?.price}
-                  </p>
-                </label>
+                <AddOnsItemCard item={item} key={index} handleAddOnsChange={handleAddOnsChange} selectedItems={selectedItems} decrementAddOns={decrementAddOns} incrementAddOns={incrementAddOns} />
               );
             })}
 
@@ -348,7 +341,10 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
             {/* Special Instructions */}
             <label className="form-control w-full mt-2">
               <div className="label">
-                <h2 className="font-semibold text-xs">Special instructions</h2>
+                <h2 className="font-semibold text-xs" onClick={() => {
+                  console.log("Selected Item", selectedItem);
+                  console.log("Selected Items", selectedItems);
+                }}>Special instructions</h2>
               </div>
               <textarea
                 value={specialInstructions}
@@ -397,7 +393,7 @@ const ItemsCart = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
   );
 };
 
-export default ItemsCart;
+export default SingleItemModal;
 
 const ItemsDrawer = ({ children, isOpen, isLargeDevice }: DrawerProps) => {
   if (isLargeDevice) {

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useCartContext } from "../../context/cartContext";
-import { Food, items } from "../../data/items";
-import { SelectCartProps } from "../itemspage/ItemList";
-import ItemsCart from "../itemspage/ItemsCart";
+import { useCartContext } from "../../../context/cartContext";
+import { Food, items } from "../../../data/items";
+import { SelectCartProps } from "../../../components/ItemList/ItemList";
+import SingleItemModal from "../../../components/SingleItemModal/SingleItemModal";
 import Carousel, { CarouselItem } from "./Carousel";
 import Catering from "@/images/Catering.png";
 import Catering1 from "@/images/Catering1.png";
@@ -24,9 +24,7 @@ const Hero = () => {
 
   const { cartItems } = useCartContext();
 
-  const [selectedItem, setSelectedItem] = useState<SelectCartProps | null>(
-    null
-  );
+  const [selectedItem, setSelectedItem] = useState<Food | null>(null);
 
   // Toggle drawer visibility
   const toggleDrawer = () => {
@@ -41,7 +39,7 @@ const Hero = () => {
       image: item.image,
       description: item.description,
       regularPrice: item.regularPrice,
-      Variation: item.Variation,
+      variation: item.variation,
       addOns: item.addOns,
       relatedItems: item.relatedItems,
       categoryId: item.categoryId,
@@ -103,7 +101,7 @@ const Hero = () => {
             </div>
           ))}
           {isOpen && (
-            <ItemsCart
+            <SingleItemModal
               selectedItem={selectedItem}
               toggleDrawer={toggleDrawer}
               isOpen={isOpen}
