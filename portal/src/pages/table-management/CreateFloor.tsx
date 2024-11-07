@@ -1,27 +1,41 @@
 import { useState } from "react";
 import Input from "../../components/form-elements/Input";
+import { useFrappeCreateDoc, useFrappeGetDocList } from 'frappe-react-sdk'
+import { RestaurantFloor } from "../../types/ExcelRestaurantPos/RestaurantFloor";
 
 type Props = {
   setIsOpenFloorCreate: React.Dispatch<React.SetStateAction<boolean>>;
 };
+
+
 const CreateFloor = ({ setIsOpenFloorCreate }: Props) => {
-  // State to manage the form data
   const [floorName, setFloorName] = useState("");
-  const [floorNumber, setFloorNumber] = useState("");
+
+  const { data } = useFrappeGetDocList("Company")
+  console.log(data?.[0]?.name)
+
+  const { createDoc, loading, error } = useFrappeCreateDoc<RestaurantFloor>()
+
+
+
+
+  // State to manage the form data
+
 
   const createFloor = () => {
     // Here you would typically handle the floor creation logic,
     // such as making an API call to save the floor data.
-    const newFloor = {
-      name: floorName,
-      number: floorNumber,
-    };
+    if (!floorName) return
 
-    console.log("Creating floor:", newFloor);
+    createDoc("Restaurant Floor", {
+      floor: floorName,
+      company: data?.[0]?.name,
+
+    })
 
     // Reset the form
     setFloorName("");
-    setFloorNumber("");
+
 
     // Close the modal
     setIsOpenFloorCreate(false);
@@ -42,8 +56,8 @@ const CreateFloor = ({ setIsOpenFloorCreate }: Props) => {
           className="space-y-3
           "
         >
-          <Input label="Floor Name" />
-          <Input label="Floor Number" />
+          <Input label="Floor Name" value={floorName} onChange={(e) => setFloorName(e.target.value)} />
+
           <div className="flex justify-end mt-4">
             <button
               type="button"
@@ -52,7 +66,7 @@ const CreateFloor = ({ setIsOpenFloorCreate }: Props) => {
             >
               Cancel
             </button>
-            <button type="submit" className="main_btn">
+            <button type="submit" className="main_btn disabled:opacity-50" disabled={floorName.length === 0}>
               Create
             </button>
           </div>

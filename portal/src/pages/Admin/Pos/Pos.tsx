@@ -11,7 +11,7 @@ import CheckoutPopup from "../../../components/alert/CheckoutPopup";
 import { styles } from "../../../utilities/cn";
 import Textarea from "../../../components/form-elements/Textarea";
 import TruncateText from "../../../components/common/TruncateText";
-import { foodCategories } from "../../ItemsPage/ItemsPage";
+import { foodCategories } from "../../Items/Items";
 import { Food, items } from "../../../data/items";
 import { useCartContext } from "../../../context/cartContext";
 import useWindowWidth from "../../../hook/useWindowWidth";

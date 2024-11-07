@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCartContext } from "../../context/cartContext";
-import { Food } from "../../data/items";
+import { Food, items } from "../../data/items";
 import TruncateText from "../common/TruncateText";
 import SingleItemModal from "../SingleItemModal/SingleItemModal";
 import { useFrappeGetDocList } from "frappe-react-sdk";
@@ -40,13 +40,13 @@ const ItemList = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Food | null>(null);
 
-  const { data, isLoading, error } = useFrappeGetDocList("Item", {
-    fields: ["item_code", 'item_name', 'item_group', 'allow_alternative_item', 'has_variants', 'image', 'description', 'variant_of', 'customer', 'sales_uom', 'is_sales_item', 'standard_rate'],
-    filters: [
-      ['variant_of', '=', '']
-    ],
-    limit: 30,
-  });
+  // const { data, isLoading, error } = useFrappeGetDocList("Item", {
+  //   fields: ["item_code", 'item_name', 'item_group', 'allow_alternative_item', 'has_variants', 'image', 'description', 'variant_of', 'customer', 'sales_uom', 'is_sales_item', 'standard_rate'],
+  //   filters: [
+  //     ['variant_of', '=', '']
+  //   ],
+  //   limit: 30,
+  // });
 
 
 
@@ -79,10 +79,10 @@ const ItemList = ({
     <div className={`${className}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:xl:grid-cols-4 gap-3 py-4 px-2">
         {" "}
-        {data?.map((item) => (
+        {items?.map((item, idx) => (
           <div
             onClick={() => handleItemClick(item)}
-            key={item?.id}
+            key={idx}
             className="p-2 lg:p-4 cursor-pointer flex flex-row justify-start items-center border rounded-xl hover:shadow-lg transition-shadow relative"
           >
             <img
