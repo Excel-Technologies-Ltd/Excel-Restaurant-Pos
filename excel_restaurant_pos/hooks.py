@@ -150,13 +150,12 @@ fixtures = [
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Item": {
+		# "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
+		"on_update": "excel_restaurant_pos.doc_event.item.create_add_on_item"
+	}
+}
 
 # Scheduled Tasks
 # ---------------
