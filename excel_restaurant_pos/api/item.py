@@ -122,6 +122,7 @@ def get_food_item_list(category=None):
 
 @frappe.whitelist(allow_guest=True)
 def get_single_food_item_details(item_code):
+    item_code, item_name, item_group, image, has_variants = frappe.db.get_value("Item", {"item_code": item_code}, ["item_code", "item_name", "item_group", "image", "has_variants"])
     print(item_code)
 
 
@@ -137,3 +138,22 @@ def get_add_ons_list(item_code):
           AND parentfield = 'categories'
         ORDER BY creation
     """
+    
+def get_add_ons_list(item_code):
+    query = """
+        SELECT fi.item_id as item_code ,i.item_name as item_name,i.image as image,COALESCE(ip.price_list_rate, 0) as price
+        FROM `tabFood Item List` as fi
+        LEFT JOIN `tabItem` as i ON fi.item_id = i.item_code
+        LEFT JOIN `tabItem Price` as ip ON fi.item_id = ip.item_code and ip.price_list = "Standard Selling"
+        WHERE fi.parent = %s and fi.parentfield= "add_ons_item_list" and fi.parenttype= "Item"
+    """
+    return frappe.db.sql(query, (item_code,), as_dict=True)
+
+def get_variant_item_list(item_code):
+    query = """
+        SELECT i.item_code as item_code ,i.item_name as item_name,i.image as image,COALESCE(ip.price_list_rate, 0) as price
+        FROM `tabItem` as i
+        LEFT JOIN `tabItem Price` as ip ON i.item_code = ip.item_code and ip.price_list = "Standard Selling"
+        WHERE i.variant_of = %s
+    """
+    return frappe.db.sql(query, (item_code,), as_dict=True)

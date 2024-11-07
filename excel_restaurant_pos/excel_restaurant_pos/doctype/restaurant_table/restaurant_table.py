@@ -12,7 +12,7 @@ class RestaurantTable(Document):
         if not self.is_new():
             return
         host = get_url()
-        url = f"{host}/restaurant/items?table_id={self.name}&order_type=DineIn"
+        url = f"{host}/restaurant/items?table_id={self.name}"
         frappe.msgprint(url)
         
         # Generate the QR code with the URL data
