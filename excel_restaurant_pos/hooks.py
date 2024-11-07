@@ -22,8 +22,13 @@ fixtures = [
             "name", "in", [
                 "Item-add_ons_item",
                 "Item-add_ons_item_list",
-                "Item-frequently_bought_item_list",
-                "Item-frequently_bought_items"
+                # "Item-frequently_bought_item_list",
+                # "Item-frequently_bought_items",
+                "Item Group-is_add_ons",
+                "Item Group-is_restaurant_pos",
+                "Item-default_variant",
+                "Item Group-column_break_qf15o",
+                "Item Group-column_break_uytx9"
             ]
         ]
     ]},
@@ -31,6 +36,8 @@ fixtures = [
         [
             "name", "in", [
                 "Item-main-quick_entry",
+                "Item Group-main-make_attachments_public",
+                "Item Group-image-hidden"
             ]
         ]
     ]}
