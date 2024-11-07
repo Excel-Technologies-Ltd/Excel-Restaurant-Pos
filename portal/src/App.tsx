@@ -7,7 +7,7 @@ import { FrappeProvider } from "frappe-react-sdk";
 
 export default function App() {
   return (
-    <FrappeProvider siteName="localhost:8000" enableSocket={true}>
+    <FrappeProvider siteName="localhost:8000" socketPort="9000" enableSocket={true}>
       <RouterProvider router={router} />
     </FrappeProvider>
 

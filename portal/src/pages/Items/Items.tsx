@@ -6,7 +6,7 @@ import { useSearchParams } from "react-router-dom";
 import Drawer from "../../components/Drawer/Drawer";
 import Select from "../../components/form-elements/Select";
 import Button from "../../components/Button/Button";
-import { useFrappeGetDocList } from "frappe-react-sdk";
+import { useFrappeGetCall, useFrappeGetDocList } from "frappe-react-sdk";
 
 type FoodCategory = {
   id: number;
@@ -30,6 +30,11 @@ const Items = () => {
   const order_type = searchParams.get("order_type");
 
 
+  // useFrappeGetCall
+  const { data: categories, isLoading: isLoadingCategories } = useFrappeGetCall('excel_restaurant_pos.api.item.get_category_list', {
+    fields: ["*"]
+  })
+
 
 
   console.log(table_id, order_type);
@@ -38,12 +43,6 @@ const Items = () => {
     setIsOpen(!isOpen);
   };
   useEffect(() => {
-
-    // 
-    // if (!table_id && !order_type) {
-    //   toggleDrawer();
-    // }
-
 
     const handleResize = () => {
       setIsLargeDevice(window.innerWidth > 768);
@@ -71,11 +70,11 @@ const Items = () => {
                 All
               </p>
             </div>
-            {foodCategories?.map((category: FoodCategory, index: number) => (
+            {categories?.message?.map((category: FoodCategory, index: number) => (
               <div
-                onClick={() => setSelectedCategory(String(category?.id))}
+                onClick={() => setSelectedCategory(category?.name)}
                 key={index}
-                className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor  ${String(category?.id) === selectedCategory
+                className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor  ${category?.name === selectedCategory
                   ? "bg-lightPrimaryColor"
                   : ""
                   }`}
@@ -97,7 +96,7 @@ const Items = () => {
         </div>
       </div>
       <ItemsPageBottom />
-      <Drawer isOpen={isOpen} isLargeDevice={isLargeDevice}>
+      {/* <Drawer isOpen={isOpen} isLargeDevice={isLargeDevice}>
         <div
           className={`overflow-y-auto p-4 ${isLargeDevice
             ? "max-h-[calc(100vh-100px)] "
@@ -142,7 +141,7 @@ const Items = () => {
 
           </div>
         </div>
-      </Drawer >
+      </Drawer > */}
     </div >
   );
 };

@@ -11,11 +11,13 @@ import CheckoutPopup from "../../../components/alert/CheckoutPopup";
 import { styles } from "../../../utilities/cn";
 import Textarea from "../../../components/form-elements/Textarea";
 import TruncateText from "../../../components/common/TruncateText";
-import { foodCategories } from "../../Items/Items";
-import { Food, items } from "../../../data/items";
+// import { foodCategories } from "../../Items/Items";
+// import { Food, items } from "../../../data/items";
 import { useCartContext } from "../../../context/cartContext";
 import useWindowWidth from "../../../hook/useWindowWidth";
-import { SelectCartProps } from "../../../components/ItemList/ItemList";
+import { Food } from "../../../data/items";
+import { useFrappeGetCall } from "frappe-react-sdk";
+import { useSearchParams } from "react-router-dom";
 
 
 const Pos = () => {
@@ -32,7 +34,41 @@ const Pos = () => {
   const [discountType, setDiscountType] = useState<"flat" | "percentage">(
     "percentage"
   );
+  const [foodCategories, setFoodCategories] = useState<any[]>([])
   const [notes, setNotes] = useState<string>("");
+
+  // useFrappeGetCall
+  const { data: categories, isLoading: isLoadingCategories } = useFrappeGetCall('excel_restaurant_pos.api.item.get_category_list', {
+    fields: ["*"]
+  })
+
+  const { data: foods, isLoading: isLoadingFoods } = useFrappeGetCall('excel_restaurant_pos.api.item.get_food_item_list', {
+    fields: ["*"]
+  })
+
+  useEffect(() => {
+    if (categories) {
+      setFoodCategories(categories.message)
+    }
+  }, [categories])
+
+  const handleCategoryClick = (category: string) => {
+    console.log("category", category);
+    setSelectedCategory(category);
+  };
+
+  const filteredItems = foods?.message?.filter((item: any) => {
+    if (selectedCategory == "0") {
+      return true;
+    } else {
+      return item.item_group === selectedCategory;
+    }
+  });
+
+  console.log("filteredItems", filteredItems);
+
+  console.log("categories", foodCategories);
+
 
   // Toggle drawer visibility
   const [isOpen, setIsOpen] = useState(false);
@@ -66,10 +102,6 @@ const Pos = () => {
   const getItemQuantity = (itemId: number) => {
     const cartItem = cartItems?.find((cartItem) => cartItem?.id === itemId);
     return cartItem ? cartItem?.quantity : 0;
-  };
-
-  const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category);
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -207,13 +239,7 @@ const Pos = () => {
     updateCartCount();
   };
 
-  const filteredItems = items?.filter((item) => {
-    if (selectedCategory == "0") {
-      return true;
-    } else {
-      return item.categoryId == Number(selectedCategory);
-    }
-  });
+
 
   return (
     <div className="p-2 foodsBody" id="foodsBody">
@@ -236,7 +262,7 @@ const Pos = () => {
               />
               {foodCategories?.map((item, index) => (
                 <CategoryCard
-                  onClick={() => handleCategoryClick(String(item?.id))}
+                  onClick={() => handleCategoryClick(item.name)}
                   key={index}
                   title={item?.name}
                   isActive={String(item?.id) === selectedCategory}
@@ -265,10 +291,10 @@ const Pos = () => {
                   />
                   <div className="p-2">
                     <p className="text-xs lg:text-sm font-semibold text-gray-800">
-                      {item?.name}
+                      {item?.item_name}
                     </p>
                     <p className="text-xs lg:text-sm font-medium text-primaryColor">
-                      ৳{item?.sellPrice}
+                      ৳{item?.price}
                     </p>
                     <div className="text-xs lg:text-sm text-gray-500">
                       <TruncateText content={item?.description || ""} length={100} />
@@ -282,9 +308,7 @@ const Pos = () => {
                       {getItemQuantity(item?.id)}
                     </div>
                   )}
-                  {/* <button className="absolute bottom-3 right-3 bg-primaryColor p-2 rounded-full text-white invisible group-hover:visible shadow-lg cursor-pointer hidden">
-                    <MdOutlineShoppingCart />
-                  </button> */}
+
                 </div>
               );
             })}
