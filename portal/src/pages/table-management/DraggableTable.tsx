@@ -19,7 +19,7 @@ import DraggableTableCreate from "./DraggableTableCreate";
 import DraggableTableDetails from "./DraggableTableDetails";
 import DraggableTableEdit from "./DraggableTableEdit";
 import ModalRightToLeft from "./ModalRightToLeft";
-import { useFrappeGetDocList } from "frappe-react-sdk";
+import { useFrappeCreateDoc, useFrappeDocTypeEventListener, useFrappeGetCall, useFrappeGetDocList } from "frappe-react-sdk";
 import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
 
 // Interface for table shape
@@ -40,9 +40,65 @@ export interface TableShape {
 }
 
 const DraggableTable: React.FC = () => {
+  const { data: company } = useFrappeGetDocList("Company")
+  const { data: floors, mutate } = useFrappeGetDocList("Restaurant Floor");
+  useFrappeDocTypeEventListener("Restaurant Floor", (doc) => {
+    mutate();
+    console.log("doc", doc);
+  });
+  const [selectedFloor, setSelectedFloor] = useState<string>('')
+  // console.log("selectedFloor", selectedFloor);
 
-  const { data: floors } = useFrappeGetDocList("Restaurant Floor");
-  console.log(floors);
+
+  useEffect(() => {
+    if (selectedFloor) {
+      console.log("selectedFloor in useEffect", selectedFloor);
+      setNewTableData(prev => ({
+        ...prev,
+        restaurant_floor: selectedFloor
+      }))
+    }
+  }, [selectedFloor])
+
+  const { createDoc, } = useFrappeCreateDoc<RestaurantTable>()
+
+  const { data: tablesFromERP, mutate: mutateTables } = useFrappeGetDocList("Restaurant Table", {
+    fields: ["*"],
+    filters: [
+      ["company", "=", company?.[0]?.name],
+      ["restaurant_floor", "=", selectedFloor]
+    ]
+  })
+  console.log("tablesFromERP", tablesFromERP);
+
+
+  useFrappeDocTypeEventListener("Restaurant Floor", (doc) => {
+    mutateTables();
+    console.log("doc", doc);
+  });
+
+
+
+
+  useEffect(() => {
+    if (floors?.length) {
+      if (!selectedFloor)
+        setSelectedFloor(floors?.[0]?.name)
+    }
+    if (tablesFromERP) {
+      const updatedTables = tablesFromERP.map((table) => ({
+        ...table,
+        length: +table.length,
+        breadth: +table.breadth,
+        position: JSON.parse(table.position)
+      }))
+      setTables(updatedTables)
+    }
+  }, [floors, selectedFloor, tablesFromERP])
+
+
+
+  // console.log(floors);
 
   const dispatch = useDispatch();
   const rightModalOpen = useSelector(
@@ -61,28 +117,35 @@ const DraggableTable: React.FC = () => {
     "Rectangle" | "Circle" | "Road"
   >("Rectangle");
 
-  const newTable: RestaurantTable = {
-    idx: 0,
+  const initialNewTable: RestaurantTable =
+  {
+    id: '',
+    table_no: "",
     type: "Rectangle",
     length: 180 + '',
     breadth: 80 + '',
     position: { x: 10, y: 55 },
-    seat: null,
-    company: "",
-    restaurant_floor: "",
-    rotation: 0,
+    seat: "",
+    company: company?.[0]?.name,
+    restaurant_floor: '',
+    rotation: '',
     bg_color: newTableShape == "Road" ? "#BFBFBF" : "#155e75",
   }
+
+
   const [newTableData, setNewTableData] = useState<RestaurantTable>(
-    newTable
+    initialNewTable
   );
 
+  useEffect(() => {
+    console.log("tables", tables);
+  }, [tables])
 
-  console.log({ tables });
+  // console.log({ tables });
 
   const headerRef = useRef<HTMLDivElement>(null); // Ref for the header
 
-  const bookedColor = "#880000";
+  // const bookedColor = "#880000";
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -106,14 +169,14 @@ const DraggableTable: React.FC = () => {
     dispatch(closeRightModal());
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch("/data.json");
-      const data = await response.json();
-      setTables(data);
-    };
-    fetchData();
-  }, []);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     const response = await fetch("/data.json");
+  //     const data = await response.json();
+  //     setTables(data);
+  //   };
+  //   fetchData();
+  // }, []);
 
   useEffect(() => {
     localStorage.setItem("tables", JSON.stringify(tables));
@@ -122,8 +185,8 @@ const DraggableTable: React.FC = () => {
 
 
   // Custom Dragging Functionality
-  const handleDrag = (e: React.MouseEvent | React.TouchEvent, idx: number) => {
-    const table = tables.find((table) => table.idx === idx);
+  const handleDrag = (e: React.MouseEvent | React.TouchEvent, id: string) => {
+    const table = tables.find((table) => table.id === id);
     if (!table) return;
 
     const headerHeight = headerRef.current?.offsetHeight || 0; // Get the height of the header
@@ -148,7 +211,7 @@ const DraggableTable: React.FC = () => {
 
       setTables((prev) =>
         prev.map((t) =>
-          t.idx === idx ? { ...t, position: { x: newX, y: newY } } : t
+          t.id === id ? { ...t, position: { x: newX, y: newY } } : t
         )
       );
     };
@@ -167,11 +230,11 @@ const DraggableTable: React.FC = () => {
   };
 
   // Custom Resize Functionality
-  const handleResize = (e: React.MouseEvent | React.TouchEvent, idx: number) => {
+  const handleResize = (e: React.MouseEvent | React.TouchEvent, id: string) => {
     e.preventDefault(); // Prevent default scroll behavior
     e.stopPropagation(); // Prevent event from bubbling up
 
-    const table = tables.find((table) => table.idx === idx);
+    const table = tables.find((table) => table.id === id);
     if (!table) return;
 
     const initialLength = +table.length;
@@ -195,7 +258,7 @@ const DraggableTable: React.FC = () => {
 
       setTables((prev) =>
         prev.map((t) =>
-          t.idx === idx
+          t.id === id
             ? {
               ...t,
               length: table.type === "Circle" ? newLength + '' : newLength + '',
@@ -254,7 +317,7 @@ const DraggableTable: React.FC = () => {
 
       setTables((prev) =>
         prev.map((t) =>
-          t.idx === idx ? { ...t, rotation: (table.rotation || 0) + degrees } : t
+          t.idx === idx ? { ...t, rotation: (parseInt(table.rotation || '0') + degrees).toString() } : t
         )
       );
     };
@@ -274,43 +337,58 @@ const DraggableTable: React.FC = () => {
 
   const openCreateTableModal = () => {
     if (!floors?.length) return toast.error("Please create a floor first.");
-
-    setNewTableData(newTable)
+    // console.log("initialNewTable", initialNewTable);
+    console.log("selectedFloor", selectedFloor);
+    setNewTableData(prev => {
+      console.log("prev", prev);
+      return {
+        ...prev,
+        restaurant_floor: selectedFloor
+      }
+    })
     setIsCreateModalOpen(true);
   };
 
   const createTable = () => {
-    if (!newTableShape) return;
+
+    // console.log("newTableData in createTable", newTableData);
+
+    if (!company?.[0]?.name) {
+      toast.error("Please create a company first.");
+      return;
+    }
 
     if (!newTableData?.seat || !newTableData?.restaurant_floor || !newTableData?.type) {
       toast.error("Please fill in all the details before creating the table.");
       return;
     }
 
-    const newTable: RestaurantTable = {
-      seat: newTableData.seat,
-      company: newTableData.company,
-      restaurant_floor: newTableData.restaurant_floor,
-      type: newTableData.type,
-      length: newTableData.length,
-      breadth: newTableData.breadth,
-      position: newTableData.position,
-      bg_color: newTableData.bg_color,
-      rotation: newTableData.rotation,
-    };
+    createDoc(
+      "Restaurant Table",
+      {
+        id: new Date().toISOString(),
+        company: newTableData?.company,
+        restaurant_floor: newTableData?.restaurant_floor,
+        type: newTableData?.type,
+        length: newTableData?.length,
+        breadth: newTableData?.breadth,
+        position: newTableData?.position,
+        table_no: +newTableData?.table_no,
+        seat: +newTableData?.seat,
+        rotation: newTableData?.rotation,
+        bg_color: newTableData?.bg_color,
+      }
+    )
 
-    setTables((prev) => [...prev, newTable]);
+    // const newTable: RestaurantTable = {
+    //   ...newTableData,
+    // };
+
+    // setTables((prev) => [...prev, newTable]);
     setIsCreateModalOpen(false);
+    setNewTableData(initialNewTable);
 
-    setNewTableData({
-      shape: "rectangle",
-      length: 180,
-      breadth: 80,
-      position: { x: 10, y: 55 },
-      seat: "",
-      tableNo: "",
-      bgColor: newTableShape == "road" ? "#BFBFBF" : "#155e75",
-    });
+
   };
 
   const deleteTable = (idx: number) => {
@@ -321,15 +399,9 @@ const DraggableTable: React.FC = () => {
     const table = tables.find((t) => t.id === id);
     if (table) {
       setNewTableData({
-        shape: table.shape,
-        length: table.length,
-        breadth: table.breadth,
-        position: table.position,
-        seat: table.seat,
-        tableNo: table.tableNo,
-        bgColor: table.bgColor,
+        ...table,
       });
-      setNewTableShape(table.shape);
+      setNewTableShape(table.type);
       setSelectedTable(table);
       setIsEditModalOpen(true);
     }
@@ -343,8 +415,8 @@ const DraggableTable: React.FC = () => {
             ? {
               ...table,
               seat: newTableData?.seat || table.seat,
-              tableNo: newTableData?.tableNo || table.tableNo,
-              bgColor: newTableData?.bgColor || table.bgColor,
+              table_no: newTableData?.table_no || table.table_no,
+              bg_color: newTableData?.bg_color || table.bg_color,
             }
             : table
         )
@@ -378,15 +450,20 @@ const DraggableTable: React.FC = () => {
             Create Table
           </button>
         </div>
-        <div className="flex">
-          <Select className="w-32 text-xs md:text-base" isHideSelect>
-            <option value="">Select Floor</option>
+        {floors?.length && <div className="flex">
+          <Select className="w-32 text-xs md:text-base" isHideSelect onChange={(e) => {
+            setSelectedFloor(e.target.value)
+            setNewTableData(prev => ({
+              ...prev,
+              restaurant_floor: e.target.value
+            }))
+          }}>
             {floors?.map((floor) => (
               <option value={floor?.name}>{floor?.name}</option>
             ))}
           </Select>
           {/* <button className="main_btn h-fit">Save</button> */}
-        </div>
+        </div>}
       </div>
 
       <div className="w-full mt-8 absolute border-5">
@@ -394,12 +471,13 @@ const DraggableTable: React.FC = () => {
           <div
             key={table.id}
             style={{
-              width: table.shape === "circle" ? table.length : table.length,
-              height: table.shape === "circle" ? table.length : table.breadth,
+              width: table.type === "Circle" ? table.length : table.length,
+              height: table.type === "Circle" ? table.length : table.breadth,
               left: `${table.position.x}px`,
               top: `${table.position.y}px`,
-              borderRadius: table.shape === "circle" ? "50%" : "8px",
-              backgroundColor: table?.isBooked ? bookedColor : table.bgColor,
+              borderRadius: table.type === "Circle" ? "50%" : "8px",
+              // backgroundColor: table?.is_booked ? bookedColor : table.bg_color,
+              backgroundColor: table.bg_color,
               transform: `rotate(${table.rotation || 0}deg)`,
             }}
             className="absolute cursor-move group"
@@ -428,7 +506,7 @@ const DraggableTable: React.FC = () => {
 
               {/* Start rectangle table  */}
               {table?.seat &&
-                table?.shape == "rectangle" &&
+                table?.type == "Rectangle" &&
                 table?.length >= table?.breadth && (
                   <div className="flex justify-around absolute -top-[20px] w-full">
                     {Array?.from(
@@ -437,19 +515,21 @@ const DraggableTable: React.FC = () => {
                         return (
                           <div
                             key={i}
-                            className={styles(
-                              "w-10 h-3 bg-primaryColor rounded-t",
-                              `bg[${table?.isBooked ? "bg-" + bookedColor : ""
-                              }]`
-                            )}
+                            // className={styles(
+                            //   "w-10 h-3 bg-primaryColor rounded-t",
+                            //   `bg[${table?.is_booked ? "bg-" + bookedColor : ""
+                            //   }]`
+                            // )}
+                            className="w-10 h-3 bg-primaryColor rounded-t"
                           ></div>
+
                         );
                       }
                     )}
                   </div>
                 )}
               {table?.seat &&
-                table?.shape == "rectangle" &&
+                table?.type == "Rectangle" &&
                 table?.length >= table?.breadth && (
                   <div className="flex justify-around absolute -bottom-[20px] w-full">
                     {Array?.from(
@@ -459,9 +539,9 @@ const DraggableTable: React.FC = () => {
                           <div
                             key={i}
                             className={styles(
-                              "w-10 h-3 bg-primaryColor rounded-b",
-                              `bg[${table?.isBooked ? "bg-" + bookedColor : ""
-                              }]`
+                              "w-10 h-3 bg-primaryColor rounded-b"
+                              // `bg[${table?.is_booked ? "bg-" + bookedColor : ""
+                              // }]`
                             )}
                           ></div>
                         );
@@ -471,7 +551,7 @@ const DraggableTable: React.FC = () => {
                 )}
 
               {table?.seat &&
-                table?.shape == "rectangle" &&
+                table?.type == "Rectangle" &&
                 table?.length < table?.breadth && (
                   <div className="absolute flex flex-col justify-around -right-[20px] h-full">
                     {Array?.from(
@@ -482,8 +562,8 @@ const DraggableTable: React.FC = () => {
                             key={i}
                             className={styles(
                               "w-3 h-10 bg-primaryColor rounded-e",
-                              `bg[${table?.isBooked ? "bg-" + bookedColor : ""
-                              }]`
+                              // `bg[${table?.is_booked ? "bg-" + bookedColor : ""
+                              // }]`
                             )}
                           ></div>
                         );
@@ -492,7 +572,7 @@ const DraggableTable: React.FC = () => {
                   </div>
                 )}
               {table?.seat &&
-                table?.shape == "rectangle" &&
+                table?.type == "Rectangle" &&
                 table?.length < table?.breadth && (
                   <div className="absolute flex flex-col justify-around -left-[20px] w-full h-full">
                     {Array?.from(
@@ -503,8 +583,8 @@ const DraggableTable: React.FC = () => {
                             key={i}
                             className={styles(
                               "w-3 h-10 bg-primaryColor rounded-s",
-                              `bg[${table?.isBooked ? "bg-" + bookedColor : ""
-                              }]`
+                              // `bg[${table?.is_booked ? "bg-" + bookedColor : ""
+                              // }]`
                             )}
                           ></div>
                         );
@@ -516,7 +596,7 @@ const DraggableTable: React.FC = () => {
               {/* End Rectangle table */}
 
               {/* Start Circle table */}
-              {table?.seat && table?.shape == "circle" && (
+              {table?.seat && table?.type == "Circle" && (
                 <div
                   className={styles(
                     "absolute flex justify-center items-center -right-[20px]s h-full w-full"
@@ -528,7 +608,7 @@ const DraggableTable: React.FC = () => {
                         key={i}
                         className={styles(
                           "bg-primaryColor absolute ",
-                          `bg[${table?.isBooked ? "bg-" + bookedColor : ""}]`,
+                          // `bg[${table?.is_booked ? "bg-" + bookedColor : ""}]`,
                           { "w-10 h-3 rounded-b -bottom-[18px]": i == 0 },
                           { "w-10 h-3 rounded-t -top-[18px]": i == 1 },
                           { "w-3 h-10 rounded-s -left-[18px] ": i == 2 },
@@ -542,13 +622,13 @@ const DraggableTable: React.FC = () => {
               {/* End Circle table */}
 
               <button
-                onClick={() => deleteTable(table.id)}
-                onTouchEnd={() => deleteTable(table.id)}
+                onClick={() => deleteTable(table?.idx as number)}
+                onTouchEnd={() => deleteTable(table?.idx as number)}
                 className={styles(
                   "absolute top-0 right-0 p-1 bg-red-500 text-white rounded invisible group-hover:visible",
                   {
                     "left-[50%] transform -translate-x-1/2 w-fit":
-                      table.shape === "circle",
+                      table.type === "Circle",
                   }
                 )}
               // className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded invisible group-hover:visible"
@@ -557,8 +637,8 @@ const DraggableTable: React.FC = () => {
               </button>
 
               <div
-                onMouseDown={(e) => handleResize(e, table.idx)}
-                onTouchStart={(e) => handleResize(e, table.idx)}
+                onMouseDown={(e) => handleResize(e, table?.id as string)}
+                onTouchStart={(e) => handleResize(e, table?.id as string)}
                 className={styles(
                   "absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize rounded-full invisible group-hover:visible",
                   {
@@ -594,8 +674,6 @@ const DraggableTable: React.FC = () => {
         <DraggableTableCreate
           newTableData={newTableData}
           setNewTableData={setNewTableData}
-          newTableShape={newTableShape}
-          setNewTableShape={setNewTableShape}
           setIsCreateModalOpen={setIsCreateModalOpen}
           createTable={createTable}
         />

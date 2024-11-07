@@ -14,20 +14,28 @@ export interface RestaurantTable {
   /**	Floor : Link - Restaurant Floor	*/
   restaurant_floor: string;
   /**	Seat : Int	*/
-  seat: number | null;
+  seat: number | string;
   /**	Type : Select	*/
-  type: "" | "Rectangle" | "Circle" | "Road";
+  type: TableType;
   /**	Bg Color : Data	*/
   bg_color?: string;
   /**	Position : JSON	*/
-  position: any;
-  /**	Width : Data	*/
+  position: {
+    x: number;
+    y: number;
+  };
+  /**	Length : Data	*/
   length: string;
   /**	Breadth : Data	*/
   breadth: string;
   /**	File Path : Data	*/
   file_path?: string;
-
-  //   rotation
-  rotation: number;
+  /**	Id : Data	*/
+  id: string;
+  /**	Rotation : Data	*/
+  rotation?: string;
+  /**	Table No : Int	*/
+  table_no: number | string;
 }
+
+export type TableType = "Rectangle" | "Circle" | "Road";

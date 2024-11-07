@@ -1,38 +1,29 @@
 import { useFrappeGetDocList } from "frappe-react-sdk";
 import Input from "../../components/form-elements/Input";
 import Select from "../../components/form-elements/Select";
+import { RestaurantTable, TableType } from "../../types/ExcelRestaurantPos/RestaurantTable";
 
-// Define the type for the table data
-interface NewTableData {
-  tableNo: string;
-  seat: string; // Adjust type if seat count is numeric
-  bgColor: string; // Assume this is a hex color string
-}
 
-// Define the props for the DraggableTableCreate component
+
 interface DraggableTableCreateProps {
-  newTableData: NewTableData;
-  setNewTableData: React.Dispatch<React.SetStateAction<NewTableData>>;
-  newTableShape: "rectangle" | "circle" | "road"; // or 'square' if needed
-  setNewTableShape: React.Dispatch<
-    React.SetStateAction<"rectangle" | "circle" | "road">
-  >;
+  newTableData: RestaurantTable;
+  setNewTableData: React.Dispatch<React.SetStateAction<RestaurantTable>>;
   setIsCreateModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   createTable: () => void; // This can also be more specific if it has parameters
 }
 
+// * DraggableTableCreate component
 const DraggableTableCreate = ({
   newTableData,
   setNewTableData,
-  newTableShape,
-  setNewTableShape,
   setIsCreateModalOpen,
   createTable,
 }: DraggableTableCreateProps) => {
 
-  const { data: floors } = useFrappeGetDocList("Restaurant Floor");
-  const { data: company } = useFrappeGetDocList("Company")
 
+
+  const { data: floors } = useFrappeGetDocList("Restaurant Floor");
+  console.log(newTableData);
 
   return (
     <div
@@ -41,38 +32,45 @@ const DraggableTableCreate = ({
     >
       <div className="bg-white p-6 rounded-lg shadow-lg min-w-full xsm:min-w-[400px]">
         <h2 className="text-xl mb-4 font-semibold">
-          {newTableShape
-            ? `Create ${newTableShape} ${newTableShape === "road" ? "" : "table"
+          {newTableData.type
+            ? `Create ${newTableData.type} ${newTableData.type === "Road" ? "" : "table"
             }`
             : "Create table"}
         </h2>
         <div className="space-y-3">
           <Select
-            value={newTableShape}
+            value={newTableData.type}
             onChange={(e) => {
-              setNewTableShape(
-                e.target.value as "rectangle" | "circle" | "road"
-              );
-              if (e.target.value === "road") {
+              setNewTableData({
+                ...newTableData,
+                type: e.target.value as TableType,
+              });
+              if (e.target.value === "Road") {
                 setNewTableData({
                   ...newTableData,
-                  bgColor: "#BFBFBF",
+                  bg_color: "#BFBFBF",
                 });
               } else {
                 setNewTableData({
                   ...newTableData,
-                  bgColor: "#155e75",
+                  bg_color: "#155e75",
                 });
               }
             }}
             className="md:text-sm"
           >
-            <option value="rectangle">Rectangle</option>
-            <option value="circle">Circle</option>
-            <option value="road">Road</option>
+            <option value="Rectangle">Rectangle</option>
+            <option value="Circle">Circle</option>
+            <option value="Road">Road</option>
           </Select>
 
-          <Select label="Floor">
+          <Select label="Floor" value={newTableData.restaurant_floor} onChange={(e) => {
+            setNewTableData({
+              ...newTableData,
+              restaurant_floor: e.target.value,
+            });
+          }}
+          >
             {floors?.map((floor) => (
               <option value={floor.name}>{floor.name}</option>
             ))}
@@ -80,11 +78,11 @@ const DraggableTableCreate = ({
 
           <Input
             label="Table No"
-            value={newTableData.tableNo}
+            value={newTableData.table_no}
             onChange={(e) =>
               setNewTableData({
                 ...newTableData,
-                tableNo: e.target.value,
+                table_no: e.target.value,
               })
             }
           />
@@ -92,7 +90,10 @@ const DraggableTableCreate = ({
             label="Seat"
             value={newTableData.seat}
             onChange={(e) =>
-              setNewTableData({ ...newTableData, seat: e.target.value })
+              setNewTableData({
+                ...newTableData,
+                seat: e.target.value,
+              })
             }
           />
 
@@ -101,11 +102,11 @@ const DraggableTableCreate = ({
             <input
               type="color"
               className="w-full mt-1"
-              value={newTableData.bgColor}
+              value={newTableData.bg_color}
               onChange={(e) =>
                 setNewTableData({
                   ...newTableData,
-                  bgColor: e.target.value,
+                  bg_color: e.target.value,
                 })
               }
             />

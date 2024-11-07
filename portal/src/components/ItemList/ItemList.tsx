@@ -3,7 +3,8 @@ import { useCartContext } from "../../context/cartContext";
 import { Food, items } from "../../data/items";
 import TruncateText from "../common/TruncateText";
 import SingleItemModal from "../SingleItemModal/SingleItemModal";
-import { useFrappeGetDocList } from "frappe-react-sdk";
+import { useFrappeGetCall } from "frappe-react-sdk";
+
 
 
 export type SelectCartProps = {
@@ -40,14 +41,11 @@ const ItemList = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Food | null>(null);
 
-  // const { data, isLoading, error } = useFrappeGetDocList("Item", {
-  //   fields: ["item_code", 'item_name', 'item_group', 'allow_alternative_item', 'has_variants', 'image', 'description', 'variant_of', 'customer', 'sales_uom', 'is_sales_item', 'standard_rate'],
-  //   filters: [
-  //     ['variant_of', '=', '']
-  //   ],
-  //   limit: 30,
-  // });
 
+
+  const { data: foods, isLoading: isLoadingFoods } = useFrappeGetCall('excel_restaurant_pos.api.item.get_food_item_list', {
+    fields: ["*"]
+  })
 
 
   const { cartItems } = useCartContext();
@@ -67,19 +65,19 @@ const ItemList = ({
     return cartItem ? cartItem.quantity : 0;
   };
 
-  // const filteredItems = items?.filter((item) => {
-  //   if (selectedCategory == "0") {
-  //     return true;
-  //   } else {
-  //     return item.categoryId == Number(selectedCategory);
-  //   }
-  // });
+  const filteredItems = foods?.message?.filter((item: any) => {
+    if (selectedCategory == "0") {
+      return true;
+    } else {
+      return item.item_group === selectedCategory;
+    }
+  });
 
   return (
     <div className={`${className}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:xl:grid-cols-4 gap-3 py-4 px-2">
         {" "}
-        {items?.map((item, idx) => (
+        {filteredItems?.map((item, idx) => (
           <div
             onClick={() => handleItemClick(item)}
             key={idx}
@@ -104,13 +102,13 @@ const ItemList = ({
             )}
             <div className="flex flex-col items-start justify-start ps-2">
               <p className="text-xs lg:text-base font-semibold text-gray-800">
-                {item?.name}
+                {item?.item_name}
               </p>
               <p className="text-xs lg:text-base font-medium text-primaryColor">
-                ৳{item?.sell_price || 0}
+                ৳{item?.price || 0}
               </p>
               <div className="text-xs lg:text-base text-gray-500">
-                <TruncateText content={item?.description} length={25} />{" "}
+                <TruncateText content={item?.item_name} length={25} />{" "}
               </div>
             </div>
           </div>

@@ -7,6 +7,7 @@ import { useCartContext } from "../../context/cartContext";
 import { SelectCartProps } from "../ItemList/ItemList";
 import { Food } from "../../data/items";
 import AddOnsItemCard from "./components/AddOnsItemCard";
+import { useFrappeGetDoc } from "frappe-react-sdk";
 
 type Props = {
   isOpen: boolean;
@@ -21,7 +22,10 @@ type DrawerProps = {
 };
 
 const SingleItemModal = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
-  console.log("selectedItem", selectedItem);
+  console.log("selectedItem in single item modal", selectedItem);
+
+  const { data: item } = useFrappeGetDoc('Item', selectedItem?.name);
+
   const [selectedVariation, setSelectedVariation] = useState(
     selectedItem?.variation?.[0]
   );
