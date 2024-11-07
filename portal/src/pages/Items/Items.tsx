@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IoFastFoodOutline } from "react-icons/io5";
 import ItemsPageBottom from "../../components/header/ItemsPageBottom";
 import ItemList from "../../components/ItemList/ItemList";
+import { useSearchParams } from "react-router-dom";
+import Drawer from "../../components/Drawer/Drawer";
+import Select from "../../components/form-elements/Select";
+import Button from "../../components/Button/Button";
+import { useFrappeGetDocList } from "frappe-react-sdk";
 
 type FoodCategory = {
   id: number;
@@ -9,9 +14,47 @@ type FoodCategory = {
   description: string;
 };
 
-const ItemsPage = () => {
+enum OrderType {
+  DineIn = "dineIn",
+  TakeAway = "takeAway",
+}
+
+const Items = () => {
   const [selectedCategory, setSelectedCategory] = useState("0");
   const [isOpen, setIsOpen] = useState(false);
+  const [isLargeDevice, setIsLargeDevice] = useState(window.innerWidth > 768);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [isTableSelectShow, setIsTableSelectShow] = useState(false);
+
+  const table_id = searchParams.get("table_id");
+  const order_type = searchParams.get("order_type");
+
+
+
+
+  console.log(table_id, order_type);
+  // Toggle drawer visibility
+  const toggleDrawer = () => {
+    setIsOpen(!isOpen);
+  };
+  useEffect(() => {
+
+    // 
+    // if (!table_id && !order_type) {
+    //   toggleDrawer();
+    // }
+
+
+    const handleResize = () => {
+      setIsLargeDevice(window.innerWidth > 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   return (
     <div className="h-screen">
       <div className="h-screen flex">
@@ -54,11 +97,57 @@ const ItemsPage = () => {
         </div>
       </div>
       <ItemsPageBottom />
-    </div>
+      <Drawer isOpen={isOpen} isLargeDevice={isLargeDevice}>
+        <div
+          className={`overflow-y-auto p-4 ${isLargeDevice
+            ? "max-h-[calc(100vh-100px)] "
+            : "max-h-[100vh]"
+            }`}
+        >
+          <div className="p-4">
+            <label className="text-sm font-medium">How would you like to order?</label>
+            <Select className="mt-2" onChange={(e) => {
+              setSearchParams({ order_type: e.target.value })
+              if (e.target.value === OrderType.DineIn)
+                setIsTableSelectShow(true)
+              else
+                setIsTableSelectShow(false)
+
+            }}
+            >
+              <option value={OrderType.DineIn}>Dine In</option>
+              <option value={OrderType.TakeAway}>Take Away</option>
+            </Select>
+          </div>
+          {isTableSelectShow && (
+            <div className="mb-3 p-4">
+              <label className="text-sm font-medium">Select Table</label>
+              <Select className="mt-2" onChange={(e) => setSearchParams({ table_id: e.target.value })}>
+                <option value={OrderType.DineIn}>Dine In</option>
+                <option value={OrderType.TakeAway}>Take Away</option>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex justify-end mt-4">
+            <button className="mr-2 cancel_btn" onClick={() => {
+              toggleDrawer()
+            }} >
+              Cancel
+            </button>
+
+            <Button className="main_btn" label="Start Order" onClick={() => {
+              toggleDrawer()
+            }} />
+
+          </div>
+        </div>
+      </Drawer >
+    </div >
   );
 };
 
-export default ItemsPage;
+export default Items;
 
 export const foodCategories: FoodCategory[] = [
   {

@@ -1,3 +1,4 @@
+import { useFrappeGetDocList } from "frappe-react-sdk";
 import Input from "../../components/form-elements/Input";
 import Select from "../../components/form-elements/Select";
 
@@ -28,6 +29,11 @@ const DraggableTableCreate = ({
   setIsCreateModalOpen,
   createTable,
 }: DraggableTableCreateProps) => {
+
+  const { data: floors } = useFrappeGetDocList("Restaurant Floor");
+  const { data: company } = useFrappeGetDocList("Company")
+
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 px-5"
@@ -36,9 +42,8 @@ const DraggableTableCreate = ({
       <div className="bg-white p-6 rounded-lg shadow-lg min-w-full xsm:min-w-[400px]">
         <h2 className="text-xl mb-4 font-semibold">
           {newTableShape
-            ? `Create ${newTableShape} ${
-                newTableShape === "road" ? "" : "table"
-              }`
+            ? `Create ${newTableShape} ${newTableShape === "road" ? "" : "table"
+            }`
             : "Create table"}
         </h2>
         <div className="space-y-3">
@@ -66,6 +71,13 @@ const DraggableTableCreate = ({
             <option value="circle">Circle</option>
             <option value="road">Road</option>
           </Select>
+
+          <Select label="Floor">
+            {floors?.map((floor) => (
+              <option value={floor.name}>{floor.name}</option>
+            ))}
+          </Select>
+
           <Input
             label="Table No"
             value={newTableData.tableNo}

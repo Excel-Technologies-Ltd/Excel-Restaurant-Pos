@@ -1,6 +1,7 @@
 import { DrawerProps } from "../CartModal/AllCarts";
 
-export const Drawer = ({ children, isOpen, isLargeDevice }: DrawerProps) => {
+
+const Drawer = ({ children, isOpen, isLargeDevice }: DrawerProps) => {
     if (isLargeDevice) {
         return (
             <div
@@ -30,3 +31,6 @@ export const Drawer = ({ children, isOpen, isLargeDevice }: DrawerProps) => {
         );
     }
 };
+
+
+export default Drawer;

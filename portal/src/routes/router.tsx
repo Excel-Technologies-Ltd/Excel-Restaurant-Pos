@@ -21,7 +21,7 @@ import DraggableTable from "../pages/table-management/DraggableTable.js";
 import Login from "../pages/login/Login.js";
 import { lazy } from "react";
 const Home = lazy(() => import("../pages/Home/Home.js"));
-const ItemsPage = lazy(() => import("../pages/ItemsPage/ItemsPage"));
+const Items = lazy(() => import("../pages/Items/Items"));
 // const DraggableTable = lazy(
 //   () => import("../pages/table-management/DraggableTable")
 // );
@@ -40,7 +40,7 @@ export const router = createBrowserRouter([
       },
       {
         path: URLItems(),
-        element: <ItemsPage />,
+        element: <Items />,
       },
       {
         path: URLItem(),
