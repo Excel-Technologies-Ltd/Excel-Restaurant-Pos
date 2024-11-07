@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:Table-{###}",
+ "autoname": "format:Table-{table_no}-{#}",
  "creation": "2024-11-06 01:07:50.381416",
  "default_view": "List",
  "doctype": "DocType",
@@ -13,10 +13,12 @@
   "type",
   "bg_color",
   "position",
-  "width",
+  "length",
   "breadth",
   "file_path",
-  "id"
+  "id",
+  "rotation",
+  "table_no"
  ],
  "fields": [
   {
@@ -32,7 +34,7 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Seat",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.type !='Road'"
   },
   {
    "fieldname": "type",
@@ -50,12 +52,6 @@
    "fieldname": "position",
    "fieldtype": "JSON",
    "label": "Position",
-   "reqd": 1
-  },
-  {
-   "fieldname": "width",
-   "fieldtype": "Data",
-   "label": "Width",
    "reqd": 1
   },
   {
@@ -81,11 +77,27 @@
    "fieldtype": "Data",
    "label": "Id",
    "reqd": 1
+  },
+  {
+   "fieldname": "length",
+   "fieldtype": "Data",
+   "label": "Length"
+  },
+  {
+   "fieldname": "rotation",
+   "fieldtype": "Data",
+   "label": "Rotation"
+  },
+  {
+   "fieldname": "table_no",
+   "fieldtype": "Int",
+   "label": "Table No",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-07 10:31:29.889846",
+ "modified": "2024-11-07 10:59:45.412549",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",
