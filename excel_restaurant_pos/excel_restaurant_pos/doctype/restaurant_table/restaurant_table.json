@@ -15,7 +15,8 @@
   "position",
   "width",
   "breadth",
-  "file_path"
+  "file_path",
+  "id"
  ],
  "fields": [
   {
@@ -74,11 +75,17 @@
    "fieldname": "file_path",
    "fieldtype": "Data",
    "label": "File Path"
+  },
+  {
+   "fieldname": "id",
+   "fieldtype": "Data",
+   "label": "Id",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-06 15:18:48.522088",
+ "modified": "2024-11-07 10:31:29.889846",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",

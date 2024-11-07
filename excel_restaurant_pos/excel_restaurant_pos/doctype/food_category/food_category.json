@@ -7,20 +7,29 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "category"
+  "category",
+  "icon"
  ],
  "fields": [
   {
    "fieldname": "category",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Category",
-   "options": "Item Group"
+   "options": "Item Group",
+   "reqd": 1
+  },
+  {
+   "fieldname": "icon",
+   "fieldtype": "Attach Image",
+   "label": "Icon",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-11-06 00:28:08.633413",
+ "modified": "2024-11-06 15:53:31.973705",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Food Category",
