@@ -43,9 +43,9 @@ const ItemList = ({
 
 
 
-  const { data: foods, isLoading: isLoadingFoods } = useFrappeGetCall('excel_restaurant_pos.api.item.get_food_item_list', {
-    fields: ["*"]
-  })
+  // const { data: foods, isLoading: isLoadingFoods } = useFrappeGetCall('excel_restaurant_pos.api.item.get_food_item_list', {
+  //   fields: ["*"]
+  // })
 
 
   const { cartItems } = useCartContext();
@@ -65,11 +65,11 @@ const ItemList = ({
     return cartItem ? cartItem.quantity : 0;
   };
 
-  const filteredItems = foods?.message?.filter((item: any) => {
+  const filteredItems = items?.filter((item: Food) => {
     if (selectedCategory == "0") {
       return true;
     } else {
-      return item.item_group === selectedCategory;
+      return String(item?.categoryId) === selectedCategory;
     }
   });
 
@@ -102,13 +102,13 @@ const ItemList = ({
             )}
             <div className="flex flex-col items-start justify-start ps-2">
               <p className="text-xs lg:text-base font-semibold text-gray-800">
-                {item?.item_name}
+                {item?.name}
               </p>
               <p className="text-xs lg:text-base font-medium text-primaryColor">
-                ৳{item?.price || 0}
+                ৳{item?.sellPrice || 0}
               </p>
               <div className="text-xs lg:text-base text-gray-500">
-                <TruncateText content={item?.item_name} length={25} />{" "}
+                <TruncateText content={item?.description} length={25} />{" "}
               </div>
             </div>
           </div>

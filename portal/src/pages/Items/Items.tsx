@@ -31,9 +31,9 @@ const Items = () => {
 
 
   // useFrappeGetCall
-  const { data: categories, isLoading: isLoadingCategories } = useFrappeGetCall('excel_restaurant_pos.api.item.get_category_list', {
-    fields: ["*"]
-  })
+  // const { data: categories, isLoading: isLoadingCategories } = useFrappeGetCall('excel_restaurant_pos.api.item.get_category_list', {
+  //   fields: ["*"]
+  // })
 
 
 
@@ -61,7 +61,7 @@ const Items = () => {
         <div className="overflow-y-auto bg-gray-50 w-32 shadow-md">
           <div className={`bg-gray h-[70vh] pt-12 px-2 `}>
             <div
-              onClick={() => setSelectedCategory(String(0))}
+              onClick={() => setSelectedCategory("0")}
               className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor  ${"0" === selectedCategory ? "bg-lightPrimaryColor" : ""
                 }`}
             >
@@ -70,11 +70,11 @@ const Items = () => {
                 All
               </p>
             </div>
-            {categories?.message?.map((category: FoodCategory, index: number) => (
+            {foodCategories?.map((category: FoodCategory, index: number) => (
               <div
-                onClick={() => setSelectedCategory(category?.name)}
+                onClick={() => setSelectedCategory(String(category?.id))}
                 key={index}
-                className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor  ${category?.name === selectedCategory
+                className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor ${String(category?.id) === selectedCategory
                   ? "bg-lightPrimaryColor"
                   : ""
                   }`}
