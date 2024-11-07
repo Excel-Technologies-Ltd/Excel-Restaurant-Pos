@@ -57,16 +57,15 @@ function Password({
       {/* LABEL WITH REQUIRED STAR */}
       <div className="flex">
         <div className="input_label font-bold">{label}</div>
-        {required && <span className="-mt-[6px] mx-1 text-redColor">*</span>}
+        {required && <span className="input_required">*</span>}
       </div>
 
       {/* PASSWORD INPUT BOX  */}
       <div className="relative w-full">
         <input
           type={showPassword ? type : "password"}
-          className={`custom_input ps-9 ${
-            disabled && "disabled_bg"
-          } ${className}`}
+          className={`custom_input ps-9 ${disabled && "disabled_bg"
+            } ${className}`}
           value={value}
           name={name}
           onChange={onChange}

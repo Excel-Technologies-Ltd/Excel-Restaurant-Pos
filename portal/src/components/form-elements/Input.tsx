@@ -53,7 +53,8 @@ const Input = forwardRef<HTMLInputElement, Props>((props: Props, ref) => {
     parentClass,
     isReadOnly = false,
     onClick,
-    onFocus
+    onFocus,
+
   } = props;
 
   return (
@@ -71,9 +72,8 @@ const Input = forwardRef<HTMLInputElement, Props>((props: Props, ref) => {
       {/* INPUT BOX */}
       <input
         type={type}
-        className={`custom_input ${
-          disabled && "disabled_bg placeholder:!text-grayColor"
-        } ${className}`}
+        className={`custom_input ${disabled && "disabled_bg placeholder:!text-grayColor"
+          } ${className}`}
         value={value}
         name={name}
         onClick={onClick}

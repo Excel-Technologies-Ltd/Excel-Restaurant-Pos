@@ -1,3 +1,4 @@
+
 import { ButtonProps } from "../../interface";
 import { styles } from "../../utilities/cn";
 
@@ -12,6 +13,7 @@ function Button({
     type = "button",
     className = "",
 }: ButtonProps) {
+    console.log("isLoading Button", isLoading);
     return (
         <button
             onClick={onClick}
@@ -23,7 +25,7 @@ function Button({
                 { "bg-gray-500 cursor-not-allowed": disabled }
             )}
         >
-            {isLoading ? "Loading..." : label || "--"}
+            {isLoading ? <div className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" /> Loading</div> : label || "--"}
         </button>
     );
 }

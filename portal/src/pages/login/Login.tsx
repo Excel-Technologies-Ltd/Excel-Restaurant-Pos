@@ -1,13 +1,50 @@
 import Input from "../../components/form-elements/Input";
 import Password from "../../components/form-elements/Password";
 import Button from "../../components/Button/Button";
+import { useState } from "react";
+import { useFrappeAuth } from "frappe-react-sdk";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 
+
+
 const Login = () => {
+    const { login, currentUser, isLoading, } = useFrappeAuth();
     const navigate = useNavigate();
-    const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+    if (currentUser) {
+        navigate("/admin/dashboard")
+    }
+    const [userNameOrMail, setUserNameOrMail] = useState("");
+    const [password, setPassword] = useState("");
+    const [userNameOrMailError, setUserNameOrMailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    // const navigate = useNavigate();
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        navigate("/");
+
+        console.log(userNameOrMail, password);
+
+        if (!userNameOrMail) {
+            setUserNameOrMailError("Please enter username or email");
+        }
+        if (!password) {
+            setPasswordError("Please enter password");
+        }
+        if (userNameOrMail && password) {
+            try {
+                await login({
+                    username: userNameOrMail,
+                    password: password
+                })
+
+                toast.success("Login successful")
+            }
+            catch (error) {
+                toast.error((error as Error).message)
+                console.log("error", error);
+            }
+        }
+
     }
     return (
         <div className="h-screen w-full bg-bg sm:p-5 overflow-auto">
@@ -36,6 +73,7 @@ const Login = () => {
                     </div>
                 </div>
 
+
                 <div className="mt-5 sm:mt-10 w-full">
                     <div className="relative flex w-full items-center justify-center">
                         <p className="bg-whiteColor text-[#00000080] text-[14px] sm:text-[15px] px-1 sm:px-3 relative z-10">
@@ -44,7 +82,6 @@ const Login = () => {
                         <div className="w-full absolute h-[1px] bg-borderColor -z-1" />
                     </div>
                 </div>
-
                 <form
                     onSubmit={handleLogin}
                     className="mt-8 w-full flex flex-col gap-5"
@@ -52,24 +89,27 @@ const Login = () => {
                     <Input
                         label={"Username / Email"}
                         required
-                    // value={mailOrNumber}
-                    // type="email"
-                    // onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    //     setMailOrNumber(e.target.value)
-                    // }
+                        value={userNameOrMail}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            if (userNameOrMailError) setUserNameOrMailError("");
+                            setUserNameOrMail(e.target.value)
+                        }}
+                        errMsg={userNameOrMailError}
                     />
                     <Password
                         label={"Password"}
                         required
-                    // value={password}
-                    // onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    //     setPassword(e.target.value)
-                    // }
+                        value={password}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            if (passwordError) setPasswordError("");
+                            setPassword(e.target.value)
+                        }}
+                        errMsg={passwordError}
                     />
                     <Button
                         label={"Login"}
                         type="submit"
-                    // isLoading={isLoading}
+                        isLoading={isLoading}
                     />
                 </form>
 

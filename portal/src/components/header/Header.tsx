@@ -4,20 +4,23 @@ import { ImCalculator } from "react-icons/im";
 import { MdOutlineMenu } from "react-icons/md";
 import { RxDashboard } from "react-icons/rx";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { zIndex } from "../../data/zIndex";
 import { setSidebarOpen } from "../../redux/features/sidebar/sidebar";
 import { RootState } from "../../redux/store/Store";
-import { URLDashboard, URLItems } from "../../routes/routes-link";
+import { URLDashboard, URLItems, URLLogin } from "../../routes/routes-link";
 import { styles } from "../../utilities/cn";
 import nameProfile from "../../utilities/name-to-profile";
 import Calculator from "../calculator/Calculator";
+import { useFrappeAuth } from "frappe-react-sdk";
 
 type Props = {};
 
-const Header = ({}: Props) => {
+const Header = ({ }: Props) => {
+  const { logout } = useFrappeAuth();
   // action dispatcher
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const pathDashboard = pathname?.split("/")[1];
 
@@ -27,6 +30,13 @@ const Header = ({}: Props) => {
   // dropdown state
   const [dropdown, setDropDown] = useState(false);
   const [dropdownCalculator, setDropDownCalculator] = useState(false);
+
+  const handleLogout = async () => {
+    console.log("logout");
+    await logout();
+    navigate(URLLogin());
+  };
+
 
   // handle click outside
   useEffect(() => {
@@ -54,8 +64,8 @@ const Header = ({}: Props) => {
       setDropDownCalculator(true);
     } else if (key === "Escape") {
       setDropDownCalculator(false);
-    // } else if (key === "Backspace") {
-    //   e.preventDefault();
+      // } else if (key === "Backspace") {
+      //   e.preventDefault();
     } else if (["+", "-", "*", "%"].includes(key)) {
       e.preventDefault();
     } else if (!isNaN(Number(key)) || key === ".") {
@@ -120,7 +130,7 @@ const Header = ({}: Props) => {
                   hidden: !dropdownCalculator,
                 }
               )}
-              // ref={inputRef}
+            // ref={inputRef}
             >
               <Calculator isOpen={dropdownCalculator} />
             </div>
@@ -192,7 +202,7 @@ const Header = ({}: Props) => {
                 {/* LOGOUT */}
                 <button
                   className="border-b py-2 w-full 2xl:py-3 text-textColor text-[11px] 2xl:text-[13px] flex hover:bg-primaryColor hover:text-white rounded-none px-5 items-center gap-2"
-                  // onClick={handleLogout}
+                  onClick={handleLogout}
                 >
                   <BiLogOut /> Logout
                 </button>

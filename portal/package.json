@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [],
   "scripts": {
     "dev": "vite --host",
     "build": "vite build --base=/assets/excel_restaurant_pos/portal/ && yarn copy-html-entry",
@@ -15,6 +16,7 @@
     "@reduxjs/toolkit": "^2.2.5",
     "@types/highcharts": "^7.0.0",
     "@types/js-cookie": "^3.0.6",
+    "axios": "^1.7.7",
     "clsx": "^2.1.1",
     "frappe-react-sdk": "^1.9.0",
     "highcharts-react-official": "^3.2.1",
