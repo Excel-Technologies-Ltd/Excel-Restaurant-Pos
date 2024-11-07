@@ -34,7 +34,7 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Seat",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.type !='Road'"
   },
   {
    "fieldname": "type",
@@ -97,7 +97,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-07 10:50:31.323173",
+ "modified": "2024-11-07 10:59:45.412549",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",
