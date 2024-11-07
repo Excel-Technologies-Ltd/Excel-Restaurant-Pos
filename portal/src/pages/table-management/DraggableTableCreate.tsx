@@ -1,18 +1,19 @@
 import { useFrappeGetDocList } from "frappe-react-sdk";
 import Input from "../../components/form-elements/Input";
 import Select from "../../components/form-elements/Select";
+import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
 
 // Define the type for the table data
-interface NewTableData {
-  tableNo: string;
-  seat: string; // Adjust type if seat count is numeric
-  bgColor: string; // Assume this is a hex color string
-}
+// interface NewTableData {
+//   tableNo: string;
+//   seat: string; // Adjust type if seat count is numeric
+//   bgColor: string; // Assume this is a hex color string
+// }
 
 // Define the props for the DraggableTableCreate component
 interface DraggableTableCreateProps {
-  newTableData: NewTableData;
-  setNewTableData: React.Dispatch<React.SetStateAction<NewTableData>>;
+  newTableData: RestaurantTable;
+  setNewTableData: React.Dispatch<React.SetStateAction<RestaurantTable>>;
   newTableShape: "rectangle" | "circle" | "road"; // or 'square' if needed
   setNewTableShape: React.Dispatch<
     React.SetStateAction<"rectangle" | "circle" | "road">
@@ -33,7 +34,7 @@ const DraggableTableCreate = ({
   const { data: floors } = useFrappeGetDocList("Restaurant Floor");
   const { data: company } = useFrappeGetDocList("Company")
 
-
+  console.log("new ", newTableData);
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 px-5"
@@ -48,20 +49,20 @@ const DraggableTableCreate = ({
         </h2>
         <div className="space-y-3">
           <Select
-            value={newTableShape}
+            value={newTableData.type}
             onChange={(e) => {
-              setNewTableShape(
-                e.target.value as "rectangle" | "circle" | "road"
-              );
-              if (e.target.value === "road") {
+              // setNewTableShape(
+              //   e.target.value as "Rectangle" | "Circle" | "Road"
+              // );
+              if (e.target.value === "Road") {
                 setNewTableData({
                   ...newTableData,
-                  bgColor: "#BFBFBF",
+                  bg_color: "#BFBFBF",
                 });
               } else {
                 setNewTableData({
                   ...newTableData,
-                  bgColor: "#155e75",
+                  bg_color: "#155e75",
                 });
               }
             }}
