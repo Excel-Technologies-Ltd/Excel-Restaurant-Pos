@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { BiSolidEdit } from "react-icons/bi";
 import { IoMdEye } from "react-icons/io";
@@ -11,6 +11,7 @@ import {
   closeRightModal,
   openRightModal,
 } from "../../redux/features/modal/foodsModal";
+import { debounce } from 'lodash';
 import { RootState } from "../../redux/store/Store";
 import { styles } from "../../utilities/cn";
 import Pos from "../Admin/Pos/Pos";
@@ -19,7 +20,7 @@ import DraggableTableCreate from "./DraggableTableCreate";
 import DraggableTableDetails from "./DraggableTableDetails";
 import DraggableTableEdit from "./DraggableTableEdit";
 import ModalRightToLeft from "./ModalRightToLeft";
-import { useFrappeCreateDoc, useFrappeDocTypeEventListener, useFrappeGetCall, useFrappeGetDocList } from "frappe-react-sdk";
+import { useFrappeCreateDoc, useFrappeDocTypeEventListener, useFrappeGetDocList, useFrappeUpdateDoc } from "frappe-react-sdk";
 import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
 
 // Interface for table shape
@@ -40,6 +41,16 @@ export interface TableShape {
 }
 
 const DraggableTable: React.FC = () => {
+  const [isOpenFloorCreate, setIsOpenFloorCreate] = useState(false);
+  const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<RestaurantTable | null>(null);
+  const [newTableShape, setNewTableShape] = useState<
+    "Rectangle" | "Circle" | "Road"
+  >("Rectangle");
+
   const { data: company } = useFrappeGetDocList("Company")
   const { data: floors, mutate } = useFrappeGetDocList("Restaurant Floor");
   useFrappeDocTypeEventListener("Restaurant Floor", (doc) => {
@@ -49,6 +60,14 @@ const DraggableTable: React.FC = () => {
   const [selectedFloor, setSelectedFloor] = useState<string>('')
   // console.log("selectedFloor", selectedFloor);
 
+
+  const { updateDoc } = useFrappeUpdateDoc<RestaurantTable>();
+
+  const updateTable = (table: RestaurantTable) => {
+    if (table.name) {
+      updateDoc("Restaurant Table", table.name, table)
+    }
+  }
 
   useEffect(() => {
     if (selectedFloor) {
@@ -62,20 +81,19 @@ const DraggableTable: React.FC = () => {
 
   const { createDoc, } = useFrappeCreateDoc<RestaurantTable>()
 
-  const { data: tablesFromERP, mutate: mutateTables } = useFrappeGetDocList("Restaurant Table", {
+  const { data: tablesFromERP } = useFrappeGetDocList("Restaurant Table", {
     fields: ["*"],
     filters: [
       ["company", "=", company?.[0]?.name],
       ["restaurant_floor", "=", selectedFloor]
     ]
   })
-  console.log("tablesFromERP", tablesFromERP);
+  // useFrappeDocTypeEventListener("Restaurant Table", (doc) => {
+  //   mutateTables();
+  //   console.log("doc", doc);
+  // });
 
 
-  useFrappeDocTypeEventListener("Restaurant Floor", (doc) => {
-    mutateTables();
-    console.log("doc", doc);
-  });
 
 
 
@@ -96,6 +114,14 @@ const DraggableTable: React.FC = () => {
     }
   }, [floors, selectedFloor, tablesFromERP])
 
+  useEffect(() => {
+    console.log("tablesFromERP", tablesFromERP);
+    if (tablesFromERP) {
+      // if the table is already in the state, then don't add it again
+      const newTables = tablesFromERP.filter(table => !tables.some(t => t.name === table.name))
+      setTables(prev => [...prev, ...newTables])
+    }
+  }, [])
 
 
   // console.log(floors);
@@ -107,23 +133,15 @@ const DraggableTable: React.FC = () => {
 
 
 
-  const [isOpenFloorCreate, setIsOpenFloorCreate] = useState(false);
-  const [tables, setTables] = useState<RestaurantTable[]>([]);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedTable, setSelectedTable] = useState<RestaurantTable | null>(null);
-  const [newTableShape, setNewTableShape] = useState<
-    "Rectangle" | "Circle" | "Road"
-  >("Rectangle");
+
 
   const initialNewTable: RestaurantTable =
   {
-    id: '',
+    id: new Date().toISOString(),
     table_no: "",
     type: "Rectangle",
-    length: 180 + '',
-    breadth: 80 + '',
+    length: 180,
+    breadth: 80,
     position: { x: 10, y: 55 },
     seat: "",
     company: company?.[0]?.name,
@@ -137,9 +155,7 @@ const DraggableTable: React.FC = () => {
     initialNewTable
   );
 
-  useEffect(() => {
-    console.log("tables", tables);
-  }, [tables])
+
 
   // console.log({ tables });
 
@@ -156,9 +172,7 @@ const DraggableTable: React.FC = () => {
       pathname: location.pathname,
       search: params.toString(),
     });
-    dispatch(openRightModal());
-  };
-
+  }
   const handleCloseModal = () => {
     const params = new URLSearchParams(location.search);
     params.delete("table");
@@ -184,156 +198,6 @@ const DraggableTable: React.FC = () => {
 
 
 
-  // Custom Dragging Functionality
-  const handleDrag = (e: React.MouseEvent | React.TouchEvent, id: string) => {
-    const table = tables.find((table) => table.id === id);
-    if (!table) return;
-
-    const headerHeight = headerRef.current?.offsetHeight || 0; // Get the height of the header
-    const initialX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const initialY = "touches" in e ? e.touches[0].clientY : e.clientY;
-
-    const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
-      const clientX =
-        "touches" in moveEvent
-          ? moveEvent.touches[0].clientX
-          : moveEvent.clientX;
-      const clientY =
-        "touches" in moveEvent
-          ? moveEvent.touches[0].clientY
-          : moveEvent.clientY;
-
-      const newX = table.position.x + (clientX - initialX);
-      const newY = Math.max(
-        headerHeight,
-        table.position.y + (clientY - initialY)
-      ); // Prevent dragging above header
-
-      setTables((prev) =>
-        prev.map((t) =>
-          t.id === id ? { ...t, position: { x: newX, y: newY } } : t
-        )
-      );
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-      document.removeEventListener("touchmove", onMouseMove);
-      document.removeEventListener("touchend", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-    document.addEventListener("touchmove", onMouseMove);
-    document.addEventListener("touchend", onMouseUp);
-  };
-
-  // Custom Resize Functionality
-  const handleResize = (e: React.MouseEvent | React.TouchEvent, id: string) => {
-    e.preventDefault(); // Prevent default scroll behavior
-    e.stopPropagation(); // Prevent event from bubbling up
-
-    const table = tables.find((table) => table.id === id);
-    if (!table) return;
-
-    const initialLength = +table.length;
-    const initialBreadth = +table.breadth;
-
-    const initialClientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const initialClientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-
-    const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
-      const clientX =
-        "touches" in moveEvent
-          ? moveEvent.touches[0].clientX
-          : moveEvent.clientX;
-      const clientY =
-        "touches" in moveEvent
-          ? moveEvent.touches[0].clientY
-          : moveEvent.clientY;
-
-      const newLength = Math.max(initialLength + clientX - initialClientX, 50);
-      const newBreadth = Math.max(initialBreadth + clientY - initialClientY, 50);
-
-      setTables((prev) =>
-        prev.map((t) =>
-          t.id === id
-            ? {
-              ...t,
-              length: table.type === "Circle" ? newLength + '' : newLength + '',
-              breadth: table.type === "Circle" ? newLength + '' : newBreadth + '',
-            }
-            : t
-        )
-      );
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-      document.removeEventListener("touchmove", onMouseMove);
-      document.removeEventListener("touchend", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-    document.addEventListener("touchmove", onMouseMove);
-    document.addEventListener("touchend", onMouseUp);
-  };
-
-  // Custom Rotate Functionality
-  const handleRotate = (e: React.MouseEvent | React.TouchEvent, idx: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const table = tables.find((table) => table.idx === idx);
-    if (!table) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + +table.length / 2;
-    const centerY = rect.top + +table.breadth / 2;
-
-    const initialClientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const initialClientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-
-    const initialAngle = Math.atan2(
-      initialClientY - centerY,
-      initialClientX - centerX
-    );
-
-    const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
-      const clientX =
-        "touches" in moveEvent
-          ? moveEvent.touches[0].clientX
-          : moveEvent.clientX;
-      const clientY =
-        "touches" in moveEvent
-          ? moveEvent.touches[0].clientY
-          : moveEvent.clientY;
-
-      const currentAngle = Math.atan2(clientY - centerY, clientX - centerX);
-      const degrees = ((currentAngle - initialAngle) * 180) / Math.PI;
-
-      setTables((prev) =>
-        prev.map((t) =>
-          t.idx === idx ? { ...t, rotation: (parseInt(table.rotation || '0') + degrees).toString() } : t
-        )
-      );
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-      document.removeEventListener("touchmove", onMouseMove);
-      document.removeEventListener("touchend", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-    document.addEventListener("touchmove", onMouseMove);
-    document.addEventListener("touchend", onMouseUp);
-  };
 
   const openCreateTableModal = () => {
     if (!floors?.length) return toast.error("Please create a floor first.");
@@ -350,7 +214,6 @@ const DraggableTable: React.FC = () => {
   };
 
   const createTable = () => {
-
     // console.log("newTableData in createTable", newTableData);
 
     if (!company?.[0]?.name) {
@@ -363,22 +226,17 @@ const DraggableTable: React.FC = () => {
       return;
     }
 
+    const newTable = {
+      ...newTableData,
+      id: new Date().toISOString(),
+    }
+
     createDoc(
       "Restaurant Table",
-      {
-        id: new Date().toISOString(),
-        company: newTableData?.company,
-        restaurant_floor: newTableData?.restaurant_floor,
-        type: newTableData?.type,
-        length: newTableData?.length,
-        breadth: newTableData?.breadth,
-        position: newTableData?.position,
-        table_no: +newTableData?.table_no,
-        seat: +newTableData?.seat,
-        rotation: newTableData?.rotation,
-        bg_color: newTableData?.bg_color,
-      }
+      newTable
     )
+
+    setTables(prev => [...prev, newTable])
 
     // const newTable: RestaurantTable = {
     //   ...newTableData,
@@ -387,16 +245,14 @@ const DraggableTable: React.FC = () => {
     // setTables((prev) => [...prev, newTable]);
     setIsCreateModalOpen(false);
     setNewTableData(initialNewTable);
-
-
   };
 
   const deleteTable = (idx: number) => {
     setTables((prev) => prev.filter((table) => table.idx !== idx));
   };
 
-  const handleEdit = (id: string) => {
-    const table = tables.find((t) => t.id === id);
+  const handleEdit = (name: string) => {
+    const table = tables.find((t) => t.name === name);
     if (table) {
       setNewTableData({
         ...table,
@@ -428,6 +284,184 @@ const DraggableTable: React.FC = () => {
   const openFloorCreateModal = () => {
     setIsOpenFloorCreate(true);
   };
+
+  const handleRotate = (e: React.MouseEvent | React.TouchEvent, name: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const targetedTable = tables.find((table) => table.name === name);
+    if (!targetedTable) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + targetedTable.length / 2;
+    const centerY = rect.top + targetedTable.breadth / 2;
+
+    const initialClientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const initialClientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    const initialAngle = Math.atan2(
+      initialClientY - centerY,
+      initialClientX - centerX
+    );
+
+    const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const clientX =
+        "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+      const clientY =
+        "touches" in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
+
+      const currentAngle = Math.atan2(clientY - centerY, clientX - centerX);
+      const degrees = ((currentAngle - initialAngle) * 180) / Math.PI;
+
+      setTables((prev) =>
+        prev.map((t) =>
+          t.name === name
+            ? { ...t, rotation: (parseFloat(targetedTable.rotation || '0') + degrees).toString() }
+            : t
+        )
+      );
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("touchmove", onMouseMove);
+      document.removeEventListener("touchend", onMouseUp);
+
+      // Update the table state after rotation ends
+      const updatedTable = tables.find((table) => table.name === name);
+      if (updatedTable) handleTableUpdate(updatedTable);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("touchmove", onMouseMove);
+    document.addEventListener("touchend", onMouseUp);
+  };
+
+  // Custom Resize Functionality
+  const handleResize = (e: React.MouseEvent | React.TouchEvent, name: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const targetTable = tables.find((table) => table.name === name);
+    if (!targetTable) return;
+
+    const initialLength = targetTable.length;
+    const initialBreadth = targetTable.breadth;
+    const initialClientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const initialClientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+
+    const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const clientX =
+        "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+      const clientY =
+        "touches" in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
+
+      const newLength = Math.max(initialLength + clientX - initialClientX, 50);
+      const newBreadth = Math.max(initialBreadth + clientY - initialClientY, 50);
+
+      setTables((prev) =>
+        prev.map((t) =>
+          t.name === name
+            ? {
+              ...t,
+              length: targetTable.type === "Circle" ? newLength : newLength,
+              breadth: targetTable.type === "Circle" ? newLength : newBreadth,
+            }
+            : t
+        )
+      );
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("touchmove", onMouseMove);
+      document.removeEventListener("touchend", onMouseUp);
+
+      // Call handleTableUpdate with the updated table data after resizing ends
+      const updatedTable = tables.find((table) => table.name === name);
+      if (updatedTable) handleTableUpdate(updatedTable);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("touchmove", onMouseMove);
+    document.addEventListener("touchend", onMouseUp);
+  };
+
+
+
+  const handleDrag = (e: React.MouseEvent | React.TouchEvent, name: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const targetedTable = tables.find((table) => table.name === name);
+    if (!targetedTable) return;
+
+    const headerHeight = headerRef.current?.offsetHeight || 0; // Optional: prevent dragging above header
+    const initialX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const initialY = "touches" in e ? e.touches[0].clientY : e.clientY;
+
+    const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const clientX =
+        "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+      const clientY =
+        "touches" in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
+
+      const newX = targetedTable.position.x + (clientX - initialX);
+      const newY = Math.max(
+        headerHeight,
+        targetedTable.position.y + (clientY - initialY)
+      ); // Prevent dragging above header
+
+      setTables((prev) =>
+        prev.map((t) =>
+          t.name === name ? { ...t, position: { x: newX, y: newY } } : t
+        )
+      );
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("touchmove", onMouseMove);
+      document.removeEventListener("touchend", onMouseUp);
+
+      // Update the table state after dragging ends
+      const updatedTable = tables.find((table) => table.name === name);
+      if (updatedTable) handleTableUpdate(updatedTable);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("touchmove", onMouseMove);
+    document.addEventListener("touchend", onMouseUp);
+  };
+
+
+
+  // Debounced function to update the table data in the backend after a delay
+  const debouncedSaveData = useCallback(
+    debounce((data: RestaurantTable) => {
+      updateTable(data); // Call the API to update the data after debounce delay
+    }, 1000),
+    [updateTable]
+  );
+
+  const handleTableUpdate = (updatedTable: RestaurantTable) => {
+    setModifiedTable(updatedTable); // Update local state with the latest changes
+    debouncedSaveData(updatedTable); // Debounce API call to reduce frequency
+  };
+
+
+  useEffect(() => {
+    return () => {
+      // Cancel the debounced function on unmount to avoid memory leaks
+      debouncedSaveData.cancel();
+    };
+  }, [debouncedSaveData]);
+
 
   return (
     <div className="flex flex-col items-center bg-gray-200 h-[calc(100vh-48px)] w-full relative overflow-x-auto ">
@@ -469,7 +503,7 @@ const DraggableTable: React.FC = () => {
       <div className="w-full mt-8 absolute border-5">
         {tables.map((table) => (
           <div
-            key={table.id}
+            key={table.name}
             style={{
               width: table.type === "Circle" ? table.length : table.length,
               height: table.type === "Circle" ? table.length : table.breadth,
@@ -481,22 +515,22 @@ const DraggableTable: React.FC = () => {
               transform: `rotate(${table.rotation || 0}deg)`,
             }}
             className="absolute cursor-move group"
-            onMouseDown={(e) => handleDrag(e, table.id)}
-            onTouchStart={(e) => handleDrag(e, table.id)}
+            onMouseDown={(e) => handleDrag(e, table?.name as string)}
+            onTouchStart={(e) => handleDrag(e, table?.name as string)}
           >
             <div className="relative h-full w-full justify-center items-center flex">
               {table?.seat && (
                 <div className="absolute space-x-2 group-hover:visible visible z-30">
                   <button
-                    onClick={() => handleEdit(table.id)}
-                    onTouchEnd={() => handleEdit(table.id)}
+                    onClick={() => handleEdit(table?.name as string)}
+                    onTouchEnd={() => handleEdit(table?.name as string)}
                     className="bg-blue-500 bg-opacity-40 text-white px-2 py-1 rounded"
                   >
                     <BiSolidEdit />
                   </button>
                   <button
-                    onClick={() => handleRightSideModal(table?.id)}
-                    onTouchEnd={() => handleRightSideModal(table?.id)}
+                    onClick={() => handleRightSideModal(table?.name as string)}
+                    onTouchEnd={() => handleRightSideModal(table?.name as string)}
                     className="bg-green-500 bg-opacity-40 text-white px-2 py-1 rounded"
                   >
                     <IoMdEye />
@@ -637,8 +671,8 @@ const DraggableTable: React.FC = () => {
               </button>
 
               <div
-                onMouseDown={(e) => handleResize(e, table?.id as string)}
-                onTouchStart={(e) => handleResize(e, table?.id as string)}
+                onMouseDown={(e) => handleResize(e, table?.name as string)}
+                onTouchStart={(e) => handleResize(e, table?.name as string)}
                 className={styles(
                   "absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize rounded-full invisible group-hover:visible",
                   {
@@ -652,8 +686,8 @@ const DraggableTable: React.FC = () => {
 
               {/* Rotate Handle */}
               <div
-                onMouseDown={(e) => handleRotate(e, table?.idx as number)}
-                onTouchStart={(e) => handleRotate(e, table?.idx as number)}
+                onMouseDown={(e) => handleRotate(e, table?.name as string)}
+                onTouchStart={(e) => handleRotate(e, table?.name as string)}
                 className={styles(
                   "absolute top-0 left-0 w-6 h-6 cursor-pointer rounded-full flex justify-center items-center text-white invisible group-hover:visible",
                   {

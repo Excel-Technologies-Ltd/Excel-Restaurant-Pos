@@ -25,9 +25,9 @@ export interface RestaurantTable {
     y: number;
   };
   /**	Length : Data	*/
-  length: string;
+  length: number;
   /**	Breadth : Data	*/
-  breadth: string;
+  breadth: number;
   /**	File Path : Data	*/
   file_path?: string;
   /**	Id : Data	*/
