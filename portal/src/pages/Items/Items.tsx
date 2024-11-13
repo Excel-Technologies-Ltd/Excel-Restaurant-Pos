@@ -6,12 +6,13 @@ import { useSearchParams } from "react-router-dom";
 import Drawer from "../../components/Drawer/Drawer";
 import Select from "../../components/form-elements/Select";
 import Button from "../../components/Button/Button";
-import { useFrappeGetCall, useFrappeGetDocList } from "frappe-react-sdk";
+import { useFrappeDocTypeEventListener, useFrappeGetCall, useFrappeGetDocList } from "frappe-react-sdk";
+import toast from "react-hot-toast";
 
 type FoodCategory = {
-  id: number;
-  name: string;
-  description: string;
+  id?: number;
+  name?: string;
+  description?: string;
 };
 
 enum OrderType {
@@ -20,7 +21,19 @@ enum OrderType {
 }
 
 const Items = () => {
-  const [selectedCategory, setSelectedCategory] = useState("0");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const { data: categories,mutate} = useFrappeGetCall('excel_restaurant_pos.api.item.get_category_list', {
+    fields: ["*"]
+  },)
+  useFrappeDocTypeEventListener('Item Group', (doc) => {
+    console.log("Event Received:", doc);
+    mutate();
+    toast.success("Category updated!");
+  });
+  
+  
+  
+
   const [isOpen, setIsOpen] = useState(false);
   const [isLargeDevice, setIsLargeDevice] = useState(window.innerWidth > 768);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -37,7 +50,7 @@ const Items = () => {
 
 
 
-  console.log(table_id, order_type);
+  
   // Toggle drawer visibility
   const toggleDrawer = () => {
     setIsOpen(!isOpen);
@@ -61,8 +74,8 @@ const Items = () => {
         <div className="overflow-y-auto bg-gray-50 w-32 shadow-md">
           <div className={`bg-gray h-[70vh] pt-12 px-2 `}>
             <div
-              onClick={() => setSelectedCategory("0")}
-              className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor  ${"0" === selectedCategory ? "bg-lightPrimaryColor" : ""
+              onClick={() => setSelectedCategory("")}
+              className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor  ${"" === selectedCategory ? "bg-lightPrimaryColor" : ""
                 }`}
             >
               <IoFastFoodOutline className="text-primaryColor text-2xl mb-2" />
@@ -70,9 +83,9 @@ const Items = () => {
                 All
               </p>
             </div>
-            {foodCategories?.map((category: FoodCategory, index: number) => (
+            {categories?.message?.map((category: FoodCategory, index: number) => (
               <div
-                onClick={() => setSelectedCategory(String(category?.id))}
+                onClick={() => setSelectedCategory(String(category?.name))}
                 key={index}
                 className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor ${String(category?.id) === selectedCategory
                   ? "bg-lightPrimaryColor"
@@ -92,6 +105,10 @@ const Items = () => {
 
         {/* Item list column */}
         <div className="h-full w-full overflow-y-auto">
+        <p className="text-xs md:text-sm text-gray-light text-center">      
+                  {selectedCategory}
+                </p>
+          
           <ItemList className="py-12" selectedCategory={selectedCategory} />
         </div>
       </div>

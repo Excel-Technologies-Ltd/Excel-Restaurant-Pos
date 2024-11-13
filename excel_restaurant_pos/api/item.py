@@ -74,7 +74,7 @@ def get_food_item_list(category=None):
             'item_group': ['in', category_list],  # Filter by category list
             'variant_of': ""  # Exclude variants
         },
-        fields=['item_name', 'item_code', 'item_group', 'image', 'has_variants'],
+        fields=['item_name', 'item_code', 'item_group', 'image', 'has_variants','description'],
         order_by='creation',
         limit_page_length=100  # Adjust this to limit the number of items fetched
     )
@@ -122,22 +122,47 @@ def get_food_item_list(category=None):
 
 @frappe.whitelist(allow_guest=True)
 def get_single_food_item_details(item_code):
-    item_code, item_name, item_group, image, has_variants = frappe.db.get_value("Item", {"item_code": item_code}, ["item_code", "item_name", "item_group", "image", "has_variants"])
-    print(item_code)
+    item_details = frappe.get_doc("Item", item_code)
+    item_name = item_details.item_name
+    image = item_details.image
+    has_variants = bool(item_details.has_variants)
+    if has_variants:
+        variant_item_list = get_variant_item_list(item_code)
+        default_variant = next((variant for variant in variant_item_list if variant.get('default_variant') == True), None)
+        if default_variant:
+            price = default_variant['price']
+        else:
+            price = variant_item_list[0]['price']
+    else:
+        variant_item_list = []
+        price = frappe.db.get_value('Item Price', {'item_code': item_code, 'price_list': 'Standard Selling'}, 'price_list_rate')
+    add_ons_item_list = get_add_ons_list(item_code)
+    response={
+         "item_name": item_name,
+        "image": image,
+        "has_variants": has_variants,
+        "price": price,
+        "add_ons_item_list": add_ons_item_list,
+        "description":item_details.description
+    }
+    if has_variants:
+        response["variant_item_list"] = variant_item_list
+    return response
+    
 
 
 
 def get_category_list_with_array():
     category_list = get_category_list()
     return [category['name'] for category in category_list]
-def get_add_ons_list(item_code):
-    query = """
-        SELECT category, icon
-        FROM `tabFood Category`
-        WHERE parenttype = 'Restaurant Settings' 
-          AND parentfield = 'categories'
-        ORDER BY creation
-    """
+# def get_add_ons_list(item_code):
+#     query = """
+#         SELECT category, icon
+#         FROM `tabFood Category`
+#         WHERE parenttype = 'Restaurant Settings' 
+#           AND parentfield = 'categories'
+#         ORDER BY creation
+#     """
     
 def get_add_ons_list(item_code):
     query = """
@@ -151,7 +176,7 @@ def get_add_ons_list(item_code):
 
 def get_variant_item_list(item_code):
     query = """
-        SELECT i.item_code as item_code ,i.item_name as item_name,i.image as image,COALESCE(ip.price_list_rate, 0) as price
+        SELECT i.default_variant as default_variant,i.item_code as item_code ,i.item_name as item_name,i.image as image,COALESCE(ip.price_list_rate, 0) as price
         FROM `tabItem` as i
         LEFT JOIN `tabItem Price` as ip ON i.item_code = ip.item_code and ip.price_list = "Standard Selling"
         WHERE i.variant_of = %s
