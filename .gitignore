@@ -5,7 +5,4 @@
 tags
 excel_restaurant_pos/docs/current
 node_modules/
-excel_restaurant_pos/public/portal
-excel_restaurant_pos/public/node_modules
-excel_restaurant_pos/www/restaurant.html
 *.env
