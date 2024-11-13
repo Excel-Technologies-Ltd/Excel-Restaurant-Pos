@@ -74,7 +74,7 @@ def get_food_item_list(category=None):
             'item_group': ['in', category_list],  # Filter by category list
             'variant_of': ""  # Exclude variants
         },
-        fields=['item_name', 'item_code', 'item_group', 'image', 'has_variants'],
+        fields=['item_name', 'item_code', 'item_group', 'image', 'has_variants','description'],
         order_by='creation',
         limit_page_length=100  # Adjust this to limit the number of items fetched
     )
@@ -143,6 +143,7 @@ def get_single_food_item_details(item_code):
         "has_variants": has_variants,
         "price": price,
         "add_ons_item_list": add_ons_item_list,
+        "description":item_details.description
     }
     if has_variants:
         response["variant_item_list"] = variant_item_list

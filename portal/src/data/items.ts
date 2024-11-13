@@ -2,11 +2,12 @@ import { Variation } from "../components/ItemList/ItemList";
 import { Item } from "../components/models/Item";
 
 export interface Food {
-  id: number;
-  name: string;
+  id?: number;
+  item_name: string;
+  item_code: string;
   description?: string;
   regularPrice?: number;
-  sellPrice: number;
+  price?: number;
   image?: string;
   quantity?: number;
   variation?: Variation[];
