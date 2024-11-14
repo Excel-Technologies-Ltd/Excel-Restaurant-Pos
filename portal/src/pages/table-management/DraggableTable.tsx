@@ -9,9 +9,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Select from "../../components/form-elements/Select";
 import {
   closeRightModal,
-  openRightModal,
 } from "../../redux/features/modal/foodsModal";
-import { debounce } from 'lodash';
 import { RootState } from "../../redux/store/Store";
 import { styles } from "../../utilities/cn";
 import Pos from "../Admin/Pos/Pos";
@@ -50,22 +48,40 @@ const DraggableTable: React.FC = () => {
   const [newTableShape, setNewTableShape] = useState<
     "Rectangle" | "Circle" | "Road"
   >("Rectangle");
+  const tableToUpdate = useRef<RestaurantTable[]>([]);
+  const [selectedFloor, setSelectedFloor] = useState<string>('')
+  const { updateDoc } = useFrappeUpdateDoc<RestaurantTable>();
 
   const { data: company } = useFrappeGetDocList("Company")
-  const { data: floors, mutate } = useFrappeGetDocList("Restaurant Floor");
-  useFrappeDocTypeEventListener("Restaurant Floor", (doc) => {
-    mutate();
+  const { data: floors, mutate: mutateFloors } = useFrappeGetDocList("Restaurant Floor");
+  const { data: tablesFromERP, mutate: mutateTables } = useFrappeGetDocList("Restaurant Table", {
+    fields: ["*"],
+    filters: [
+      ["company", "=", company?.[0]?.name],
+      ["restaurant_floor", "=", selectedFloor]
+    ]
+  })
+
+  useFrappeDocTypeEventListener("Restaurant Floor", async (doc) => {
+    await mutateFloors();
     console.log("doc", doc);
   });
-  const [selectedFloor, setSelectedFloor] = useState<string>('')
   // console.log("selectedFloor", selectedFloor);
 
 
-  const { updateDoc } = useFrappeUpdateDoc<RestaurantTable>();
 
-  const updateTable = (table: RestaurantTable) => {
-    if (table.name) {
-      updateDoc("Restaurant Table", table.name, table)
+  const updateTable = async () => {
+    try {
+      for (const table of tableToUpdate.current) {
+        console.log("table", table);
+        if (table.name) {
+          await updateDoc("Restaurant Table", table.name, table);
+        }
+      }
+      await mutateTables();
+      tableToUpdate.current = [];
+    } catch (error) {
+      console.log("error in updateTable", error);
     }
   }
 
@@ -81,13 +97,7 @@ const DraggableTable: React.FC = () => {
 
   const { createDoc, } = useFrappeCreateDoc<RestaurantTable>()
 
-  const { data: tablesFromERP } = useFrappeGetDocList("Restaurant Table", {
-    fields: ["*"],
-    filters: [
-      ["company", "=", company?.[0]?.name],
-      ["restaurant_floor", "=", selectedFloor]
-    ]
-  })
+
   // useFrappeDocTypeEventListener("Restaurant Table", (doc) => {
   //   mutateTables();
   //   console.log("doc", doc);
@@ -327,9 +337,18 @@ const DraggableTable: React.FC = () => {
       document.removeEventListener("touchmove", onMouseMove);
       document.removeEventListener("touchend", onMouseUp);
 
+      // Add the table to the array to be updated if it is not already in the array then add the table to the state
+      if (!tableToUpdate.current.some((table) => table.name === name)) {
+        tableToUpdate.current.push(targetedTable);
+      }
+      // if the table is already in the array then update the table state
+      tableToUpdate.current = tableToUpdate.current.map((table) =>
+        table.name === name ? targetedTable : table
+      );
+
       // Update the table state after rotation ends
-      const updatedTable = tables.find((table) => table.name === name);
-      if (updatedTable) handleTableUpdate(updatedTable);
+      // const updatedTable = tables.find((table) => table.name === name);
+      // if (updatedTable) handleTableUpdate(updatedTable);
     };
 
     document.addEventListener("mousemove", onMouseMove);
@@ -343,11 +362,11 @@ const DraggableTable: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
 
-    const targetTable = tables.find((table) => table.name === name);
-    if (!targetTable) return;
+    const targetedTable = tables.find((table) => table.name === name);
+    if (!targetedTable) return;
 
-    const initialLength = targetTable.length;
-    const initialBreadth = targetTable.breadth;
+    const initialLength = targetedTable.length;
+    const initialBreadth = targetedTable.breadth;
     const initialClientX = "touches" in e ? e.touches[0].clientX : e.clientX;
     const initialClientY = "touches" in e ? e.touches[0].clientY : e.clientY;
 
@@ -365,8 +384,8 @@ const DraggableTable: React.FC = () => {
           t.name === name
             ? {
               ...t,
-              length: targetTable.type === "Circle" ? newLength : newLength,
-              breadth: targetTable.type === "Circle" ? newLength : newBreadth,
+              length: targetedTable.type === "Circle" ? newLength : newLength,
+              breadth: targetedTable.type === "Circle" ? newLength : newBreadth,
             }
             : t
         )
@@ -379,9 +398,18 @@ const DraggableTable: React.FC = () => {
       document.removeEventListener("touchmove", onMouseMove);
       document.removeEventListener("touchend", onMouseUp);
 
+
+      // Add the table to the array to be updated if it is not already in the array then add the table to the state
+      if (!tableToUpdate.current.some((table) => table.name === name)) {
+        tableToUpdate.current.push(targetedTable);
+      }
+      // if the table is already in the array then update the table state
+      tableToUpdate.current = tableToUpdate.current.map((table) =>
+        table.name === name ? targetedTable : table
+      );
       // Call handleTableUpdate with the updated table data after resizing ends
-      const updatedTable = tables.find((table) => table.name === name);
-      if (updatedTable) handleTableUpdate(updatedTable);
+      // const updatedTable = tables.find((table) => table.name === name);
+      // if (updatedTable) handleTableUpdate(updatedTable);
     };
 
     document.addEventListener("mousemove", onMouseMove);
@@ -428,9 +456,18 @@ const DraggableTable: React.FC = () => {
       document.removeEventListener("touchmove", onMouseMove);
       document.removeEventListener("touchend", onMouseUp);
 
+      // Add the table to the array to be updated if it is not already in the array then add the table to the state
+      if (!tableToUpdate.current.some((table) => table.name === name)) {
+        tableToUpdate.current.push(targetedTable);
+      }
+      // if the table is already in the array then update the table state
+      tableToUpdate.current = tableToUpdate.current.map((table) =>
+        table.name === name ? targetedTable : table
+      );
+
       // Update the table state after dragging ends
-      const updatedTable = tables.find((table) => table.name === name);
-      if (updatedTable) handleTableUpdate(updatedTable);
+      // const updatedTable = tables.find((table) => table.name === name);
+      // if (updatedTable) handleTableUpdate(updatedTable);
     };
 
     document.addEventListener("mousemove", onMouseMove);
@@ -442,25 +479,25 @@ const DraggableTable: React.FC = () => {
 
 
   // Debounced function to update the table data in the backend after a delay
-  const debouncedSaveData = useCallback(
-    debounce((data: RestaurantTable) => {
-      updateTable(data); // Call the API to update the data after debounce delay
-    }, 1000),
-    [updateTable]
-  );
+  // const debouncedSaveData = useCallback(
+  //   debounce((data: RestaurantTable) => {
+  //     updateTable(data); // Call the API to update the data after debounce delay
+  //   }, 1000),
+  //   [updateTable]
+  // );
 
-  const handleTableUpdate = (updatedTable: RestaurantTable) => {
-    setModifiedTable(updatedTable); // Update local state with the latest changes
-    debouncedSaveData(updatedTable); // Debounce API call to reduce frequency
-  };
+  // const handleTableUpdate = (updatedTable: RestaurantTable) => {
+  //   setModifiedTable(updatedTable); // Update local state with the latest changes
+  //   debouncedSaveData(updatedTable); // Debounce API call to reduce frequency
+  // };
 
 
-  useEffect(() => {
-    return () => {
-      // Cancel the debounced function on unmount to avoid memory leaks
-      debouncedSaveData.cancel();
-    };
-  }, [debouncedSaveData]);
+  // useEffect(() => {
+  //   return () => {
+  //     // Cancel the debounced function on unmount to avoid memory leaks
+  //     debouncedSaveData.cancel();
+  //   };
+  // }, [debouncedSaveData]);
 
 
   return (
@@ -479,9 +516,15 @@ const DraggableTable: React.FC = () => {
           </button>
           <button
             onClick={() => openCreateTableModal()}
-            className="main_btn"
+            className="main_btn mr-2"
           >
             Create Table
+          </button>
+          <button
+            onClick={() => updateTable()}
+            className="main_btn"
+          >
+            Update Table
           </button>
         </div>
         {floors?.length && <div className="flex">

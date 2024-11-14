@@ -1,12 +1,9 @@
-interface TableData {
-  tableNo: string; // Assuming tableNo is a string
-  seat: string; // Assuming seat is a string
-  bgColor: string; // Assuming bgColor is a string representing a color
-}
+import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
+
 
 interface DraggableTableEditProps {
-  newTableData: TableData; // The current table data being edited
-  setNewTableData: React.Dispatch<React.SetStateAction<TableData>>; // Function to update table data
+  newTableData: RestaurantTable; // The current table data being edited
+  setNewTableData: React.Dispatch<React.SetStateAction<RestaurantTable>>; // Function to update table data
   setIsEditModalOpen: React.Dispatch<React.SetStateAction<boolean>>; // Function to open/close the edit modal
   saveEdit: () => void; // Function to save the edited table data
 }
@@ -29,11 +26,11 @@ const DraggableTableEdit = ({
             Table No:
             <input
               type="text"
-              value={newTableData.tableNo}
+              value={newTableData.table_no}
               onChange={(e) =>
                 setNewTableData({
                   ...newTableData,
-                  tableNo: e.target.value,
+                  table_no: e.target.value,
                 })
               }
               className="border p-2 w-full"
@@ -55,11 +52,11 @@ const DraggableTableEdit = ({
             <input
               type="color"
               className="cursor-pointer w-full mt-2"
-              value={newTableData.bgColor}
+              value={newTableData.bg_color}
               onChange={(e) =>
                 setNewTableData({
                   ...newTableData,
-                  bgColor: e.target.value,
+                  bg_color: e.target.value,
                 })
               }
             />

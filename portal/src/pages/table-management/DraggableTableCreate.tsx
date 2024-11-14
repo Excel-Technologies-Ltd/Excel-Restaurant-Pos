@@ -39,8 +39,9 @@ const DraggableTableCreate = ({
         </h2>
         <div className="space-y-3">
           <Select
-            value={newTableData.type}
+          
             onChange={(e) => {
+              
               setNewTableData({
                 ...newTableData,
                 type: e.target.value as TableType,
