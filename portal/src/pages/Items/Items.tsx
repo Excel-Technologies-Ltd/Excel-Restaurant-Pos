@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { IoFastFoodOutline } from "react-icons/io5";
 import ItemsPageBottom from "../../components/header/ItemsPageBottom";
 import ItemList from "../../components/ItemList/ItemList";
-import { useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import Drawer from "../../components/Drawer/Drawer";
 import Select from "../../components/form-elements/Select";
 import Button from "../../components/Button/Button";
@@ -30,16 +30,16 @@ const Items = () => {
     mutate();
     toast.success("Category updated!");
   });
-  
-  
+  const [searchParams] = useSearchParams();
+const table_id = searchParams.get("table_id");
+ // Logs the value of `order_type`.
+
   
 
   const [isOpen, setIsOpen] = useState(false);
   const [isLargeDevice, setIsLargeDevice] = useState(window.innerWidth > 768);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [isTableSelectShow, setIsTableSelectShow] = useState(false);
 
-  const table_id = searchParams.get("table_id");
+  const [isTableSelectShow, setIsTableSelectShow] = useState(false);
   const order_type = searchParams.get("order_type");
 
 
@@ -66,6 +66,10 @@ const Items = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+useEffect(() => {
+  console.log(table_id);
+}, [table_id])
 
   return (
     <div className="h-screen">
@@ -109,7 +113,7 @@ const Items = () => {
                   {selectedCategory}
                 </p>
           
-          <ItemList className="py-12" selectedCategory={selectedCategory} />
+          <ItemList className="py-12"  selectedCategory={selectedCategory} table_id={table_id} />
         </div>
       </div>
       <ItemsPageBottom />

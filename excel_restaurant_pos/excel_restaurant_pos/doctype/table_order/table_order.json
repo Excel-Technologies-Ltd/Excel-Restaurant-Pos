@@ -1,0 +1,162 @@
+{
+ "actions": [],
+ "autoname": "format:Order-{DD}-{###}",
+ "creation": "2024-11-14 10:25:10.696519",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "customer",
+  "amended_from",
+  "table",
+  "floor",
+  "pos_profile",
+  "adresss",
+  "tax",
+  "discount",
+  "amount",
+  "total_amount",
+  "item_list",
+  "tax_and_charges",
+  "company",
+  "customer_name",
+  "remarks",
+  "status",
+  "discount_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Table Order",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "table",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Table",
+   "options": "Restaurant Table",
+   "reqd": 1
+  },
+  {
+   "fieldname": "floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Restaurant Floor"
+  },
+  {
+   "fieldname": "pos_profile",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Pos Profile",
+   "options": "POS Profile"
+  },
+  {
+   "fieldname": "adresss",
+   "fieldtype": "Data",
+   "label": "Adresss"
+  },
+  {
+   "fieldname": "tax",
+   "fieldtype": "Data",
+   "label": "Tax"
+  },
+  {
+   "fieldname": "discount",
+   "fieldtype": "Data",
+   "label": "Discount"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Amount",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Data",
+   "label": "Total Amount",
+   "reqd": 1
+  },
+  {
+   "fieldname": "item_list",
+   "fieldtype": "Table",
+   "label": "Item List",
+   "options": "Table Order Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "tax_and_charges",
+   "fieldtype": "Data",
+   "label": "Tax And Charges"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nOrder Placed\nSent to Kitchen\nWork in progress\nPreparing\nReady for Pickup\nServed\nCompleted\nCanceled"
+  },
+  {
+   "fieldname": "discount_type",
+   "fieldtype": "Select",
+   "label": "Discount Type",
+   "options": "\npercentage\nflat amount"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2024-11-17 18:56:21.566554",
+ "modified_by": "Administrator",
+ "module": "Excel Restaurant Pos",
+ "name": "Table Order",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

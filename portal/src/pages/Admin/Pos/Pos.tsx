@@ -16,7 +16,7 @@ import TruncateText from "../../../components/common/TruncateText";
 import { useCartContext } from "../../../context/cartContext";
 import useWindowWidth from "../../../hook/useWindowWidth";
 import { Food } from "../../../data/items";
-import { useFrappeGetCall } from "frappe-react-sdk";
+import { useFrappeGetCall, useFrappeGetDocList, useFrappePostCall } from "frappe-react-sdk";
 import { useSearchParams } from "react-router-dom";
 
 
@@ -25,7 +25,7 @@ const Pos = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState("0");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
   const [showCart, setShowCart] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -42,9 +42,16 @@ const Pos = () => {
     fields: ["*"]
   })
 
-  const { data: foods, isLoading: isLoadingFoods } = useFrappeGetCall('excel_restaurant_pos.api.item.get_food_item_list', {
-    fields: ["*"]
+  const {call:createOrder,loading,error,result}=useFrappePostCall("excel_restaurant_pos.api.item.create_order")
+  const { data:foods, mutate } = useFrappeGetCall(
+    `excel_restaurant_pos.api.item.get_food_item_list?category=${selectedCategory}`,
+    { fields: ["*"] }
+  );
+  const { data: tableIds } = useFrappeGetDocList('Restaurant Table', {
+    fields: ["name"]
   })
+  const selectedTableId = tableIds?.map((item: any) => item?.name)
+
 
   useEffect(() => {
     if (categories) {
@@ -57,15 +64,14 @@ const Pos = () => {
     setSelectedCategory(category);
   };
 
-  const filteredItems = foods?.message?.filter((item: any) => {
-    if (selectedCategory == "0") {
-      return true;
-    } else {
-      return item.item_group === selectedCategory;
-    }
-  });
+  const [isCheckoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [fullName, setFullName] = useState<string>("");
+  const [tableId, setTableId] = useState<string>("");
+  const [tableIdError, setTableIdError] = useState<string>("");
 
-  console.log("filteredItems", filteredItems);
+ // Table IDs
+
+  
 
   console.log("categories", foodCategories);
 
@@ -99,8 +105,8 @@ const Pos = () => {
   };
 
   // Get the quantity of an item in the cart
-  const getItemQuantity = (itemId: number) => {
-    const cartItem = cartItems?.find((cartItem) => cartItem?.id === itemId);
+  const getItemQuantity = (itemId: string) => {
+    const cartItem = cartItems?.find((cartItem) => cartItem?.item_code === itemId);
     return cartItem ? cartItem?.quantity : 0;
   };
 
@@ -165,7 +171,7 @@ const Pos = () => {
 
   // Calculate the subtotal price based on items and their quantities
   const subtotal = cartItems.reduce(
-    (acc, item) => acc + item?.price * (quantities[item?.id] || item?.quantity),
+    (acc, item) => acc + item?.price * (quantities[item?.item_code] || item?.quantity),
     0
   );
 
@@ -214,31 +220,64 @@ const Pos = () => {
 
   // Handle checkout
   const handleCheckout = () => {
-    // Check if the cart is empty
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-
     if (cart.length === 0) {
-      // If the cart is empty, show a toast message
       toast.error("Your cart is empty! Please add items to checkout.");
-      return; // Exit the function early
+      return;
     }
+    setCheckoutModalOpen(true); // Open confirmation modal
+  };
 
+  const confirmCheckout = async () => {
+    if (!tableId.trim()) {
+      setTableIdError("Table ID is required.");
+      return;
+    }
+    
+    
+    const getCartItems = JSON.parse(localStorage.getItem("cart") || "[]");
+    const formatedCartItems = getCartItems?.map((item: any) => ({
+      item: item?.item_code,
+      qty: item?.quantity,
+      rate: item?.price,
+      amount: item?.price * item?.quantity
+    }))
+
+
+    const payload={
+      customer:"Room One",
+      item_list: formatedCartItems,
+      table: tableId,
+      full_name: fullName ? fullName : "Test User",
+      remarks: notes,
+      discount_type: discountType,
+      total_amount: payableAmount,
+      tax: tax,
+      discount: discountAmount,
+      amount: subtotal
+    }
+    try {
+      const result = await createOrder({data:payload})
+      console.log("result", result);
+    } catch (error) {
+      console.log("error", error);
+    }
+    console.log("payload", payload);
     setQuantities({});
-    localStorage.removeItem("cart"); // Clear cart from localStorage
-
-    // Store total price in localStorage
+    localStorage.removeItem("cart");
     localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
 
-    // Show success toast
-    // toast.success("Checkout successful");
     setShowPopup(true);
     setDiscountType("percentage");
     setDiscount("");
     setNotes("");
-
     updateCartCount();
-  };
 
+    setCheckoutModalOpen(false); // Close modal after checkout
+  };
+useEffect(() => {
+  mutate()
+}, [selectedCategory])
 
 
   return (
@@ -256,16 +295,16 @@ const Pos = () => {
           >
             <div className="flex gap-2 w-max justify-center items-center">
               <CategoryCard
-                onClick={() => handleCategoryClick("0")}
+                onClick={() => handleCategoryClick("")}
                 title="All"
-                isActive={String("0") === selectedCategory}
+                isActive={String("") === selectedCategory}
               />
               {foodCategories?.map((item, index) => (
                 <CategoryCard
                   onClick={() => handleCategoryClick(item.name)}
                   key={index}
                   title={item?.name}
-                  isActive={String(item?.id) === selectedCategory}
+                  isActive={String(item?.name) === selectedCategory}
                 />
               ))}
             </div>
@@ -273,11 +312,11 @@ const Pos = () => {
 
           {/* Foods Cards */}
           <div className="grid grid-cols-1 xsm:grid-cols-2 lg:grid-cols-3 gap-4 xl:grid-cols-4 mt-5">
-            {filteredItems?.map((item, index) => {
+            {foods?.message?.map((item, index) => {
               return (
                 <div
                   key={index}
-                  onClick={() => handleItemClick(item)}
+                  onClick={() => handleItemClick(item.item_code)}
                   className="border border-borderColor rounded-lg shadowe hover:shadow-lg hover:border-primaryColor group relative cursor-pointer"
                 >
                   <img
@@ -340,33 +379,33 @@ const Pos = () => {
                           </div>
                           <div className="flex gap-2">
                             <div className="flex items-center rounded-md h-fit border w-fit">
-                              {quantities[item?.id] === 1 ? (
+                              {quantities[item?.item_code] === 1 ? (
                                 <button
-                                  onClick={() => decrement(item?.id)}
+                                  onClick={() => decrement(item?.item_code)}
                                   className="px-1 rounded-md rounded-e-none text-xs bg-gray-200 cursor-not-allowed h-fit py-1.5 "
                                 >
                                   <LuMinus className="text-xs" />
                                 </button>
                               ) : (
                                 <button
-                                  onClick={() => decrement(item?.id)}
+                                  onClick={() => decrement(item?.item_code)}
                                   className="px-1 rounded-md rounded-e-none text-xs bg-gray-200 h-fit py-1.5 "
                                 >
                                   <LuMinus className="text-xs" />
                                 </button>
                               )}
                               <span className="px-2 text-xs h-full flex items-center">
-                                {quantities[item?.id] || item?.quantity}
+                                {quantities[item?.item_code] || item?.quantity}
                               </span>
                               <button
-                                onClick={() => increment(item?.id)}
+                                onClick={() => increment(item?.item_code)}
                                 className="px-1 rounded-md rounded-s-none bg-gray-200 h-fit py-1.5 "
                               >
                                 <FiPlus className="text-xs" />
                               </button>
                             </div>
                             <button
-                              onClick={() => removeItem(item?.id)}
+                              onClick={() => removeItem(item?.item_code)}
                               className="text-redColor px-1.5 rounded-md text-xs bg-gray-200 h-fit py-1.5 border"
                             >
                               <FaRegTrashCan />
@@ -447,6 +486,49 @@ const Pos = () => {
             </div>
           </div>
         )}
+         {isCheckoutModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-lg font-semibold mb-4">Confirm Checkout</h2>
+            <label className="block mb-2">
+              Full Name (optional)
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full border rounded p-2 mt-1"
+              />
+            </label>
+            <label className="block mb-2">
+              Table ID <span className="text-red-500">*</span>
+              <select
+                value={tableId}
+                onChange={(e) => {
+                  setTableId(e.target.value);
+                  setTableIdError("");
+                }}
+                className={`w-full border rounded p-2 mt-1 ${tableIdError ? "border-red-500" : ""}`}
+              >
+                <option value="">Select Table ID</option>
+                {selectedTableId?.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
+              </select>
+              {tableIdError && <p className="text-red-500 text-xs mt-1">{tableIdError}</p>}
+            </label>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setCheckoutModalOpen(false)} className="mr-2 bg-gray-200 px-4 py-2 rounded">
+                Cancel
+              </button>
+              <button onClick={confirmCheckout} className="bg-primaryColor px-4 py-2 rounded text-white">
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
       {w1280 && (
         <button

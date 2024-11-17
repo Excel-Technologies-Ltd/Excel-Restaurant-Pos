@@ -52,8 +52,10 @@ const ItemsDrawer = memo(({ children, isOpen, isLargeDevice }: DrawerProps) => {
 const SingleItemModal = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
   const { data: item } = useFrappeGetCall(`excel_restaurant_pos.api.item.get_single_food_item_details?item_code=${selectedItem}`, { fields: ["*"] });
   const itemDetails = item?.message;
+  console.log("itemDetails", itemDetails);
+  const {updateCartCount} = useCartContext()
 
-  const [selectedVariation, setSelectedVariation] = useState(null);
+  const [selectedVariation, setSelectedVariation] = useState({});
   const [quantity, setQuantity] = useState(1);
   const [selectedItems, setSelectedItems] = useState<Food[]>([]);
   const [isLargeDevice, setIsLargeDevice] = useState(window.innerWidth > 768);
@@ -66,12 +68,34 @@ const SingleItemModal = ({ isOpen, toggleDrawer, selectedItem }: Props) => {
             : [...prevAddOns, { ...item, quantity: 1 }]          // Add with quantity 1 if not selected
     );
 };
-console.log("selectedAddOns", selectedAddOns);
+const calculateTotalPrice = () => {
+  // Base item price
+  const basePrice = selectedVariation.price || itemDetails?.price || 0;
+  const itemTotal = basePrice * quantity;
+
+  // Add-ons total
+  const addOnsTotal = selectedAddOns.reduce((total, addOn) => {
+    return total + (addOn.price || 0) * addOn.quantity;
+  }, 0);
+
+  // Sum base item total and add-ons total
+  return itemTotal + addOnsTotal;
+};
+// Inside the SingleItemModal component
+
+const increment = () => {
+  setQuantity(prevQuantity => prevQuantity + 1);
+};
+
+const decrement = () => {
+  setQuantity(prevQuantity => (prevQuantity > 1 ? prevQuantity - 1 : 1));
+};
+
 
 const incrementAddOns = (item_code: string) => {
     setSelectedAddOns(prevAddOns =>
         prevAddOns.map(addOn =>
-            addOn.item_code === item_code ? { ...addOn, quantity: addOn.quantity + 1 } : addOn
+            addOn?.item_code === item_code ? { ...addOn, quantity: addOn?.quantity + 1 } : addOn
         )
     );
 };
@@ -79,27 +103,14 @@ const incrementAddOns = (item_code: string) => {
 const decrementAddOns = (item_code: string) => {
     setSelectedAddOns(prevAddOns =>
         prevAddOns.map(addOn =>
-            addOn.item_code === item_code && addOn.quantity > 1 ? { ...addOn, quantity: addOn.quantity - 1 } : addOn
+            addOn?.item_code === item_code && addOn.quantity > 1 ? { ...addOn, quantity: addOn.quantity - 1 } : addOn
         )
     );
 };
 
 const addToCart = () => {
-  const newCartItem = selectedVariation
-    ? [{ ...selectedVariation, quantity }, ...selectedAddOns]
-    : [
-        ...selectedAddOns,
-        {
-          item_code: itemDetails?.item_code,
-          item_name: itemDetails?.item_name,
-          image: itemDetails?.image,
-          price: itemDetails?.price,
-          quantity,
-        },
-      ];
-      console.log("newCartItem", newCartItem);
+  const newCartItem = [{ ...selectedVariation, quantity }, ...selectedAddOns]   
       // return;
-
   // Retrieve the existing cart from local storage
   const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
 
@@ -108,17 +119,21 @@ const addToCart = () => {
 
   // Use a Map to remove duplicates by `item_code`
   const uniqueCart = Array.from(
-    new Map(combinedCart.map((item) => [item.item_code, item])).values()
+    new Map(combinedCart.map((item) => [item?.item_code, item])).values()
   );
 
   // If a new item was added, save to local storage and show success toast
-  console.log(uniqueCart.length, existingCart.length);
   
   if (uniqueCart.length >= existingCart.length) {
     console.log("uniqueCart", uniqueCart);
     localStorage.setItem("cart", JSON.stringify(uniqueCart));
-    toast.success("Item added to cart!");
+    // toast.success("Item added to cart!");
+    updateCartCount()
   }
+  setQuantity(1); // Reset quantity to 1
+  setSelectedVariation({}); // Reset selected variation
+  setSelectedAddOns([]); // Clear selected add-ons
+  toggleDrawer();
 
  
 };
@@ -144,8 +159,19 @@ const addToCart = () => {
       const defaultVariant = itemDetails?.variant_item_list?.find((variation:any) => variation.default_variant);
       if (defaultVariant) {
         setSelectedVariation(defaultVariant);
-        toast.success("Default variant selected.");
+       
       }
+      else{
+        setSelectedVariation(itemDetails?.variant_item_list[0])
+      }
+    }else{
+      setSelectedVariation({
+        item_code: itemDetails?.item_code,
+        item_name: itemDetails?.item_name,
+        image: itemDetails?.image,
+        price: itemDetails?.price,
+      })
+     
     }
   }, [isOpen, itemDetails]);
 
@@ -184,9 +210,9 @@ const addToCart = () => {
                         onChange={() => setSelectedVariation(variation)}
                         className="mr-2"
                       />
-                      {variation.item_name}
+                      {variation?.item_name}
                     </div>
-                    <h2>{variation.price}</h2>
+                    <h2>{variation?.price}</h2>
                   </label>
                 ))}
               </div>
@@ -218,7 +244,24 @@ const addToCart = () => {
           </div>
         </div>
         <div className={`p-4 pt-2 border bottom-0 absolute w-full bg-white z-50 ${isLargeDevice ? "rounded-b-lg" : ""}`}>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
+          <div className="flex items-center border rounded-md text-sm">
+              <button
+                onClick={decrement}
+                className="px-3.5 rounded-md rounded-e-none h-full text-[11px] bg-gray-200"
+              >
+                <FaMinus />
+              </button>
+              <span className="px-3.5">{quantity}</span>
+              <button
+                onClick={increment}
+                className="px-3.5 rounded-md rounded-s-none h-full text-[14px] bg-gray-200"
+              >
+                <FiPlus />
+              </button>
+            </div>
+            <div className="text-sm font-semibold">Total: ৳{calculateTotalPrice()}</div>
+
             <button onClick={()=> addToCart()} className="bg-primaryColor px-3 py-1.5 rounded-md text-white h-fit text-sm">
               Add to cart
             </button>

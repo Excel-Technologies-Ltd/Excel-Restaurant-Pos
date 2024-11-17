@@ -9,14 +9,15 @@ app_license = "MIT"
 # ------------------
 
 fixtures = [
-    # {"dt": "DocType", "filters": [
-    #     [
-    #         "name", "in", [
-    #             "Doctype1Name",
-    #             "Doctype2Name"
-    #         ]
-    #     ]
-    # ]},
+    {"dt": "Role", "filters": [
+        [
+            "name", "in", [
+                "Restaurant Waiter",
+                "Restaurant Manager",
+                "Restaurant Chef"
+            ]
+        ]
+    ]},
     {"dt": "Custom Field", "filters": [
         [
             "name", "in", [

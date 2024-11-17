@@ -31,9 +31,11 @@ export interface Variation {
 const ItemList = ({
   className,
   selectedCategory = "",
+  table_id,
 }: {
   className?: string;
   selectedCategory?: string;
+  table_id?: string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItemName, setSelectedItemName] = useState("");
@@ -66,7 +68,7 @@ const ItemList = ({
 
   const getItemQuantity = useCallback(
     (itemId: number) => {
-      const cartItem = cartItems?.find((cartItem) => cartItem.id === itemId);
+      const cartItem = cartItems?.find((cartItem) => cartItem.item_code === itemId);
       return cartItem ? cartItem.quantity : 0;
     },
     [cartItems]
@@ -90,11 +92,11 @@ const ItemList = ({
               alt=""
               className="h-20 w-20 lg:h-32 lg:w-32 object-cover rounded-lg"
             />
-            {getItemQuantity(item?.id) > 0 && (
+            {getItemQuantity(item?.item_code) > 0 && (
               <div
                 className="w-5 h-5 rounded-full bg-primaryColor shadow absolute top-[-6px] right-[-6px] flex justify-center items-center text-xs md:text-sm text-white border"
               >
-                {getItemQuantity(item?.id)}
+                {getItemQuantity(item?.item_code)}
               </div>
             )}
             <div className="flex flex-col items-start justify-start ps-2">
@@ -115,6 +117,7 @@ const ItemList = ({
             selectedItem={selectedItemName}
             toggleDrawer={toggleDrawer}
             isOpen={isOpen}
+            table_id={table_id}
           />
         )}
       </div>

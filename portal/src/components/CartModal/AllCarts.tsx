@@ -5,6 +5,7 @@ import { FiPlus } from "react-icons/fi";
 import { LuMinus } from "react-icons/lu";
 import { RxCross2 } from "react-icons/rx";
 import { useCartContext } from "../../context/cartContext";
+import { useFrappeGetDocList, useFrappePostCall } from "frappe-react-sdk";
 
 type Props = {
   isOpen: boolean;
@@ -21,10 +22,10 @@ export type DrawerProps = {
 };
 
 type CartItem = {
-  id: number;
-  name: string;
+  item_code: string;
+  item_name: string;
   description: string;
-  sellPrice: number;
+  price: number;
   quantity: number;
   totalPrice: number;
 };
@@ -36,7 +37,7 @@ const AllCarts = ({
   isAdmin = false,
 }: Props) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [discount, setDiscount] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [discountError, setDiscountError] = useState<string>("");
@@ -44,6 +45,20 @@ const AllCarts = ({
     "percentage"
   );
   const { updateCartCount, cartCount } = useCartContext();
+  const [isCheckoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [fullName, setFullName] = useState<string>("");
+  const [tableId, setTableId] = useState<string>("Table-001");
+  const [tableIdError, setTableIdError] = useState<string>("");
+   const defaultTableId = 'Table-001'
+  const { data: tableIds } = useFrappeGetDocList('Restaurant Table', {
+    fields: ["name"]
+  })
+  const selectedTableId =  defaultTableId ? [defaultTableId] : tableIds?.map((item: any) => item?.name)
+
+  const {call:createOrder,loading,error,result}=useFrappePostCall("excel_restaurant_pos.api.item.create_order")
+ 
+
+
 
   console.log({ cartCount });
   useEffect(() => {
@@ -55,8 +70,8 @@ const AllCarts = ({
 
       // Set the initial quantities based on the items in the cart
       const initialQuantities = storedCart.reduce(
-        (acc: { [key: number]: number }, item: CartItem) => {
-          acc[item.id] = item.quantity;
+        (acc: { [key: string]: number }, item: CartItem) => {
+          acc[item?.item_code] = item.quantity;
           return acc;
         },
         {}
@@ -66,39 +81,66 @@ const AllCarts = ({
   }, [cartCount]);
 
   // Increment product quantity based on item ID
-  const increment = (id: number) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: (prevQuantities[id] || 0) + 1,
-    }));
-  };
+const increment = (item_code: string) => {
+  setQuantities((prevQuantities) => ({
+    ...prevQuantities,
+    [item_code]: (prevQuantities[item_code] || 0) + 1,
+  }));
+  
+  setCartItems((prevItems) => {
+    const updatedItems = prevItems.map((item) =>
+      item.item_code === item_code
+        ? { ...item, quantity: (quantities[item_code] || 0) + 1 }
+        : item
+    );
 
-  // Decrement product quantity based on item ID
-  const decrement = (id: number) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: (prevQuantities[id] || 1) > 1 ? prevQuantities[id] - 1 : 1,
-    }));
-  };
+    // Save updated cart items to localStorage
+    localStorage.setItem("cart", JSON.stringify(updatedItems));
+    updateCartCount()
+    return updatedItems;
+  });
+};
+
+// Decrement product quantity based on item_code
+const decrement = (item_code: string) => {
+  setQuantities((prevQuantities) => ({
+    ...prevQuantities,
+    [item_code]: (prevQuantities[item_code] || 1) > 1 ? prevQuantities[item_code] - 1 : 1,
+  }));
+
+  setCartItems((prevItems) => {
+    const updatedItems = prevItems.map((item) =>
+      item.item_code === item_code && item.quantity > 1
+        ? { ...item, quantity: quantities[item_code] - 1 }
+        : item
+    );
+
+    // Save updated cart items to localStorage
+    localStorage.setItem("cart", JSON.stringify(updatedItems));
+    updateCartCount()
+    return updatedItems;
+  });
+};
+
 
   // Remove item from cart
-  const removeItem = (id: number) => {
-    const updatedCartItems = cartItems.filter((item) => item.id !== id);
+  const removeItem = (item_code: string) => {
+    const updatedCartItems = cartItems.filter((item) => item.item_code !== item_code);
     setCartItems(updatedCartItems);
     localStorage.setItem("cart", JSON.stringify(updatedCartItems));
-
     updateCartCount();
   };
 
   const carts = JSON.parse(localStorage.getItem("cart") || "[]");
 
   const taxRate = 0.1; // 10% tax rate
-
+  console.log({cartItems})
   // Calculate the subtotal price based on items and their quantities
   const subtotal = cartItems.reduce(
-    (acc, item) => acc + item.sellPrice * (quantities[item.id] || item.quantity),
+    (acc, item) => acc + Number(item.price || 0) * Number(item.quantity || 0),
     0
   );
+  console.log({subtotal})
 
   // Calculate the tax based on the subtotal
   const tax = subtotal * taxRate;
@@ -106,43 +148,70 @@ const AllCarts = ({
   // Calculate discount based on selected type
   const discountAmount =
     discountType === "percentage"
-      ? (subtotal * Number(discount)) / 100
-      : Number(discount);
+      ? (subtotal * Number(discount || 0)) / 100
+      : Number(discount || 0);
+ const payableAmount = isNaN(subtotal - discountAmount + tax) ? 0 : subtotal - discountAmount + tax;
 
-  const payableAmount = subtotal - discountAmount + tax;
 
-  // Handle checkout
-  const handleCheckout = () => {
-    // Check if the cart is empty
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+ const handleCheckout = () => {
+  if (cartItems.length === 0) {
+    toast.error("Your cart is empty! Please add items to checkout.");
+    return;
+  }
 
-    if (cart.length === 0) {
-      // If the cart is empty, show a toast message
-      toast.error("Your cart is empty! Please add items to checkout.");
-      return;
-    }
+  // Open checkout confirmation modal
+  setCheckoutModalOpen(true);
+};
+const confirmCheckout = async () => {
+  if (!tableId.trim()) {
+    setTableIdError("Table ID is required.");
+    return;
+  }
+  const getCartItems = JSON.parse(localStorage.getItem("cart") || "[]");
+  const formatedCartItems = getCartItems?.map((item: any) => ({
+    item: item?.item_code,
+    qty: item?.quantity,
+    rate: item?.price,
+    amount: item?.price * item?.quantity
+  }))
 
-    // Proceed with checkout if cart is not empty
-    setDiscount("");
-    setDiscountType("percentage");
-    setDiscountError("");
-    setCartItems([]);
-    setQuantities({});
-    setNotes("");
-    localStorage.removeItem("cart");
 
-    // Store total price in localStorage
-    localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
+  const payload={
+    customer:"Room One",
+    item_list: formatedCartItems,
+    table: tableId,
+    full_name: fullName ? fullName : "Test User",
+    remarks: notes,
+    discount_type: discountType,
+    total_amount: payableAmount,
+    tax: tax,
+    discount: discountAmount,
+    amount: subtotal
+  }
+  try {
+    const result = await createOrder({data:payload})
+    console.log("result", result);
+  } catch (error) {
+    console.log("error", error);
+  }
+  console.log("payload", payload);
 
-    // if (isAdmin) {
-    //   // Show success toast
-    //   toast.success("Checkout successful!");
-    // }
+  // Proceed with checkout
+  setDiscount("");
+  setDiscountType("percentage");
+  setDiscountError("");
+  setCartItems([]);
+  setQuantities({});
+  setNotes("");
+  localStorage.removeItem("cart");
+  localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
+  setShowPopup(true);
+  toggleDrawer();
+  updateCartCount();
 
-    setShowPopup(true);
-    toggleDrawer();
-    updateCartCount();
-  };
+  // Close modal after checkout
+  setCheckoutModalOpen(false);
+};
 
   const closeModal = () => {
     setDiscount("");
@@ -153,28 +222,33 @@ const AllCarts = ({
     setNotes("");
   };
 
+
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
     const value = e.target.value;
 
-    // Validate the discount value based on the type
-    if (discountType === "percentage") {
-      const numericValue = Number(value);
-      if (value && (numericValue < 0 || numericValue > 100)) {
-        setDiscountError("Discount must be between 0 and 100.");
-        return;
-      } else {
-        setDiscountError("");
-      }
-    } else {
-      // For flat amount, you can customize your validation logic as needed
-      if (value && Number(value) < 0) {
-        setDiscountError("Flat discount cannot be negative.");
-      } else {
-        setDiscountError("");
-      }
+    const numericValue = Number(value);
+
+
+
+    if (discountType === "percentage" && (numericValue < 0 || numericValue > 100)) {
+
+      setDiscountError("Discount must be between 0 and 100.");
+
+      return;
+
+    } else if (discountType === "flat" && numericValue < 0) {
+
+      setDiscountError("Flat discount cannot be negative.");
+
+      return;
+
     }
 
+    setDiscountError("");
+
     setDiscount(value);
+
   };
   // main : 379 , add : 29 , another : 199
   const handleDiscountTypeChange = (
@@ -250,53 +324,53 @@ const AllCarts = ({
         )}
         <div className="mt-3">
           {cartItems?.map((item) => (
-            <div key={item.id} className="border p-2 rounded-md mb-3 w-full">
+            <div key={item.item_code} className="border p-2 rounded-md mb-3 w-full">
               <div className="flex justify-between">
                 <div className="flex">
                   <img
                     src="https://images.deliveryhero.io/image/fd-bd/Products/5331721.jpg??width=400"
-                    alt={item.name}
+                    alt={item.item_name}
                     className="h-10 w-10 lg:h-20 lg:w-20 object-cover rounded-lg"
                   />
                   <div className="flex flex-col items-start justify-center ps-2">
                     <p className="text-xs lg:text-sm font-semibold text-gray-800">
-                      {item.name}
+                      {item.item_name}
                     </p>
                     <p className="text-xs lg:text-base font-medium text-primaryColor">
-                      ৳{item.sellPrice}
+                      ৳{item.price}
                     </p>
                   </div>
                 </div>
                 <div className="col-span-1 flex flex-col justify-center items-center gap-2">
                   <div className="flex items-center rounded-md h-fit">
-                    {quantities[item.id] === 1 ? (
+                    {quantities[item.item_code] === 1 ? (
                       <button
-                        onClick={() => decrement(item.id)}
+                        onClick={() => decrement(item.item_code)}
                         className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 cursor-not-allowed h-fit py-2 border ms-1.5"
                       >
                         <LuMinus className="text-xs" />
                       </button>
                     ) : (
                       <button
-                        onClick={() => decrement(item.id)}
+                        onClick={() => decrement(item.item_code)}
                         className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 h-fit py-2 border"
                       >
                         <LuMinus className="text-xs" />
                       </button>
                     )}
                     <span className="px-2 text-xs h-full flex items-center border">
-                      {quantities[item.id] || item.quantity}
+                      { item.quantity}
                     </span>
-                    {quantities[item.id] > 0 && (
+                    {quantities[item.item_code] > 0 && (
                       <button
-                        onClick={() => increment(item.id)}
+                        onClick={() => increment(item.item_code)}
                         className="px-2 rounded-md rounded-s-none bg-gray-200 h-fit py-2 border"
                       >
                         <FiPlus className="text-xs" />
                       </button>
                     )}
                     <button
-                      onClick={() => removeItem(item.id)} // Call removeItem function on click
+                      onClick={() => removeItem(item.item_code)} // Call removeItem function on click
                       className="text-redColor px-2 rounded-md text-xs bg-gray-200 h-fit py-2 ms-1.5 border"
                     >
                       <FaRegTrashCan />
@@ -389,6 +463,57 @@ const AllCarts = ({
             >
               Checkout
             </button>
+          </div>
+        </div>
+        
+      )}
+        {isCheckoutModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-lg font-semibold mb-4">Confirm Checkout</h2>
+            <label className="block mb-2">
+              Full Name (optional)
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full border rounded p-2 mt-1"
+              />
+            </label>
+            <label className="block mb-2">
+              Table ID <span className="text-red-500">*</span>
+              <select
+                value={defaultTableId || tableId}
+               
+                onChange={(e) => {
+                  setTableId(e.target.value);
+                  setTableIdError("");
+                }}
+                className={`w-full border rounded p-2 mt-1 ${tableIdError ? "border-red-500" : ""}`}
+              >
+                <option value="">Select Table ID</option>
+                {selectedTableId?.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
+              </select>
+              {tableIdError && <p className="text-red-500 text-xs mt-1">{tableIdError}</p>}
+            </label>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setCheckoutModalOpen(false)}
+                className="mr-2 bg-gray-200 px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCheckout}
+                className="bg-primaryColor px-4 py-2 rounded text-white"
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       )}
