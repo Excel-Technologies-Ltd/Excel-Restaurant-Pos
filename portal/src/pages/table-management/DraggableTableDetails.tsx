@@ -1,14 +1,9 @@
 import { styles } from "../../utilities/cn";
+import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
 
-interface TableData {
-  tableNo?: string;
-  seat?: string;
-  bgColor?: string;
-  shape?: string;
-}
 interface DraggableTableDetailsProps {
   setIsDetailsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedTable: TableData;
+  selectedTable: RestaurantTable;
 }
 
 const DraggableTableDetails = ({
@@ -25,19 +20,19 @@ const DraggableTableDetails = ({
         <div className="space-y-2 ">
           <RowData
             title="Table No"
-            value={selectedTable.tableNo ? selectedTable.tableNo : "--"}
+            value={selectedTable.table_no ? selectedTable.table_no.toString() : "--"}
           />
           <RowData title="Seat" value={selectedTable.seat + " Seats"} />
           <RowData
             title="Shape"
-            value={selectedTable.shape}
+            value={selectedTable.type ? selectedTable.type : "--"}
             valueClass="capitalize"
           />
           <div className="flex">
             <h2 className="w-40 font-semibold text-sm">Background Color</h2>
             <div
               className={styles(
-                `w-10 h-4 rounded bg-[${selectedTable?.bgColor}]`
+                `w-10 h-4 rounded bg-[${selectedTable?.bg_color}]`
               )}
             ></div>
           </div>
