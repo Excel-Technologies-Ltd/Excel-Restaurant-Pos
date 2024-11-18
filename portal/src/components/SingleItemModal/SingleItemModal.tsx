@@ -137,6 +137,16 @@ const addToCart = () => {
 
  
 };
+const getDescription = (description: string) => {
+  const hasHtml = (text) => /<\/?[a-z][\s\S]*>/i.test(text);
+  const stripHtml = (html) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || "";
+  };
+  const cleanContent = hasHtml(description) ? stripHtml(description) : description;
+  return cleanContent;
+}
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -195,7 +205,7 @@ const addToCart = () => {
             <div>
               <h2 className="font-semibold">{itemDetails?.item_name}</h2>
               <h2 className="text-xs font-semibold pt-1">Price ৳{itemDetails?.price}</h2>
-              <h2 className="text-xs text-gray-500 pt-2">{itemDetails?.description}</h2>
+              <h2 className="text-xs text-gray-500 pt-2">{getDescription(itemDetails?.description)}</h2>
             </div>
             {itemDetails?.has_variants && (
               <div className="border shadow p-2 rounded-md mt-4">

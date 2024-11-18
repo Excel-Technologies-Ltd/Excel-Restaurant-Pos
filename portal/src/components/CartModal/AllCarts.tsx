@@ -49,7 +49,7 @@ const AllCarts = ({
   const [fullName, setFullName] = useState<string>("");
   const [tableId, setTableId] = useState<string>("Table-001");
   const [tableIdError, setTableIdError] = useState<string>("");
-   const defaultTableId = 'Table-001'
+  const defaultTableId = localStorage.getItem("table_id") 
   const { data: tableIds } = useFrappeGetDocList('Restaurant Table', {
     fields: ["name"]
   })
@@ -205,6 +205,7 @@ const confirmCheckout = async () => {
   setNotes("");
   localStorage.removeItem("cart");
   localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
+  localStorage.removeItem("table_id")
   setShowPopup(true);
   toggleDrawer();
   updateCartCount();

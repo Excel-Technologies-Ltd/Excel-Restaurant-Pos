@@ -46,6 +46,7 @@ const ItemList = ({
 
   const { cartItems } = useCartContext();
 
+
   useEffect(() => {
     mutate();
   }, [selectedCategory, mutate]);
@@ -117,7 +118,6 @@ const ItemList = ({
             selectedItem={selectedItemName}
             toggleDrawer={toggleDrawer}
             isOpen={isOpen}
-            table_id={table_id}
           />
         )}
       </div>

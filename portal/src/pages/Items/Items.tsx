@@ -68,7 +68,7 @@ const table_id = searchParams.get("table_id");
   }, []);
 
 useEffect(() => {
-  console.log(table_id);
+ localStorage.setItem("table_id", table_id || "");
 }, [table_id])
 
   return (
