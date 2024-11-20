@@ -154,8 +154,11 @@ fixtures = [
 doc_events = {
 	"Item": {
 		# "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-		"on_update": "excel_restaurant_pos.doc_event.item.create_add_on_item"
-	}
+		"on_update": "excel_restaurant_pos.doc_event.item.create_add_on_item",
+	},
+    "Table Order": {
+        "on_submit": "excel_restaurant_pos.doc_event.pos_invoice.create_pos_invoice"
+    }
 }
 
 # Scheduled Tasks

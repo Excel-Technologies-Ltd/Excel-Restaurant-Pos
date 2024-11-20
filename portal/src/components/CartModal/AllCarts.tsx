@@ -190,28 +190,32 @@ const confirmCheckout = async () => {
   }
   try {
     const result = await createOrder({data:payload})
-    console.log("result", result);
+    if(result?.message?.status==="success"){
+      toast.success(result?.message?.message)
+      setDiscount("");
+      setDiscountType("percentage");
+      setDiscountError("");
+      setCartItems([]);
+      setQuantities({});
+      setNotes("");
+      localStorage.removeItem("cart");
+      localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
+      localStorage.removeItem("table_id")
+      setShowPopup(true);
+      toggleDrawer();
+      updateCartCount();
+    
+      // Close modal after checkout
+      setCheckoutModalOpen(false)
+    }else{
+      toast.error(result?.message?.message)
+    }
   } catch (error) {
     console.log("error", error);
   }
-  console.log("payload", payload);
 
   // Proceed with checkout
-  setDiscount("");
-  setDiscountType("percentage");
-  setDiscountError("");
-  setCartItems([]);
-  setQuantities({});
-  setNotes("");
-  localStorage.removeItem("cart");
-  localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
-  localStorage.removeItem("table_id")
-  setShowPopup(true);
-  toggleDrawer();
-  updateCartCount();
-
-  // Close modal after checkout
-  setCheckoutModalOpen(false);
+;
 };
 
   const closeModal = () => {

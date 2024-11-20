@@ -12,12 +12,19 @@ import { URLDashboard, URLItems, URLLogin } from "../../routes/routes-link";
 import { styles } from "../../utilities/cn";
 import nameProfile from "../../utilities/name-to-profile";
 import Calculator from "../calculator/Calculator";
-import { useFrappeAuth } from "frappe-react-sdk";
+import { useFrappeAuth, useFrappeGetDoc } from "frappe-react-sdk";
 
 type Props = {};
 
 const Header = ({ }: Props) => {
-  const { logout } = useFrappeAuth();
+  const { logout,currentUser } = useFrappeAuth();
+  const {data:getFullName}= useFrappeGetDoc("User", currentUser ?? undefined,["full_name"])
+
+  console.log({fullName:getFullName?.full_name});
+  // get First letter of first name and last name
+  const firstLetter = getFullName?.full_name?.split(" ")[0]?.[0] ?? "";
+
+  
   // action dispatcher
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -154,7 +161,7 @@ const Header = ({ }: Props) => {
                     {/* <FaUserCircle
                   className={`w-[30px] h-[30px] text-grayColor bg-lightBlue rounded-full cursor-pointer `}
                 /> */}
-                    {nameProfile("Name")}
+                    {firstLetter}
                   </div>
                 )}
 
@@ -163,14 +170,14 @@ const Header = ({ }: Props) => {
                   <p
                     className={`text-textColor text-xs text-start font-medium capitalize`}
                   >
-                    {"Full Name"}
+                    {getFullName?.full_name}
                   </p>
 
                   {/* USER ROLE */}
                   <p
                     className={`text-lightGrayColor text-[10px] font-medium text-start `}
                   >
-                    {"Admin"}
+                  
                   </p>
                 </div>
               </button>
@@ -184,9 +191,9 @@ const Header = ({ }: Props) => {
               >
                 {/* USER NAME AND ROLE */}
                 <div className="text-center flex flex-col border-b py-2 2xl:py-4 text-textColor capitalize text-sm 2xl:text-base">
-                  Full Name
-                  <span className="text-xs 2xl:text-sm text-lightGrayColor">
-                    {"Admin"}
+                    {getFullName?.full_name}
+                  <span className="lowercase text-xs 2xl:text-sm text-lightGrayColor">
+                    {currentUser}
                   </span>
                 </div>
 

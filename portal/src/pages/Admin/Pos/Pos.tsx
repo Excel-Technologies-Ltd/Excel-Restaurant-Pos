@@ -245,7 +245,6 @@ const Pos = () => {
 
 
     const payload={
-      customer:"Room One",
       item_list: formatedCartItems,
       table: tableId,
       full_name: fullName ? fullName : "Test User",
@@ -258,22 +257,29 @@ const Pos = () => {
     }
     try {
       const result = await createOrder({data:payload})
-      console.log("result", result);
+      console.log("result", result?.message?.status);
+      if(result?.message?.status==="success"){
+        toast.success(result?.message?.message)
+        setQuantities({});
+        localStorage.removeItem("cart");
+        localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
+    
+        setShowPopup(true);
+        setDiscountType("percentage");
+        setDiscount("");
+        setNotes("");
+        updateCartCount();
+    
+        setCheckoutModalOpen(false);
+      }else{
+        toast.error(result?.message?.message)
+      }
+  
     } catch (error) {
       console.log("error", error);
+      toast.error("Failed to create order");
     }
-    console.log("payload", payload);
-    setQuantities({});
-    localStorage.removeItem("cart");
-    localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
-
-    setShowPopup(true);
-    setDiscountType("percentage");
-    setDiscount("");
-    setNotes("");
-    updateCartCount();
-
-    setCheckoutModalOpen(false); // Close modal after checkout
+     // Close modal after checkout
   };
 useEffect(() => {
   mutate()

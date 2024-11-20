@@ -1,4 +1,3 @@
-
 import frappe
 @frappe.whitelist(allow_guest=True)
 def test():
@@ -198,11 +197,18 @@ def create_order(data):
     :return: JSON response with success status or error message.
     """
     try:
+        check_order_exists = frappe.db.exists("Table Order", {
+            "table": data["table"],
+            "status": ["not in", ["Completed", "Canceled"]]
+        })
+        if check_order_exists:
+            return {"status": "error", "message": _("Order already exists for this table")}
         # Parse incoming JSON data
         order_data = frappe.parse_json(data)
+        settings = frappe.get_doc("Restaurant Settings")
         
         # Mandatory fields check
-        required_fields = ["customer", "table", "amount", "total_amount", "item_list"]
+        required_fields = ["table", "amount", "total_amount", "item_list"]
         for field in required_fields:
             if not order_data.get(field):
                 return {"status": "error", "message": _("Field '{0}' is required.").format(field)}
@@ -210,7 +216,7 @@ def create_order(data):
         # Create a new 'Table Order' document
         order_doc = frappe.get_doc({
             "doctype": "Table Order",
-            "customer": order_data["customer"],
+            "customer": settings.customer,
             "doc_status": "0",
             "table": order_data["table"],
             # "pos_profile": order_data["pos_profile"],
@@ -257,8 +263,13 @@ def get_order_list():
 def get_order_item_list(order_id):
     return frappe.get_all("Table Order Item",filters={"parent":order_id},fields=['item','qty','amount','rate'],order_by="creation desc")
 
-@frappe.whitelist()
-def get_roles():
-    roles = frappe.get_roles()
-    print(roles)
+@frappe.whitelist(allow_guest=True)
+def get_roles(user):
+    roles = frappe.db.sql("""
+        SELECT `tabHas Role`.`role` AS `Role`
+        FROM `tabHas Role`
+        JOIN `tabUser` ON `tabUser`.`name` = `tabHas Role`.`parent`
+        WHERE `tabUser`.`name` = %(user)s
+    """, {"user": user}, as_dict=True)
+    
     return roles

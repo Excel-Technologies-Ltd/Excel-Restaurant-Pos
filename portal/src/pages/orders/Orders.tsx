@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { useFrappeAuth, useFrappeDocTypeEventListener, useFrappeGetCall, useFrappeGetDocList, useFrappeUpdateDoc } from "frappe-react-sdk";
+import React, { useEffect, useState } from "react";
+import { useFrappeAuth, useFrappeDocTypeEventListener, useFrappeDocumentEventListener, useFrappeGetCall, useFrappeGetDocList, useFrappeUpdateDoc } from "frappe-react-sdk";
 import { FiEdit } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 // Example of getting the user roles (this would typically come from your authentication context)
 
@@ -8,8 +9,9 @@ import { FiEdit } from "react-icons/fi";
 const Orders = () => {
   // Define the workflow states and transitions
   const {currentUser} = useFrappeAuth();
-  const {data:roles} = useFrappeGetCall("excel_restaurant_pos.api.item.get_roles")
-  const userRoles = roles?.message
+  const {data:roles} = useFrappeGetCall(`excel_restaurant_pos.api.item.get_roles?user=${currentUser}`)
+  const userRoles = roles?.message?.map((role:any)=>role?.Role)
+  console.log({userRoles});
 
   console.log(currentUser);
   const states = [
@@ -26,7 +28,7 @@ const Orders = () => {
   const transitions = [
     { id: 1, state: "Order Placed", action: "Accept", nextState: "Work in progress", allowed: "Restaurant Waiter" },
     { id: 2, state: "Order Placed", action: "Reject", nextState: "Canceled", allowed: "Restaurant Waiter" },
-    { id: 3, state: "Work in progress", action: "Ready for Pickup", nextState: "Ready for Pickup", allowed: "Restaurant Chef" },
+    { id: 3, state: "Work in progress", action: "Ready", nextState: "Ready for Pickup", allowed: "Restaurant Chef" },
     { id: 3, state: "Work in progress", action: "Reject", nextState: "Canceled", allowed: "Restaurant Chef" },
     { id: 4, state: "Ready for Pickup", action: "Completed", nextState: "Completed", allowed: "Restaurant Manager" },
   ];
@@ -53,6 +55,10 @@ const Orders = () => {
   };
   useFrappeDocTypeEventListener("Table Order", (eventData) => {
     console.log("Event data:", eventData);
+});
+useFrappeDocumentEventListener("Table Order", "on_update", (eventData) => {
+  mutate();
+  console.log("Event data:", eventData);
 });
   // Handle order status change based on allowed transitions
   const { updateDoc } = useFrappeUpdateDoc(); // Hook to update the order document
@@ -89,7 +95,31 @@ const Orders = () => {
   // Filter orders based on user roles and valid statuses
 
 
- // Filter orders based on roles and status
+
+ useEffect(() => {
+  const intervalId = setInterval(() => {
+    mutate();
+  }, 10000);
+
+  // Cleanup function to clear the interval on unmount
+  return () => clearInterval(intervalId);
+}, [mutate]);
+
+
+useEffect(()=>{
+  console.log("userRoles",userRoles);
+  // find Order Placed
+  const orderPlaced = orders?.filter((order:any)=>order?.status==="Order Placed")
+  const checkManagerOrWaiter = userRoles?.includes("Restaurant Manager") || userRoles?.includes("Restaurant Waiter")
+  const checkChef = userRoles?.includes("Restaurant Chef")
+  if(checkManagerOrWaiter && orderPlaced?.length>0){
+    toast.success("There is an order placed but not sent to kitchen yet")
+  }
+  const WorkInProgress = orders?.filter((order:any)=>order?.status==="Work in progress")
+  if(checkManagerOrWaiter && WorkInProgress?.length>0){
+    toast.success("There is an order in progress")
+  }
+},[orders])
 
   return (
     <div className="p-4">
