@@ -36,6 +36,7 @@ const Pos = () => {
   );
   const [foodCategories, setFoodCategories] = useState<any[]>([])
   const [notes, setNotes] = useState<string>("");
+  const [isParcel, setIsParcel] = useState<boolean>(false);
 
   // useFrappeGetCall
   const { data: categories, isLoading: isLoadingCategories } = useFrappeGetCall('excel_restaurant_pos.api.item.get_category_list', {
@@ -229,11 +230,11 @@ const Pos = () => {
   };
 
   const confirmCheckout = async () => {
-    if (!tableId.trim()) {
-      setTableIdError("Table ID is required.");
+
+    if (!isParcel && !tableId) {
+      toast.error("Please select a table ID.");
       return;
     }
-    
     
     const getCartItems = JSON.parse(localStorage.getItem("cart") || "[]");
     const formatedCartItems = getCartItems?.map((item: any) => ({
@@ -246,20 +247,21 @@ const Pos = () => {
 
     const payload={
       item_list: formatedCartItems,
-      table: tableId,
+      table: tableId ? tableId : "",
       full_name: fullName ? fullName : "Test User",
       remarks: notes,
       discount_type: discountType,
       total_amount: payableAmount,
       tax: tax,
       discount: discountAmount,
-      amount: subtotal
+      amount: subtotal,
+      status:"Work in progress"
     }
     try {
       const result = await createOrder({data:payload})
       console.log("result", result?.message?.status);
       if(result?.message?.status==="success"){
-        toast.success(result?.message?.message)
+        // toast.success(result?.message?.message)
         setQuantities({});
         localStorage.removeItem("cart");
         localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
@@ -269,6 +271,8 @@ const Pos = () => {
         setDiscount("");
         setNotes("");
         updateCartCount();
+        setIsParcel(false)
+        setTableId("")
     
         setCheckoutModalOpen(false);
       }else{
@@ -505,7 +509,17 @@ useEffect(() => {
                 className="w-full border rounded p-2 mt-1"
               />
             </label>
-            <label className="block mb-2">
+            <label className="block my-3">
+              <input
+                type="checkbox"
+                checked={isParcel}
+                onChange={(e) => setIsParcel(e.target.checked)}
+      />
+              Is Parcel?
+            </label>
+            {
+              !isParcel && (
+                <label className="block mb-2">
               Table ID <span className="text-red-500">*</span>
               <select
                 value={tableId}
@@ -524,6 +538,8 @@ useEffect(() => {
               </select>
               {tableIdError && <p className="text-red-500 text-xs mt-1">{tableIdError}</p>}
             </label>
+              )
+            }
             <div className="flex justify-end mt-4">
               <button onClick={() => setCheckoutModalOpen(false)} className="mr-2 bg-gray-200 px-4 py-2 rounded">
                 Cancel

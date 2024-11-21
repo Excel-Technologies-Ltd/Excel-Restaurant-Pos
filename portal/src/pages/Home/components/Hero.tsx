@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useCartContext } from "../../../context/cartContext";
 import { Food, items } from "../../../data/items";
-import { SelectCartProps } from "../../../components/ItemList/ItemList";
 import SingleItemModal from "../../../components/SingleItemModal/SingleItemModal";
 import Carousel, { CarouselItem } from "./Carousel";
 import Catering from "@/images/Catering.png";
@@ -40,8 +39,8 @@ const Hero = () => {
     toggleDrawer();
   };
 
-  const getItemQuantity = (itemId: number) => {
-    const cartItem = cartItems?.find((cartItem) => cartItem.item_code === itemId);
+  const getItemQuantity = (itemId: string) => {
+    const cartItem = cartItems?.find((cartItem:any) => cartItem?.item_code == itemId);
     return cartItem ? cartItem.quantity : 0;
   };
 

@@ -132,7 +132,7 @@ useEffect(()=>{
             {/* Order Header */}
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-semibold">{order?.name}</h3>
-              <div className="text-sm text-gray-500">{order.table}</div>
+              <div className="text-sm text-gray-500">{order?.table ? order?.table : "Parcel"}</div>
             </div>
 
             {/* Order Details */}
@@ -140,12 +140,19 @@ useEffect(()=>{
               <p className="font-semibold">Total: ৳{order?.total_amount}</p>
               <p className="font-semibold">Status: {order?.status}</p>
             </div>
+            {/* Special Instructions */}
+    {order?.remarks && (
+      <div className="mt-2 text-sm ">
+        <strong>Note:</strong> {order?.remarks}
+      </div>
+    )}
+
 
             {/* Order Item List */}
             <div className="mt-4">
               <h4 className="font-semibold mb-2">Items:</h4>
               <ul className="list-none space-y-2">
-                {order.item_list?.map((item, index) => (
+                {order?.item_list?.map((item, index) => (
                   <li key={index} className="flex justify-between text-xs">
                     <span>{item?.item}</span>
                     <span>৳{item?.rate} x {item?.qty}</span>

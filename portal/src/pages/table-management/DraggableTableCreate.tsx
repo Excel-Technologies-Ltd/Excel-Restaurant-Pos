@@ -32,7 +32,7 @@ const DraggableTableCreate = ({
     >
       <div className="bg-white p-6 rounded-lg shadow-lg min-w-full xsm:min-w-[400px]">
         <h2 className="text-xl mb-4 font-semibold">
-          {newTableData.type
+          {newTableData?.type
             ? `Create ${newTableData.type} ${newTableData.type === "Road" ? "" : "table"
             }`
             : "Create table"}
@@ -54,6 +54,7 @@ const DraggableTableCreate = ({
               } else {
                 setNewTableData({
                   ...newTableData,
+                  type: e.target.value as TableType,
                   bg_color: "#155e75",
                 });
               }
@@ -77,7 +78,7 @@ const DraggableTableCreate = ({
             ))}
           </Select>
 
-          <Input
+          {/* <Input
             label="Table No"
             value={newTableData.table_no}
             onChange={(e) =>
@@ -86,7 +87,7 @@ const DraggableTableCreate = ({
                 table_no: e.target.value,
               })
             }
-          />
+          /> */}
           <Input
             label="Seat"
             value={newTableData.seat}

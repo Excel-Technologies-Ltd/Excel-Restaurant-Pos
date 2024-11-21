@@ -18,7 +18,7 @@ import DraggableTableCreate from "./DraggableTableCreate";
 import DraggableTableDetails from "./DraggableTableDetails";
 import DraggableTableEdit from "./DraggableTableEdit";
 import ModalRightToLeft from "./ModalRightToLeft";
-import { useFrappeCreateDoc, useFrappeDocTypeEventListener, useFrappeGetDocList, useFrappeUpdateDoc } from "frappe-react-sdk";
+import { useFrappeCreateDoc, useFrappeDeleteDoc, useFrappeDocTypeEventListener, useFrappeGetDoc, useFrappeGetDocList, useFrappeUpdateDoc } from "frappe-react-sdk";
 import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
 
 // Interface for table shape
@@ -51,23 +51,27 @@ const DraggableTable: React.FC = () => {
   const tableToUpdate = useRef<RestaurantTable[]>([]);
   const [selectedFloor, setSelectedFloor] = useState<string>('')
   const { updateDoc } = useFrappeUpdateDoc<RestaurantTable>();
+  const {deleteDoc}=useFrappeDeleteDoc()
 
-  const { data: company } = useFrappeGetDocList("Company")
+  const {data,error}=useFrappeGetDoc('Restaurant Settings', 'Restaurant Settings', {
+    fields: ['*']
+  })
+  const company=data?.company
   const { data: floors, mutate: mutateFloors } = useFrappeGetDocList("Restaurant Floor");
   const { data: tablesFromERP, mutate: mutateTables } = useFrappeGetDocList("Restaurant Table", {
     fields: ["*"],
     filters: [
-      ["company", "=", company?.[0]?.name],
+      ["company", "=", company],
       ["restaurant_floor", "=", selectedFloor]
     ]
   })
 
   useFrappeDocTypeEventListener("Restaurant Floor", async (doc) => {
     await mutateFloors();
-    console.log("doc", doc);
+   
   });
-  // console.log("selectedFloor", selectedFloor);
 
+  // console.log("selectedFloor", selectedFloor);
 
 
   const updateTable = async () => {
@@ -86,6 +90,8 @@ const DraggableTable: React.FC = () => {
   }
 
   useEffect(() => {
+    console.log("selectedFloor in useEffect", selectedFloor);
+    mutateTables()
     if (selectedFloor) {
       console.log("selectedFloor in useEffect", selectedFloor);
       setNewTableData(prev => ({
@@ -93,6 +99,7 @@ const DraggableTable: React.FC = () => {
         restaurant_floor: selectedFloor
       }))
     }
+   
   }, [selectedFloor])
 
   const { createDoc, } = useFrappeCreateDoc<RestaurantTable>()
@@ -154,7 +161,7 @@ const DraggableTable: React.FC = () => {
     breadth: 80,
     position: { x: 10, y: 55 },
     seat: "",
-    company: company?.[0]?.name,
+    company: company,
     restaurant_floor: '',
     rotation: '',
     bg_color: newTableShape == "Road" ? "#BFBFBF" : "#155e75",
@@ -164,7 +171,10 @@ const DraggableTable: React.FC = () => {
   const [newTableData, setNewTableData] = useState<RestaurantTable>(
     initialNewTable
   );
-
+const {data:order}=useFrappeGetDocList('Table Order', {
+  fields:["*"]
+})
+console.log("order", order);
 
 
   // console.log({ tables });
@@ -226,11 +236,6 @@ const DraggableTable: React.FC = () => {
   const createTable = () => {
     // console.log("newTableData in createTable", newTableData);
 
-    if (!company?.[0]?.name) {
-      toast.error("Please create a company first.");
-      return;
-    }
-
     if (!newTableData?.seat || !newTableData?.restaurant_floor || !newTableData?.type) {
       toast.error("Please fill in all the details before creating the table.");
       return;
@@ -257,8 +262,15 @@ const DraggableTable: React.FC = () => {
     setNewTableData(initialNewTable);
   };
 
-  const deleteTable = (idx: number) => {
-    setTables((prev) => prev.filter((table) => table.idx !== idx));
+  const deleteTable = async (name: string) => {
+    try {
+
+      await deleteDoc("Restaurant Table", name)
+      toast.success("Table deleted successfully.")
+      mutateTables()
+    } catch (error:any) {
+      toast.error(error?.message)
+    }
   };
 
   const handleEdit = (name: string) => {
@@ -290,6 +302,9 @@ const DraggableTable: React.FC = () => {
       setIsEditModalOpen(false);
     }
   };
+
+  console.log({tables});
+  
 
   const openFloorCreateModal = () => {
     setIsOpenFloorCreate(true);
@@ -699,8 +714,8 @@ const DraggableTable: React.FC = () => {
               {/* End Circle table */}
 
               <button
-                onClick={() => deleteTable(table?.idx as number)}
-                onTouchEnd={() => deleteTable(table?.idx as number)}
+                onClick={() => deleteTable(table?.name as string)}
+                onTouchEnd={() => deleteTable(table?.name as string)}
                 className={styles(
                   "absolute top-0 right-0 p-1 bg-red-500 text-white rounded invisible group-hover:visible",
                   {
@@ -773,7 +788,7 @@ const DraggableTable: React.FC = () => {
       )}
 
       {isOpenFloorCreate && (
-        <CreateFloor setIsOpenFloorCreate={setIsOpenFloorCreate} />
+        <CreateFloor setIsOpenFloorCreate={setIsOpenFloorCreate} mutate={mutateFloors} />
       )}
 
       {rightModalOpen && (

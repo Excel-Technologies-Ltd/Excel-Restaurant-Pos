@@ -197,18 +197,18 @@ def create_order(data):
     :return: JSON response with success status or error message.
     """
     try:
-        check_order_exists = frappe.db.exists("Table Order", {
-            "table": data["table"],
-            "status": ["not in", ["Completed", "Canceled"]]
-        })
-        if check_order_exists:
-            return {"status": "error", "message": _("Order already exists for this table")}
+        # check_order_exists = frappe.db.exists("Table Order", {
+        #     "table": data["table"],
+        #     "status": ["not in", ["Completed", "Canceled"]]
+        # })
+        # if check_order_exists:
+        #     return {"status": "error", "message": _("Order already exists for this table")}
         # Parse incoming JSON data
         order_data = frappe.parse_json(data)
         settings = frappe.get_doc("Restaurant Settings")
         
         # Mandatory fields check
-        required_fields = ["table", "amount", "total_amount", "item_list"]
+        required_fields = [ "amount", "total_amount", "item_list"]
         for field in required_fields:
             if not order_data.get(field):
                 return {"status": "error", "message": _("Field '{0}' is required.").format(field)}

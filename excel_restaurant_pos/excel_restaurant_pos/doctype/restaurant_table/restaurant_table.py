@@ -36,3 +36,12 @@ class RestaurantTable(Document):
         filename = f"{self.name}_QRCode.png"
         self.file_path = filename
         save_file(filename, qr_bytes, self.doctype, self.name, is_private=0)
+    def before_trash(self):
+        print("self", self)
+        if self.name:
+            # check order for this table
+            order=frappe.get_doc('Table Order', {
+                'table':self.name
+            })
+            if order:
+                frappe.throw(_("Order is present for this table"))

@@ -48,8 +48,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Table",
-   "options": "Restaurant Table",
-   "reqd": 1
+   "options": "Restaurant Table"
   },
   {
    "fieldname": "floor",
@@ -136,7 +135,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-17 18:56:21.566554",
+ "modified": "2024-11-21 11:40:05.719299",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Table Order",

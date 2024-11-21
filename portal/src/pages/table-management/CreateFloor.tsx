@@ -1,18 +1,22 @@
 import { useState } from "react";
 import Input from "../../components/form-elements/Input";
-import { useFrappeCreateDoc, useFrappeGetDocList } from 'frappe-react-sdk'
+import { useFrappeCreateDoc, useFrappeGetDoc, useFrappeGetDocList } from 'frappe-react-sdk'
 import { RestaurantFloor } from "../../types/ExcelRestaurantPos/RestaurantFloor";
+import toast from "react-hot-toast/headless";
 
 type Props = {
   setIsOpenFloorCreate: React.Dispatch<React.SetStateAction<boolean>>;
+  mutate:any
 };
 
 
-const CreateFloor = ({ setIsOpenFloorCreate }: Props) => {
+const CreateFloor = ({ setIsOpenFloorCreate ,mutate }: Props) => {
   const [floorName, setFloorName] = useState("");
 
-  const { data } = useFrappeGetDocList("Company")
-  console.log(data?.[0]?.name)
+  const {data}=useFrappeGetDoc('Restaurant Settings', 'Restaurant Settings', {
+    fields: ['*']
+  })
+  const company=data?.company
 
   const { createDoc, loading, error } = useFrappeCreateDoc<RestaurantFloor>()
 
@@ -22,23 +26,29 @@ const CreateFloor = ({ setIsOpenFloorCreate }: Props) => {
   // State to manage the form data
 
 
-  const createFloor = () => {
+  const createFloor = async () => {
     // Here you would typically handle the floor creation logic,
     // such as making an API call to save the floor data.
     if (!floorName) return
 
-    createDoc("Restaurant Floor", {
-      floor: floorName,
-      company: data?.[0]?.name,
-
-    })
-
-    // Reset the form
-    setFloorName("");
-
-
-    // Close the modal
-    setIsOpenFloorCreate(false);
+    try {
+      await createDoc("Restaurant Floor", {
+        floor: floorName,
+        company: company,
+  
+      })
+  
+      // Reset the form
+      setFloorName("");
+  
+  
+      // Close the modal
+      setIsOpenFloorCreate(false);
+      // toast.success("Floor created successfully")
+      mutate()
+    } catch (error:any) {
+      toast.error(error?.message)
+    }
   };
 
   return (

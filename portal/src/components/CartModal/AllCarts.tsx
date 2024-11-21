@@ -47,7 +47,7 @@ const AllCarts = ({
   const { updateCartCount, cartCount } = useCartContext();
   const [isCheckoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [fullName, setFullName] = useState<string>("");
-  const [tableId, setTableId] = useState<string>("Table-001");
+  const [tableId, setTableId] = useState<string>("");
   const [tableIdError, setTableIdError] = useState<string>("");
   const defaultTableId = localStorage.getItem("table_id") 
   const { data: tableIds } = useFrappeGetDocList('Restaurant Table', {
@@ -163,10 +163,6 @@ const decrement = (item_code: string) => {
   setCheckoutModalOpen(true);
 };
 const confirmCheckout = async () => {
-  if (!tableId.trim()) {
-    setTableIdError("Table ID is required.");
-    return;
-  }
   const getCartItems = JSON.parse(localStorage.getItem("cart") || "[]");
   const formatedCartItems = getCartItems?.map((item: any) => ({
     item: item?.item_code,
@@ -179,7 +175,7 @@ const confirmCheckout = async () => {
   const payload={
     customer:"Room One",
     item_list: formatedCartItems,
-    table: tableId,
+    table: tableId ? tableId : localStorage.getItem("table_id"),
     full_name: fullName ? fullName : "Test User",
     remarks: notes,
     discount_type: discountType,
@@ -191,7 +187,7 @@ const confirmCheckout = async () => {
   try {
     const result = await createOrder({data:payload})
     if(result?.message?.status==="success"){
-      toast.success(result?.message?.message)
+      // toast.success(result?.message?.message)
       setDiscount("");
       setDiscountType("percentage");
       setDiscountError("");
@@ -301,6 +297,9 @@ const confirmCheckout = async () => {
       foodsBody?.classList.add("modal-scrollable");
     };
   }, [isOpen]);
+  useEffect(()=>{
+    setTableId(defaultTableId || "")
+  },[defaultTableId])
 
   return (
     <ItemsDrawer isOpen={isOpen} isLargeDevice={isLargeDevice}>
@@ -329,53 +328,53 @@ const confirmCheckout = async () => {
         )}
         <div className="mt-3">
           {cartItems?.map((item) => (
-            <div key={item.item_code} className="border p-2 rounded-md mb-3 w-full">
+            <div key={item?.item_code} className="border p-2 rounded-md mb-3 w-full">
               <div className="flex justify-between">
                 <div className="flex">
                   <img
                     src="https://images.deliveryhero.io/image/fd-bd/Products/5331721.jpg??width=400"
-                    alt={item.item_name}
+                    alt={item?.item_name}
                     className="h-10 w-10 lg:h-20 lg:w-20 object-cover rounded-lg"
                   />
                   <div className="flex flex-col items-start justify-center ps-2">
                     <p className="text-xs lg:text-sm font-semibold text-gray-800">
-                      {item.item_name}
+                      {item?.item_name}
                     </p>
                     <p className="text-xs lg:text-base font-medium text-primaryColor">
-                      ৳{item.price}
+                      ৳{item?.price}
                     </p>
                   </div>
                 </div>
                 <div className="col-span-1 flex flex-col justify-center items-center gap-2">
                   <div className="flex items-center rounded-md h-fit">
-                    {quantities[item.item_code] === 1 ? (
+                    {quantities[item?.item_code] === 1 ? (
                       <button
-                        onClick={() => decrement(item.item_code)}
+                        onClick={() => decrement(item?.item_code)}
                         className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 cursor-not-allowed h-fit py-2 border ms-1.5"
                       >
                         <LuMinus className="text-xs" />
                       </button>
                     ) : (
                       <button
-                        onClick={() => decrement(item.item_code)}
+                        onClick={() => decrement(item?.item_code)}
                         className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 h-fit py-2 border"
                       >
                         <LuMinus className="text-xs" />
                       </button>
                     )}
                     <span className="px-2 text-xs h-full flex items-center border">
-                      { item.quantity}
+                      { item?.quantity}
                     </span>
-                    {quantities[item.item_code] > 0 && (
+                    {quantities[item?.item_code] > 0 && (
                       <button
-                        onClick={() => increment(item.item_code)}
+                        onClick={() => increment(item?.item_code)}
                         className="px-2 rounded-md rounded-s-none bg-gray-200 h-fit py-2 border"
                       >
                         <FiPlus className="text-xs" />
                       </button>
                     )}
                     <button
-                      onClick={() => removeItem(item.item_code)} // Call removeItem function on click
+                      onClick={() => removeItem(item?.item_code)} // Call removeItem function on click
                       className="text-redColor px-2 rounded-md text-xs bg-gray-200 h-fit py-2 ms-1.5 border"
                     >
                       <FaRegTrashCan />
@@ -485,7 +484,7 @@ const confirmCheckout = async () => {
                 className="w-full border rounded p-2 mt-1"
               />
             </label>
-            <label className="block mb-2">
+            {/* <label className="block mb-2">
               Table ID <span className="text-red-500">*</span>
               <select
                 value={defaultTableId || tableId}
@@ -504,7 +503,7 @@ const confirmCheckout = async () => {
                 ))}
               </select>
               {tableIdError && <p className="text-red-500 text-xs mt-1">{tableIdError}</p>}
-            </label>
+            </label> */}
             <div className="flex justify-end mt-4">
               <button
                 onClick={() => setCheckoutModalOpen(false)}

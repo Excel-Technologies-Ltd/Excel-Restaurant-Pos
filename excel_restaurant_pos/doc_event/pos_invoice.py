@@ -13,6 +13,7 @@ def create_pos_invoice(data, method=None):
         invoice_doc = frappe.get_doc({
             "doctype": "POS Invoice",
             "customer": data.get("customer"),
+            "docstatus": 1,
             "customer_name": data.get("customer_name"),
             "company": data.get("company"),
             "posting_date": frappe.utils.today(),
@@ -59,7 +60,7 @@ def create_pos_invoice(data, method=None):
         invoice_doc.insert(ignore_permissions=True)
 
         # Optionally, submit the document if needed
-        invoice_doc.submit(ignore_permissions=True)
+        # invoice_doc.submit(ignore_permissions=True)
 
         return {
             "status": "success",

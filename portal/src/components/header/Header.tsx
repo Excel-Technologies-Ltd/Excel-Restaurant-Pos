@@ -161,7 +161,7 @@ const Header = ({ }: Props) => {
                     {/* <FaUserCircle
                   className={`w-[30px] h-[30px] text-grayColor bg-lightBlue rounded-full cursor-pointer `}
                 /> */}
-                    {firstLetter}
+                    {firstLetter || "D"}
                   </div>
                 )}
 
@@ -207,12 +207,16 @@ const Header = ({ }: Props) => {
                 </NavLink>
 
                 {/* LOGOUT */}
-                <button
-                  className="border-b py-2 w-full 2xl:py-3 text-textColor text-[11px] 2xl:text-[13px] flex hover:bg-primaryColor hover:text-white rounded-none px-5 items-center gap-2"
-                  onClick={handleLogout}
-                >
-                  <BiLogOut /> Logout
-                </button>
+                {
+                  currentUser && (
+                    <button
+                      className="border-b py-2 w-full 2xl:py-3 text-textColor text-[11px] 2xl:text-[13px] flex hover:bg-primaryColor hover:text-white rounded-none px-5 items-center gap-2"
+                      onClick={handleLogout}
+                    >
+                      <BiLogOut /> Logout
+                    </button>
+                  )
+                }
               </div>
             </div>
           </div>
