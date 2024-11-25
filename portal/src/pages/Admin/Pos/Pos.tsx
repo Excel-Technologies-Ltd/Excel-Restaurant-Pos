@@ -16,7 +16,7 @@ import TruncateText from "../../../components/common/TruncateText";
 import { useCartContext } from "../../../context/cartContext";
 import useWindowWidth from "../../../hook/useWindowWidth";
 import { Food } from "../../../data/items";
-import { useFrappeGetCall, useFrappeGetDocList, useFrappePostCall } from "frappe-react-sdk";
+import { useFrappeDocTypeEventListener, useFrappeDocumentEventListener, useFrappeGetCall, useFrappeGetDocList, useFrappePostCall } from "frappe-react-sdk";
 import { useSearchParams } from "react-router-dom";
 
 
@@ -285,6 +285,10 @@ const Pos = () => {
     }
      // Close modal after checkout
   };
+  useFrappeDocTypeEventListener("Item",()=>{
+    console.log("New Created Item")
+    mutate()
+  }),
 useEffect(() => {
   mutate()
 }, [selectedCategory])

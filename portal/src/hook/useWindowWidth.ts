@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 function useWindowWidth(screenSize: number) {
+  // console.log("screenSize", screenSize);
   const [onSmallScreen, setOnSmallScreen] = useState(false);
 
   const checkScreenSize = useCallback(() => {

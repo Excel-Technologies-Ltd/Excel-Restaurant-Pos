@@ -53,13 +53,7 @@ const Orders = () => {
       (trans) => trans?.state === currentState && roles?.includes(trans?.allowed)
     );
   };
-  useFrappeDocTypeEventListener("Table Order", (eventData) => {
-    console.log("Event data:", eventData);
-});
-useFrappeDocumentEventListener("Table Order", "on_update", (eventData) => {
-  mutate();
-  console.log("Event data:", eventData);
-});
+
   // Handle order status change based on allowed transitions
   const { updateDoc } = useFrappeUpdateDoc(); // Hook to update the order document
 
@@ -91,35 +85,29 @@ useFrappeDocumentEventListener("Table Order", "on_update", (eventData) => {
       console.log("Invalid transition for the current state and role.");
     }
   };
-
+  useFrappeDocTypeEventListener("Table Order", () => {
+   mutate()
+   console.log("Order List Updated")
+});
+useFrappeDocumentEventListener("Table Order", "on_update", (eventData) => {
+  mutate();
+  console.log("Event data:", eventData);
+});
   // Filter orders based on user roles and valid statuses
 
 
 
- useEffect(() => {
-  const intervalId = setInterval(() => {
-    mutate();
-  }, 10000);
+//  useEffect(() => {
+//   const intervalId = setInterval(() => {
+//     mutate();
+//   }, 10000);
 
-  // Cleanup function to clear the interval on unmount
-  return () => clearInterval(intervalId);
-}, [mutate]);
+//   // Cleanup function to clear the interval on unmount
+//   return () => clearInterval(intervalId);
+// }, [mutate]);
 
 
-useEffect(()=>{
-  console.log("userRoles",userRoles);
-  // find Order Placed
-  const orderPlaced = orders?.filter((order:any)=>order?.status==="Order Placed")
-  const checkManagerOrWaiter = userRoles?.includes("Restaurant Manager") || userRoles?.includes("Restaurant Waiter")
-  const checkChef = userRoles?.includes("Restaurant Chef")
-  if(checkManagerOrWaiter && orderPlaced?.length>0){
-    toast.success("There is an order placed but not sent to kitchen yet")
-  }
-  const WorkInProgress = orders?.filter((order:any)=>order?.status==="Work in progress")
-  if(checkManagerOrWaiter && WorkInProgress?.length>0){
-    toast.success("There is an order in progress")
-  }
-},[orders])
+
 
   return (
     <div className="p-4">

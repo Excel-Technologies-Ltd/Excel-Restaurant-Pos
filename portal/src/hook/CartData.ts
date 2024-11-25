@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 const useCartCount = () => {
+  console.log("useCartCount");
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {

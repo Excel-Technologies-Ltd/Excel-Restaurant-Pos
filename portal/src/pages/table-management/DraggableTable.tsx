@@ -18,7 +18,7 @@ import DraggableTableCreate from "./DraggableTableCreate";
 import DraggableTableDetails from "./DraggableTableDetails";
 import DraggableTableEdit from "./DraggableTableEdit";
 import ModalRightToLeft from "./ModalRightToLeft";
-import { useFrappeCreateDoc, useFrappeDeleteDoc, useFrappeDocTypeEventListener, useFrappeGetDoc, useFrappeGetDocList, useFrappeUpdateDoc } from "frappe-react-sdk";
+import { useFrappeCreateDoc, useFrappeDeleteDoc, useFrappeDocTypeEventListener, useFrappeDocumentEventListener, useFrappeGetCall, useFrappeGetDoc, useFrappeGetDocList, useFrappeUpdateDoc } from "frappe-react-sdk";
 import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
 
 // Interface for table shape
@@ -52,6 +52,10 @@ const DraggableTable: React.FC = () => {
   const [selectedFloor, setSelectedFloor] = useState<string>('')
   const { updateDoc } = useFrappeUpdateDoc<RestaurantTable>();
   const {deleteDoc}=useFrappeDeleteDoc()
+  const [draggableTable, setDraggableTable] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null); // Order details for modal
+  const [showOrderModal, setShowOrderModal] = useState<boolean>(false); // Modal visibility
+
 
   const {data,error}=useFrappeGetDoc('Restaurant Settings', 'Restaurant Settings', {
     fields: ['*']
@@ -78,16 +82,21 @@ const DraggableTable: React.FC = () => {
     try {
       for (const table of tableToUpdate.current) {
         console.log("table", table);
-        if (table.name) {
+        if (table?.name) {
           await updateDoc("Restaurant Table", table.name, table);
         }
       }
       await mutateTables();
+      toast.success("Table updated successfully.")
       tableToUpdate.current = [];
     } catch (error) {
       console.log("error in updateTable", error);
     }
   }
+  const { data: result ,mutate} = useFrappeGetCall("excel_restaurant_pos.api.item.get_order_list",["*"])
+  const orders = result?.message
+
+  
 
   useEffect(() => {
     console.log("selectedFloor in useEffect", selectedFloor);
@@ -115,27 +124,46 @@ const DraggableTable: React.FC = () => {
 
 
 
+  // useEffect(() => {
+  //   if (floors?.length) {
+  //     if (!selectedFloor)
+  //       setSelectedFloor(floors?.[0]?.name)
+  //   }
+  //   if (tablesFromERP) {
+  //     const updatedTables = tablesFromERP?.map((table) => ({
+  //       ...table,
+  //       length: +table.length,
+  //       breadth: +table.breadth,
+  //       position: JSON.parse(table.position)
+  //     }))
+  //     setTables(updatedTables)
+  //   }
+  // }, [floors, selectedFloor, tablesFromERP])
   useEffect(() => {
-    if (floors?.length) {
+    // Initialize tables with booking status
+    if (tablesFromERP && orders) {
+          if (floors?.length) {
       if (!selectedFloor)
         setSelectedFloor(floors?.[0]?.name)
     }
-    if (tablesFromERP) {
-      const updatedTables = tablesFromERP.map((table) => ({
-        ...table,
-        length: +table.length,
-        breadth: +table.breadth,
-        position: JSON.parse(table.position)
-      }))
-      setTables(updatedTables)
+      const updatedTables = tablesFromERP?.map((table) => {
+        const isBooked = orders?.some((order:any) => order?.table === table?.name);
+        return {
+          ...table,
+          length: +table.length,
+          breadth: +table.breadth,
+          position: JSON.parse(table.position),
+          isBooked,
+        };
+      });
+      setTables(updatedTables);
     }
-  }, [floors, selectedFloor, tablesFromERP])
+  }, [floors, selectedFloor, tablesFromERP, orders]);
 
   useEffect(() => {
-    console.log("tablesFromERP", tablesFromERP);
     if (tablesFromERP) {
       // if the table is already in the state, then don't add it again
-      const newTables = tablesFromERP.filter(table => !tables.some(t => t.name === table.name))
+      const newTables = tablesFromERP?.filter(table => !tables.some(t => t.name === table.name))
       setTables(prev => [...prev, ...newTables])
     }
   }, [])
@@ -171,10 +199,9 @@ const DraggableTable: React.FC = () => {
   const [newTableData, setNewTableData] = useState<RestaurantTable>(
     initialNewTable
   );
-const {data:order}=useFrappeGetDocList('Table Order', {
-  fields:["*"]
-})
-console.log("order", order);
+
+
+
 
 
   // console.log({ tables });
@@ -187,7 +214,7 @@ console.log("order", order);
 
   const handleRightSideModal = (id: string) => {
     const params = new URLSearchParams(location.search);
-    params.set("table", id);
+    // params.set("table", id);
     navigate({
       pathname: location.pathname,
       search: params.toString(),
@@ -353,7 +380,7 @@ console.log("order", order);
       document.removeEventListener("touchend", onMouseUp);
 
       // Add the table to the array to be updated if it is not already in the array then add the table to the state
-      if (!tableToUpdate.current.some((table) => table.name === name)) {
+      if (!tableToUpdate.current.some((table) => table?.name === name)) {
         tableToUpdate.current.push(targetedTable);
       }
       // if the table is already in the array then update the table state
@@ -490,8 +517,23 @@ console.log("order", order);
     document.addEventListener("touchmove", onMouseMove);
     document.addEventListener("touchend", onMouseUp);
   };
-
-
+  const handleDragStart = (name: string) => {
+    setDraggableTable(name);
+  };
+  const handleDragEnd = () => {
+    setDraggableTable(null);
+  };
+  
+  
+  const handleTableClick = (tableName: string) => {
+    const order = orders?.find((order: any) => order.table === tableName);
+    if (order) {
+      setSelectedOrder(order); // Set the selected order
+      setShowOrderModal(true); // Open the modal
+    } else {
+      toast.error("No order details available for this table.");
+    }
+  };
 
   // Debounced function to update the table data in the backend after a delay
   // const debouncedSaveData = useCallback(
@@ -513,6 +555,12 @@ console.log("order", order);
   //     debouncedSaveData.cancel();
   //   };
   // }, [debouncedSaveData]);
+  useFrappeDocTypeEventListener("Table Order",()=>{
+    mutate()
+  })
+  useFrappeDocumentEventListener("Table Order",'on_update',()=>{
+    mutate()
+  })
 
 
   return (
@@ -559,7 +607,7 @@ console.log("order", order);
       </div>
 
       <div className="w-full mt-8 absolute border-5">
-        {tables.map((table) => (
+        {tables?.map((table) => (
           <div
             key={table.name}
             style={{
@@ -569,14 +617,31 @@ console.log("order", order);
               top: `${table.position.y}px`,
               borderRadius: table.type === "Circle" ? "50%" : "8px",
               // backgroundColor: table?.is_booked ? bookedColor : table.bg_color,
-              backgroundColor: table.bg_color,
+              backgroundColor: draggableTable === table.name ? "green" : table.bg_color,
               transform: `rotate(${table.rotation || 0}deg)`,
             }}
             className="absolute cursor-move group"
-            onMouseDown={(e) => handleDrag(e, table?.name as string)}
-            onTouchStart={(e) => handleDrag(e, table?.name as string)}
+            // onMouseDown={(e) => handleDrag(e, table?.name as string)}
+            // onTouchStart={(e) => handleDrag(e, table?.name as string)}
+            onMouseDown={(e) => {
+              handleDragStart(table?.name as string);
+              handleDrag(e, table?.name as string);
+            }}
+            onMouseUp={handleDragEnd}
+            onTouchStart={(e) => {
+              handleDragStart(table?.name as string);
+              handleDrag(e, table?.name as string);
+            }}
+            onTouchEnd={handleDragEnd}
+            onClick={() => table?.isBooked && handleTableClick(table?.name)}
           >
+           
             <div className="relative h-full w-full justify-center items-center flex">
+            {table?.isBooked && (
+              <div className="absolute top-[-40px] left-0 w-full h-full flex justify-center items-center  text-white text-lg font-bold">
+                Booked
+              </div>
+            )}
               {table?.seat && (
                 <div className="absolute space-x-2 group-hover:visible visible z-30">
                   <button
@@ -750,7 +815,7 @@ console.log("order", order);
                   "absolute top-0 left-0 w-6 h-6 cursor-pointer rounded-full flex justify-center items-center text-white invisible group-hover:visible",
                   {
                     "p-1 top-[50%] transform -translate-y-1/2":
-                      table.type === "Circle",
+                      table?.type === "Circle",
                   }
                 )}
               // className="absolute top-0 left-0 w-6 h-6 cursor-pointer rounded-full flex justify-center items-center invisible group-hover:visible bg-primaryColor text-white"
@@ -799,6 +864,86 @@ console.log("order", order);
           <Pos />
         </ModalRightToLeft>
       )}
+      {/* Order Details Modal */}
+{showOrderModal && selectedOrder && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="bg-white rounded-lg shadow-2xl w-96 p-6 relative">
+      {/* Close Button */}
+      <button
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+        onClick={() => setShowOrderModal(false)}
+      >
+        <RxCross2 size={24} />
+      </button>
+
+      {/* Modal Header */}
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center border-b pb-4">
+        Order Details
+      </h2>
+
+      {/* Order Information */}
+      <div className="space-y-4">
+        <div className="flex justify-between">
+          <span className="font-semibold text-gray-600">Order ID:</span>
+          <span className="text-gray-800">{selectedOrder?.name}</span>
+        </div>
+        {/* <div className="flex justify-between">
+          <span className="font-semibold text-gray-600">Customer:</span>
+          <span className="text-gray-800">{selectedOrder?.customer_name}</span>
+        </div> */}
+        <div className="flex justify-between">
+          <span className="font-semibold text-gray-600">Table:</span>
+          <span className="text-gray-800">{selectedOrder?.table}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-semibold text-gray-600">Status:</span>
+          <span
+            className={`text-sm font-semibold px-2 py-1 rounded ${
+              selectedOrder?.status === "Ready for Pickup"
+                ? "bg-green-100 text-green-700"
+                : "bg-yellow-100 text-yellow-700"
+            }`}
+          >
+            {selectedOrder?.status}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-semibold text-gray-600">Total Amount:</span>
+          <span className="text-lg font-bold text-gray-900">
+            ৳{selectedOrder?.total_amount}
+          </span>
+        </div>
+      </div>
+
+      {/* Item List */}
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">Items:</h3>
+        <ul className="divide-y divide-gray-200">
+          {selectedOrder?.item_list?.map((item: any, index: number) => (
+            <li key={index} className="py-2 flex justify-between items-center">
+              <div>
+                <p className="font-medium text-gray-800">{item?.item}</p>
+                <p className="text-sm text-gray-600">
+                  {item?.qty} x ৳{item?.rate}
+                </p>
+              </div>
+              <span className="text-gray-800 font-semibold">৳{item?.amount}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Close Button */}
+      <button
+        className="w-full bg-primaryColor mt-6 text-white py-2 rounded-lg font-semibold"
+        onClick={() => setShowOrderModal(false)}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
