@@ -93,9 +93,9 @@ const DraggableTable: React.FC = () => {
       console.log("error in updateTable", error);
     }
   }
-  const { data: result ,mutate} = useFrappeGetCall("excel_restaurant_pos.api.item.get_order_list",["*"])
+  const { data: result ,mutate} = useFrappeGetCall("excel_restaurant_pos.api.item.get_running_order_list",["*"])
   const orders = result?.message
-
+console.log(orders)
   
 
   useEffect(() => {

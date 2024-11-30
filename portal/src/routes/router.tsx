@@ -11,6 +11,7 @@ import {
   URLOrders,
   URLTableManagement,
   URLUsers,
+  URLChefOrders,
 } from "./routes-link";
 import { URLLogin } from "./routes-link.js";
 import Error from "../pages/error/Error";
@@ -20,6 +21,7 @@ import DraggableTable from "../pages/table-management/DraggableTable.js";
 // import Orders from "../pages/orders/Orders.js";
 import Login from "../pages/login/Login.js";
 import { lazy } from "react";
+import ChefOrders from "../pages/orders/ChefOrders.js";
 const Home = lazy(() => import("../pages/Home/Home.js"));
 const Items = lazy(() => import("../pages/Items/Items"));
 // const DraggableTable = lazy(
@@ -67,6 +69,10 @@ export const router = createBrowserRouter([
       {
         path: URLOrders(),
         element: <Orders />,
+      },
+      {
+        path:URLChefOrders(),
+        element:<ChefOrders/>
       },
       {
         path: URLCategories(),

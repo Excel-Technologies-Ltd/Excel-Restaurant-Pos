@@ -37,6 +37,10 @@ const Pos = () => {
   const [foodCategories, setFoodCategories] = useState<any[]>([])
   const [notes, setNotes] = useState<string>("");
   const [isParcel, setIsParcel] = useState<boolean>(false);
+  const [directCheckout, setDirectCheckout] = useState<boolean>(false);
+
+
+
 
   // useFrappeGetCall
   const { data: categories, isLoading: isLoadingCategories } = useFrappeGetCall('excel_restaurant_pos.api.item.get_category_list', {
@@ -161,7 +165,7 @@ const Pos = () => {
 
   // Remove item from cart
   const removeItem = (id: number) => {
-    const updatedCartItems = cartItems.filter((item) => item?.id !== id);
+    const updatedCartItems = cartItems.filter((item) => item?.item_code !== id);
     // setCartItems(updatedCartItems);
     localStorage.setItem("cart", JSON.stringify(updatedCartItems));
 
@@ -210,7 +214,17 @@ const Pos = () => {
 
     setDiscount(value);
   };
-
+  const handleParcelChange = (e: React.ChangeEvent<HTMLInputElement>,item: string) => {
+    const isChecked = e.target.checked;
+  
+    // Update localStorage with the new value of isParcel
+    const updatedCart = cartItems?.map((cartItem) =>
+      cartItem.item_code == item
+        ? { ...cartItem, isParcel: isChecked }
+        : cartItem
+    );
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  }
   const handleDiscountTypeChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -228,34 +242,48 @@ const Pos = () => {
     }
     setCheckoutModalOpen(true); // Open confirmation modal
   };
+  const handleDirectCheckout = () => {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    if (cart.length === 0) {
+      toast.error("Your cart is empty! Please add items to checkout.");
+      return;
+    }
+    console.log(notes ? notes : "not found")
+    setDirectCheckout(true)
+    setIsParcel(true)
+    setCheckoutModalOpen(true); // Open confirmation modal
+  };
 
   const confirmCheckout = async () => {
+    
 
     if (!isParcel && !tableId) {
       toast.error("Please select a table ID.");
       return;
     }
-    
+  
     const getCartItems = JSON.parse(localStorage.getItem("cart") || "[]");
     const formatedCartItems = getCartItems?.map((item: any) => ({
       item: item?.item_code,
       qty: item?.quantity,
       rate: item?.price,
-      amount: item?.price * item?.quantity
+      amount: item?.price * item?.quantity,
+      is_parcel: tableId ?  (item?.isParcel ? 1 : 0): 1,
+      is_ready: directCheckout ? 1: 0
     }))
 
 
     const payload={
       item_list: formatedCartItems,
       table: tableId ? tableId : "",
-      full_name: fullName ? fullName : "Test User",
-      remarks: notes,
-      discount_type: discountType,
+      full_name: fullName ? fullName : "Customer",
+      remarks: notes ? notes : "",
+      discount_type: discountType ? discountType : "",
       total_amount: payableAmount,
       tax: tax,
       discount: discountAmount,
       amount: subtotal,
-      status:"Work in progress"
+      status: directCheckout ? "Completed": "Work in progress"
     }
     try {
       const result = await createOrder({data:payload})
@@ -385,12 +413,23 @@ useEffect(() => {
                       <div className="border rounded-md p-2">
                         <div className="flex justify-between transition font-medium">
                           <div className="block">
-                            <p title={item?.name} className="font-semibold">
-                              {item?.name?.substring(0, textDot)}
-                              {item?.name?.length > textDot ? "..." : ""}
+                            <p title={item?.item_name} className="font-semibold">
+                              {item?.item_name?.substring(0, textDot)}
+                              {item?.item_name?.length > textDot ? "..." : ""}
                             </p>
                             <p className="font-semibold mt-1">৳{item?.price}</p>
                           </div>
+                           <div className="flex items-center ">
+               <label className="flex items-center mt-2 text-xs">
+          <input
+            type="checkbox"
+            checked={item?.isParcel}
+            onChange={(e) => handleParcelChange(e,item?.item_code)}
+            className="mr-2"
+          />
+                  Parcel
+                </label>
+               </div>
                           <div className="flex gap-2">
                             <div className="flex items-center rounded-md h-fit border w-fit">
                               {quantities[item?.item_code] === 1 ? (
@@ -491,19 +530,28 @@ useEffect(() => {
                   <h1>৳{payableAmount.toFixed(2)}</h1>
                 </div>
               </div>
+              <div className="flex  justify-between gap-3 ">
               <button
                 onClick={handleCheckout}
                 className="bg-primaryColor text-white w-full p-2 rounded-md mt-3 text-sm"
               >
-                Proceed
+                Create Order
               </button>
+              <button
+                onClick={handleDirectCheckout}
+                className="bg-primaryColor text-white w-full p-2 rounded-md mt-3 text-sm"
+              >
+                Checkout
+              </button>
+              </div>
+              
             </div>
           </div>
         )}
          {isCheckoutModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-lg font-semibold mb-4">Confirm Checkout</h2>
+            <h2 className="text-lg font-semibold mb-4">Confirm {directCheckout ? "Checkout" : "Order"}</h2>
             <label className="block mb-2">
               Full Name (optional)
               <input
@@ -513,14 +561,24 @@ useEffect(() => {
                 className="w-full border rounded p-2 mt-1"
               />
             </label>
+           <div>
+          
             <label className="block my-3">
               <input
                 type="checkbox"
                 checked={isParcel}
-                onChange={(e) => setIsParcel(e.target.checked)}
-      />
-              Is Parcel?
+                onChange={(e) => {
+                  if(directCheckout){
+                    setIsParcel(true)
+                  }else{
+                    setIsParcel(e.target.checked)
+                  }
+                }}
+                 />
+             {" "} Is Parcel?
             </label>
+
+           </div>
             {
               !isParcel && (
                 <label className="block mb-2">
@@ -545,7 +603,7 @@ useEffect(() => {
               )
             }
             <div className="flex justify-end mt-4">
-              <button onClick={() => setCheckoutModalOpen(false)} className="mr-2 bg-gray-200 px-4 py-2 rounded">
+              <button onClick={() => {setCheckoutModalOpen(false);setDirectCheckout(false);setIsParcel(false)}} className="mr-2 bg-gray-200 px-4 py-2 rounded">
                 Cancel
               </button>
               <button onClick={confirmCheckout} className="bg-primaryColor px-4 py-2 rounded text-white">

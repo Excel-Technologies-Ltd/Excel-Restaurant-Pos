@@ -9,7 +9,9 @@
   "item",
   "qty",
   "rate",
-  "amount"
+  "amount",
+  "is_ready",
+  "is_parcel"
  ],
  "fields": [
   {
@@ -32,12 +34,24 @@
    "fieldname": "amount",
    "fieldtype": "Int",
    "label": "Amount"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_ready",
+   "fieldtype": "Check",
+   "label": "Is Ready"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_parcel",
+   "fieldtype": "Check",
+   "label": "Is Parcel"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-11-14 11:41:39.208068",
+ "modified": "2024-11-26 12:49:27.171291",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Table Order Item",

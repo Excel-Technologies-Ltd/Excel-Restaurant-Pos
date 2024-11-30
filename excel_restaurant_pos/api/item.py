@@ -188,44 +188,110 @@ def get_variant_item_list(item_code):
 import frappe
 from frappe import _
 
+@frappe.whitelist(allow_guest=True)
+def make_as_ready_item(body):
+    try:
+        data=frappe.parse_json(body)
+        # Fetch the order document using the order_id
+        order_doc = frappe.get_doc("Table Order", data["order_id"])
+
+        # Loop through the items in the order
+        for item in order_doc.item_list:
+            # Check if the item matches the name
+            if item.name.lower() == data["item_name"].lower():  # Case-insensitive match
+                item.is_ready = 1  # Mark the item as Ready
+                order_doc.save(ignore_permissions=True)  # Save the order document
+                frappe.db.commit()  # Commit the transaction
+                return {
+                    "status": "success",
+                }
+
+        # If the item wasn't found, return failure response
+        return {
+            "status": "failed",
+        }
+
+    except Exception as e:
+        # Log error and return failure message
+        return {
+            "status": "failure",
+            "message": "An error occurred while processing your request."
+        }
+
+
 @frappe.whitelist(allow_guest=True)  # Makes the endpoint publicly accessible
 def create_order(data):
     """
-    Public API endpoint to create a 'Table Order' in ERPNext.
+    Public API endpoint to create or update a 'Table Order' in ERPNext.
     
     :param data: JSON dictionary with required fields to create the order.
     :return: JSON response with success status or error message.
     """
     try:
-        # check_order_exists = frappe.db.exists("Table Order", {
-        #     "table": data["table"],
-        #     "status": ["not in", ["Completed", "Canceled"]]
-        # })
-        # if check_order_exists:
-        #     return {"status": "error", "message": _("Order already exists for this table")}
-        # Parse incoming JSON data
+        # Parse incoming data
         order_data = frappe.parse_json(data)
         settings = frappe.get_doc("Restaurant Settings")
         
+        existing_order_name=''
+        # Check for existing order
+        if order_data["table"]:
+            existing_order_name = frappe.db.exists(
+                "Table Order",
+                {
+                    "table": order_data["table"],
+                    "status": ["not in", ["Completed", "Canceled"]]
+                }
+            )
+        print(existing_order_name)
+
+        if existing_order_name:
+            print('working')
+            # Fetch the existing order using the name returned by frappe.db.exists()
+            order_doc = frappe.get_doc("Table Order", existing_order_name)
+            print(order_doc)
+            # Corrected here
+            existing_items = order_doc.item_list
+            new_items = order_data.get("item_list", [])
+            
+            # Add new items to the existing order
+            for item in new_items:
+                order_doc.append("item_list", item)
+
+            
+            # Update amounts
+            order_doc.amount =  float (order_doc.amount )+float(order_data.get("amount", 0))  # Safely cast to float
+            order_doc.total_amount = float( order_doc.total_amount) + float(order_data.get("total_amount", 0))  # Safely cast to float
+            order_doc.discount = float(order_doc.discount) + float(order_data.get("discount", 0))  # Safely cast to float
+            order_doc.status = "Work in progress"  # Update order status to work in progress
+
+            # Save and commit the changes to the existing order
+            order_doc.save(ignore_permissions=True)
+            frappe.db.commit()
+            
+            return {
+                "status": "success",
+                "message": "Order updated successfully",
+                "order_name": order_doc.name
+            }
+
         # Mandatory fields check
-        required_fields = [ "amount", "total_amount", "item_list"]
+        required_fields = ["amount", "total_amount", "item_list"]
         for field in required_fields:
             if not order_data.get(field):
                 return {"status": "error", "message": _("Field '{0}' is required.").format(field)}
 
-        # Create a new 'Table Order' document
+        # Create a new 'Table Order' document if no existing order
         order_doc = frappe.get_doc({
             "doctype": "Table Order",
             "customer": settings.customer,
             "doc_status": "0",
             "table": order_data["table"],
-            # "pos_profile": order_data["pos_profile"],
-            "amount": order_data["amount"],
-            "total_amount": order_data["total_amount"],
+            "amount": float(order_data["amount"]),
+            "total_amount": float(order_data["total_amount"]),
             "item_list": order_data["item_list"],
-            # Optional fields
+            # Optional fields with default values
             "floor": order_data.get("floor"),
-            "adresss": order_data.get("adresss") or "Test Address",
+            "address": order_data.get("address") or "Test Address",  # Corrected typo from "adresss"
             "tax": order_data.get("tax") or 0,
             "discount": order_data.get("discount") or 0,
             "discount_type": order_data.get("discount_type") or "percentage",
@@ -233,35 +299,75 @@ def create_order(data):
             "company": order_data.get("company"),
             "customer_name": order_data.get("customer_name") or "Test User",
             "remarks": order_data.get("remarks"),
-            "status": order_data.get("status", "Order Placed")  # Default to "Draft" status
+            "status": order_data.get("status", "Order Placed"),
+            "docstatus":1 if order_data.get("status")== 'Completed' else 0
+            # Default to "Order Placed"
         })
 
         # Insert the document into the database
         order_doc.insert(ignore_permissions=True)
         
-        # Commit the transaction to ensure data is saved
+        # Commit the transaction
         frappe.db.commit()
         
-        return {"status": "success", "message": "Order created successfully", "order_name": order_doc.name}
+        return {
+            "status": "success",
+            "message": "Order created successfully",
+            "order_name": order_doc.name
+        }
     
     except frappe.ValidationError as e:
+        print("validation error")
+        print(e)
         frappe.log_error(frappe.get_traceback(), _("Order Creation Error"))
         return {"status": "error", "message": str(e)}
+    
     except Exception as e:
+        print("exce")
+        print(e)
         frappe.log_error(frappe.get_traceback(), _("Unknown Error in Order Creation"))
-        print("error",e)
-        return {"status": "error", "message": _("An error occurred while creating the order")}
+        return {"status": "error", "message": str(e)}
 
 @frappe.whitelist()
-def get_order_list():
+def get_running_order_list():
     order_list = frappe.get_all("Table Order",fields=["*"],filters=[["status","!=","Completed"],["status","!=","Canceled"]],order_by="creation desc")
     for order in order_list:
         order["item_list"] = get_order_item_list(order.name)
     return order_list
 
+
+@frappe.whitelist()
+def get_order_list(status=None):
+    if status:
+        print(status)
+        order_list = frappe.get_all("Table Order",fields=["*"],filters=[["status","in",[status]]],order_by="creation desc")
+    else:
+        order_list = frappe.get_all("Table Order",fields=["*"],order_by="creation desc")
+    for order in order_list:
+        order["item_list"] = get_order_item_list(order.name)
+    return order_list
+@frappe.whitelist()
+def get_chef_order_list():
+    # Define the filters correctly using "or" condition
+    filters = [
+        ["status", "=", "Work in progress"],
+        ["status", "=", "Ready for Pickup"]
+    ]
+    
+    # Get the table orders using the OR condition with "|"
+    order_list = frappe.get_all("Table Order", fields=["*"], or_filters= filters, order_by="creation desc")
+    
+    # Add item list to each order
+    for order in order_list:
+        order["item_list"] = get_order_item_list(order.name)
+    
+    return order_list
+
+
+
 @frappe.whitelist()
 def get_order_item_list(order_id):
-    return frappe.get_all("Table Order Item",filters={"parent":order_id},fields=['item','qty','amount','rate'],order_by="creation desc")
+    return frappe.get_all("Table Order Item",filters={"parent":order_id},fields=['item','qty','amount','rate',"is_parcel","is_ready","name","parent"],order_by="creation desc")
 
 @frappe.whitelist(allow_guest=True)
 def get_roles(user):
@@ -273,3 +379,5 @@ def get_roles(user):
     """, {"user": user}, as_dict=True)
     
     return roles
+
+

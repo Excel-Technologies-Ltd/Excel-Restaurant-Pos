@@ -255,21 +255,22 @@ const getDescription = (description: string) => {
         </div>
         <div className={`p-4 pt-2 border bottom-0 absolute w-full bg-white z-50 ${isLargeDevice ? "rounded-b-lg" : ""}`}>
           <div className="flex justify-between items-center">
-          <div className="flex items-center border rounded-md text-sm">
-              <button
-                onClick={decrement}
-                className="px-3.5 rounded-md rounded-e-none h-full text-[11px] bg-gray-200"
-              >
-                <FaMinus />
-              </button>
-              <span className="px-3.5">{quantity}</span>
-              <button
-                onClick={increment}
-                className="px-3.5 rounded-md rounded-s-none h-full text-[14px] bg-gray-200"
-              >
-                <FiPlus />
-              </button>
-            </div>
+          <div className="flex items-center border rounded-md text-sm bg-gray-100">
+  <button
+    onClick={decrement}
+    className="px-4 py-2 rounded-l-md text-lg bg-gray-300 transition-colors duration-200 hover:bg-gray-400 focus:outline-none"
+  >
+    <FaMinus size={18} />
+  </button>
+  <span className="px-4 text-gray-800 font-medium">{quantity}</span>
+  <button
+    onClick={increment}
+    className="px-4 py-2 rounded-r-md text-lg bg-gray-300 transition-colors duration-200 hover:bg-gray-400 focus:outline-none"
+  >
+    <FiPlus size={18} />
+  </button>
+</div>
+
             <div className="text-sm font-semibold">Total: ৳{calculateTotalPrice()}</div>
 
             <button onClick={()=> addToCart()} className="bg-primaryColor px-3 py-1.5 rounded-md text-white h-fit text-sm">

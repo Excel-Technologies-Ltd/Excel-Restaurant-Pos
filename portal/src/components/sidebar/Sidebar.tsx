@@ -23,6 +23,7 @@ import { RootState } from "../../redux/store/Store";
 import { styles } from "../../utilities/cn";
 import MobileSidebar from "./MobileSidebar";
 import { GetMenuItems } from "./sidebar-routes-array/sidebar-array";
+import { useFrappeAuth, useFrappeGetCall } from "frappe-react-sdk";
 
 // sidebar props type
 type Props = {
@@ -33,9 +34,16 @@ type Props = {
  * @description Sidebar component
  */
 const Sidebar = ({ children }: Props) => {
+ 
+
+
   // action dispatcher
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const {currentUser} = useFrappeAuth();
+  const {data:roles} = useFrappeGetCall(`excel_restaurant_pos.api.item.get_roles?user=${currentUser}`)
+  const userRoles = roles?.message?.map((role:any)=>role?.Role)
+
 
   // Get the modal state from Redux
   const rightModalOpen = useSelector(
@@ -100,6 +108,9 @@ const Sidebar = ({ children }: Props) => {
       setSelectedMenu(null);
     }
   };
+  const filteredMenuItems = menuItems?.filter((menuItem) => {
+    return menuItem?.requiredRoles?.some((role) => userRoles?.includes(role));
+  });
 
   const submenuUrl = (item: any) => {
     const items = item?.map((item: any) => item?.url);
@@ -140,7 +151,7 @@ const Sidebar = ({ children }: Props) => {
           </div>
           {/* SIDEBAR ITEM LIST */}
           <ul className="space-y-2 font-medium mt-6">
-            {menuItems?.map((menuItem, index) => (
+            {filteredMenuItems?.map((menuItem, index) => (
               <li key={index}>
                 {menuItem?.submenu ? (
                   <>

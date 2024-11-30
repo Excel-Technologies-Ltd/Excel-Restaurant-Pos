@@ -10,10 +10,10 @@
 import { AiFillDashboard } from "react-icons/ai";
 import { IoFastFoodSharp } from "react-icons/io5";
 import { MdOutlineTableRestaurant } from "react-icons/md";
-import { PiListChecksFill } from "react-icons/pi";
+import { PiChefHatFill, PiListChecksFill } from "react-icons/pi";
 import { RiFileUserFill } from "react-icons/ri";
 import { TbCategoryFilled } from "react-icons/tb";
-import { URLAdminPos, URLCategories, URLDashboard, URLOrders, URLTableManagement, URLUsers } from "../../../routes/routes-link";
+import { URLAdminPos, URLCategories, URLChefOrders, URLDashboard, URLOrders, URLTableManagement, URLUsers } from "../../../routes/routes-link";
 
 
 interface MenuItem {
@@ -24,6 +24,7 @@ interface MenuItem {
   submenu?: Submenu[];
   moduleName?: string[];
   isModuleAccess: boolean;
+  requiredRoles?: string[]
 }
 interface Submenu {
   label: string;
@@ -39,24 +40,35 @@ export const GetMenuItems = () => {
       url: URLDashboard(),
       icon: <AiFillDashboard size={19} />,
       isModuleAccess: true,
+      requiredRoles: ["Restaurant Manager","Restaurant Waiter","Restaurant Cashier","Restaurant Chef"],
     },
     {
       label: "Pos",
       url: URLAdminPos(),
       icon: <IoFastFoodSharp size={19} />,
       isModuleAccess: true,
+      requiredRoles: ["Restaurant Manager", "Restaurant Waiter","Restaurant Cashier"],
     },
     {
       label: "Table Management",
       url: URLTableManagement(),
       icon: <MdOutlineTableRestaurant size={19} />,
       isModuleAccess: true,
+      requiredRoles: ["Restaurant Manager"],
     },
     {
       label: "Orders ",
       url: URLOrders(),
       icon: <PiListChecksFill size={19} />,
       isModuleAccess: true,
+      requiredRoles: ["Restaurant Manager", "Restaurant Waiter","Restaurant Cashier"],
+    },
+    {
+      label: "Orders ",
+      url: URLChefOrders(),
+      icon: <PiChefHatFill size={19} />,
+      isModuleAccess: true,
+      requiredRoles: ["Restaurant Chef"],
     },
     {
       label: "Categories ",

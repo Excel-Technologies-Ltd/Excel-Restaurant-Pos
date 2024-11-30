@@ -28,6 +28,7 @@ type CartItem = {
   price: number;
   quantity: number;
   totalPrice: number;
+  isParcel: boolean;
 };
 
 const AllCarts = ({
@@ -56,11 +57,7 @@ const AllCarts = ({
   const selectedTableId =  defaultTableId ? [defaultTableId] : tableIds?.map((item: any) => item?.name)
 
   const {call:createOrder,loading,error,result}=useFrappePostCall("excel_restaurant_pos.api.item.create_order")
- 
 
-
-
-  console.log({ cartCount });
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
     console.log({ storedCart });
@@ -162,13 +159,32 @@ const decrement = (item_code: string) => {
   // Open checkout confirmation modal
   setCheckoutModalOpen(true);
 };
+const handleParcelChange = (e: React.ChangeEvent<HTMLInputElement>,item: string) => {
+  const isChecked = e.target.checked;
+  setCartItems((prevItems) =>
+    prevItems.map((cartItem) =>
+      cartItem.item_code == item
+        ? { ...cartItem, isParcel: isChecked }
+        : cartItem
+    )
+  );
+
+  // Update localStorage with the new value of isParcel
+  const updatedCart = cartItems.map((cartItem) =>
+    cartItem.item_code == item
+      ? { ...cartItem, isParcel: isChecked }
+      : cartItem
+  );
+  localStorage.setItem("cart", JSON.stringify(updatedCart));
+}
 const confirmCheckout = async () => {
   const getCartItems = JSON.parse(localStorage.getItem("cart") || "[]");
   const formatedCartItems = getCartItems?.map((item: any) => ({
     item: item?.item_code,
     qty: item?.quantity,
     rate: item?.price,
-    amount: item?.price * item?.quantity
+    amount: item?.price * item?.quantity,
+    is_parcel: item?.isParcel ? 1 :0
   }))
 
 
@@ -329,7 +345,7 @@ const confirmCheckout = async () => {
         <div className="mt-3">
           {cartItems?.map((item) => (
             <div key={item?.item_code} className="border p-2 rounded-md mb-3 w-full">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <div className="flex">
                   <img
                     src="https://images.deliveryhero.io/image/fd-bd/Products/5331721.jpg??width=400"
@@ -344,6 +360,19 @@ const confirmCheckout = async () => {
                       ৳{item?.price}
                     </p>
                   </div>
+                </div>
+                <div>
+               <div className="flex items-center ">
+               <label className="flex items-center mt-2 text-xs">
+          <input
+            type="checkbox"
+            checked={item?.isParcel}
+            onChange={(e) => handleParcelChange(e,item?.item_code)}
+            className="mr-2"
+          />
+                  Parcel
+                </label>
+               </div>
                 </div>
                 <div className="col-span-1 flex flex-col justify-center items-center gap-2">
                   <div className="flex items-center rounded-md h-fit">

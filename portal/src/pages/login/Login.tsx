@@ -18,6 +18,7 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [userNameOrMailError, setUserNameOrMailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
+    const [loading,setLoading]=useState(false)
     // const navigate = useNavigate();
     const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -32,15 +33,17 @@ const Login = () => {
         }
         if (userNameOrMail && password) {
             try {
+                setLoading(true)
                 await login({
                     username: userNameOrMail,
                     password: password
                 })
-
+                setLoading(false)
                 toast.success("Login successful")
             }
             catch (error) {
                 toast.error((error as Error).message)
+                setLoading(false)
                 console.log("error", error);
             }
         }
@@ -109,7 +112,7 @@ const Login = () => {
                     <Button
                         label={"Login"}
                         type="submit"
-                        isLoading={isLoading}
+                        isLoading={loading}
                     />
                 </form>
 

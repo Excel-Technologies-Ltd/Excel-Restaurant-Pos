@@ -122,6 +122,8 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "\nOrder Placed\nSent to Kitchen\nWork in progress\nPreparing\nReady for Pickup\nServed\nCompleted\nCanceled"
   },
@@ -135,7 +137,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-21 11:40:05.719299",
+ "modified": "2024-11-30 13:36:51.712403",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Table Order",

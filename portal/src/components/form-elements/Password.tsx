@@ -72,7 +72,7 @@ function Password({
           disabled={disabled}
           pattern={pattern}
           maxLength={max || 36}
-          placeholder={`${placeholder ? placeholder : ""}`}
+          placeholder={`${placeholder ? placeholder : "Enter " + label}`}
         />
 
         {/* ICON */}

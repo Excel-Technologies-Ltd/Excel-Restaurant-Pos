@@ -82,7 +82,7 @@ const Hero = () => {
                 </div>
               )}
               <div className="p-2.5">
-                <h2 className="font-semibold">{item?.name}</h2>
+                <h2 className="font-semibold">{item?.item_name}</h2>
                 <h2>Price : ৳{item?.price}</h2>
                 <h2 className="text-xs text-gray-500 mt-1">Time : 20-30 min</h2>
               </div>

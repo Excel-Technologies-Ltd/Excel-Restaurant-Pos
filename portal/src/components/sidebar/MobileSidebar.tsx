@@ -6,6 +6,7 @@ import { setSidebarOpen } from "../../redux/features/sidebar/sidebar";
 import { RootState } from "../../redux/store/Store";
 import { styles } from "../../utilities/cn";
 import { GetMenuItems } from "./sidebar-routes-array/sidebar-array";
+import { useFrappeAuth, useFrappeGetCall } from "frappe-react-sdk";
 
 type Props = {};
 
@@ -17,6 +18,10 @@ const MobileSidebar = ({}: Props) => {
 
   // router location
   const router = useLocation();
+  const {currentUser} = useFrappeAuth();
+  const {data:roles} = useFrappeGetCall(`excel_restaurant_pos.api.item.get_roles?user=${currentUser}`)
+  const userRoles = roles?.message?.map((role:any)=>role?.Role)
+
 
   // route array
   const routeArray = router?.pathname?.split("/");
@@ -28,6 +33,9 @@ const MobileSidebar = ({}: Props) => {
     const items = item?.map((item: any) => item?.url);
     return items?.map((path: any) => path.slice(1));
   };
+  const filteredMenuItems = menuItems?.filter((menuItem) => {
+    return menuItem?.requiredRoles?.some((role) => userRoles?.includes(role));
+  });
 
   return (
     <div
@@ -38,7 +46,7 @@ const MobileSidebar = ({}: Props) => {
       style={{ zIndex: zIndex.mobileSidebar }}
     >
       <div className="flex flex-col items-center gap-3">
-        {menuItems?.map((item, index) => {
+        {filteredMenuItems?.map((item, index) => {
           return (
             <div key={index} title={item?.label}>
               {/* <Tooltip title={item?.label}> */}

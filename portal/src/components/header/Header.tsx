@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BiLogOut } from "react-icons/bi";
+import { BiLogIn, BiLogOut } from "react-icons/bi";
 import { ImCalculator } from "react-icons/im";
 import { MdOutlineMenu } from "react-icons/md";
 import { RxDashboard } from "react-icons/rx";
@@ -203,7 +203,7 @@ const Header = ({ }: Props) => {
                   to={URLDashboard()}
                   onClick={() => setDropDown(!dropdown)}
                 >
-                  <RxDashboard /> Dashboard
+                 {currentUser ? <RxDashboard /> :<BiLogIn/>  } {currentUser ? "Dashboard" : "Login"}
                 </NavLink>
 
                 {/* LOGOUT */}
