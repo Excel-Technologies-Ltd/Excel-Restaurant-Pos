@@ -14,7 +14,8 @@ fixtures = [
             "name", "in", [
                 "Restaurant Waiter",
                 "Restaurant Manager",
-                "Restaurant Chef"
+                "Restaurant Chef",
+                "Restaurant Cashier"
             ]
         ]
     ]},
