@@ -64,7 +64,7 @@ export const GetMenuItems = () => {
       requiredRoles: ["Restaurant Manager", "Restaurant Waiter","Restaurant Cashier"],
     },
     {
-      label: "Chef ",
+      label: "Kitchen Orders",
       url: URLChefOrders(),
       icon: <PiChefHatFill size={19} />,
       isModuleAccess: true,
