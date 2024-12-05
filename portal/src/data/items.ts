@@ -3,8 +3,8 @@ import { Item } from "../components/models/Item";
 
 export interface Food {
   id?: number;
-  item_name: string;
-  item_code: string;
+  item_name?: string;
+  item_code?: string;
   description?: string;
   regularPrice?: number;
   price?: number;

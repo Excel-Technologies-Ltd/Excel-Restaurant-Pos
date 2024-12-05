@@ -4,23 +4,100 @@ import { FiEdit } from "react-icons/fi";
 const Workflow = () => {
   // Define the initial workflow state and transition data
   const [states, setStates] = useState([
-    { id: 1, state: "Order Placed", nextState: "Work in progress", role: "Restaurant Waiter" },
-    { id: 2, state: "Sent to Kitchen", nextState: "Work in progress", role: "Restaurant Waiter" },
-    { id: 3, state: "Work in progress", nextState: "Preparing", role: "Restaurant Chef" },
-    { id: 4, state: "Canceled", nextState: "Canceled", role: "Restaurant Waiter" },
-    { id: 5, state: "Preparing", nextState: "Ready for Pickup", role: "Restaurant Chef" },
-    { id: 6, state: "Ready for Pickup", nextState: "Served", role: "Restaurant Waiter" },
-    { id: 7, state: "Served", nextState: "Completed", role: "Restaurant Manager" },
+    {
+      id: 1,
+      state: "Order Placed",
+      nextState: "Work in progress",
+      role: "Restaurant Waiter",
+    },
+    {
+      id: 2,
+      state: "Sent to Kitchen",
+      nextState: "Work in progress",
+      role: "Restaurant Waiter",
+    },
+    {
+      id: 3,
+      state: "Work in progress",
+      nextState: "Preparing",
+      role: "Restaurant Chef",
+    },
+    {
+      id: 4,
+      state: "Canceled",
+      nextState: "Canceled",
+      role: "Restaurant Waiter",
+    },
+    {
+      id: 5,
+      state: "Preparing",
+      nextState: "Ready to Serve",
+      role: "Restaurant Chef",
+    },
+    {
+      id: 6,
+      state: "Ready to Serve",
+      nextState: "Served",
+      role: "Restaurant Waiter",
+    },
+    {
+      id: 7,
+      state: "Served",
+      nextState: "Completed",
+      role: "Restaurant Manager",
+    },
   ]);
 
   const [transitions, setTransitions] = useState([
-    { id: 1, state: "Order Placed", action: "Approve", nextState: "Work in progress", allowed: "Restaurant Waiter" },
-    { id: 2, state: "Order Placed", action: "Reject", nextState: "Canceled", allowed: "Restaurant Waiter" },
-    { id: 3, state: "Work in progress", action: "Approve", nextState: "Preparing", allowed: "Restaurant Chef" },
-    { id: 4, state: "Work in progress", action: "Reject", nextState: "Canceled", allowed: "Restaurant Chef" },
-    { id: 5, state: "Preparing", action: "Ready for Pickup", nextState: "Ready for Pickup", allowed: "Restaurant Chef" },
-    { id: 6, state: "Ready for Pickup", action: "Served", nextState: "Served", allowed: "Restaurant Waiter" },
-    { id: 7, state: "Served", action: "Completed", nextState: "Completed", allowed: "Restaurant Manager" },
+    {
+      id: 1,
+      state: "Order Placed",
+      action: "Approve",
+      nextState: "Work in progress",
+      allowed: "Restaurant Waiter",
+    },
+    {
+      id: 2,
+      state: "Order Placed",
+      action: "Reject",
+      nextState: "Canceled",
+      allowed: "Restaurant Waiter",
+    },
+    {
+      id: 3,
+      state: "Work in progress",
+      action: "Approve",
+      nextState: "Preparing",
+      allowed: "Restaurant Chef",
+    },
+    {
+      id: 4,
+      state: "Work in progress",
+      action: "Reject",
+      nextState: "Canceled",
+      allowed: "Restaurant Chef",
+    },
+    {
+      id: 5,
+      state: "Preparing",
+      action: "Ready to Serve",
+      nextState: "Ready to Serve",
+      allowed: "Restaurant Chef",
+    },
+    {
+      id: 6,
+      state: "Ready to Serve",
+      action: "Served",
+      nextState: "Served",
+      allowed: "Restaurant Waiter",
+    },
+    {
+      id: 7,
+      state: "Served",
+      action: "Completed",
+      nextState: "Completed",
+      allowed: "Restaurant Manager",
+    },
   ]);
 
   // Handle editing state data
@@ -31,7 +108,11 @@ const Workflow = () => {
   };
 
   // Handle editing transition data
-  const handleEditTransition = (index: number, field: string, value: string) => {
+  const handleEditTransition = (
+    index: number,
+    field: string,
+    value: string
+  ) => {
     const newTransitions = [...transitions];
     newTransitions[index][field] = value;
     setTransitions(newTransitions);
@@ -57,14 +138,18 @@ const Workflow = () => {
               <td className="py-2 px-4">
                 <input
                   value={state.nextState}
-                  onChange={(e) => handleEditState(index, "nextState", e.target.value)}
+                  onChange={(e) =>
+                    handleEditState(index, "nextState", e.target.value)
+                  }
                   className="border p-1 rounded"
                 />
               </td>
               <td className="py-2 px-4">
                 <input
                   value={state.role}
-                  onChange={(e) => handleEditState(index, "role", e.target.value)}
+                  onChange={(e) =>
+                    handleEditState(index, "role", e.target.value)
+                  }
                   className="border p-1 rounded"
                 />
               </td>
@@ -95,21 +180,27 @@ const Workflow = () => {
               <td className="py-2 px-4">
                 <input
                   value={transition.action}
-                  onChange={(e) => handleEditTransition(index, "action", e.target.value)}
+                  onChange={(e) =>
+                    handleEditTransition(index, "action", e.target.value)
+                  }
                   className="border p-1 rounded"
                 />
               </td>
               <td className="py-2 px-4">
                 <input
                   value={transition.nextState}
-                  onChange={(e) => handleEditTransition(index, "nextState", e.target.value)}
+                  onChange={(e) =>
+                    handleEditTransition(index, "nextState", e.target.value)
+                  }
                   className="border p-1 rounded"
                 />
               </td>
               <td className="py-2 px-4">
                 <input
                   value={transition.allowed}
-                  onChange={(e) => handleEditTransition(index, "allowed", e.target.value)}
+                  onChange={(e) =>
+                    handleEditTransition(index, "allowed", e.target.value)
+                  }
                   className="border p-1 rounded"
                 />
               </td>

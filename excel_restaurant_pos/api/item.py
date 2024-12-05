@@ -221,6 +221,7 @@ def make_as_ready_item(body):
 
 @frappe.whitelist(allow_guest=True)  # Makes the endpoint publicly accessible
 def create_order(data):
+    user = frappe.session.user
     """
     Public API endpoint to create or update a 'Table Order' in ERPNext.
     
@@ -262,7 +263,8 @@ def create_order(data):
             order_doc.amount =  float (order_doc.amount )+float(order_data.get("amount", 0))  # Safely cast to float
             order_doc.total_amount = float( order_doc.total_amount) + float(order_data.get("total_amount", 0))  # Safely cast to float
             order_doc.discount = float(order_doc.discount) + float(order_data.get("discount", 0))  # Safely cast to float
-            order_doc.status = "Work in progress"  # Update order status to work in progress
+            order_doc.status = "Work in progress" if order_doc.status != 'Order Placed' else "Order Placed" # Update order status to work in progress
+            order_doc.remarks = order_data.get("remarks")
 
             # Save and commit the changes to the existing order
             order_doc.save(ignore_permissions=True)
@@ -284,7 +286,6 @@ def create_order(data):
         order_doc = frappe.get_doc({
             "doctype": "Table Order",
             "customer": settings.customer,
-            "doc_status": "0",
             "table": order_data["table"],
             "amount": float(order_data["amount"]),
             "total_amount": float(order_data["total_amount"]),
@@ -294,13 +295,13 @@ def create_order(data):
             "address": order_data.get("address") or "Test Address",  # Corrected typo from "adresss"
             "tax": order_data.get("tax") or 0,
             "discount": order_data.get("discount") or 0,
-            "discount_type": order_data.get("discount_type") or "percentage",
-            "tax_and_charges": order_data.get("tax_and_charges") or "Sales Tax",
+            "discount_type": order_data.get("discount_type") ,
             "company": order_data.get("company"),
             "customer_name": order_data.get("customer_name") or "Test User",
             "remarks": order_data.get("remarks"),
             "status": order_data.get("status", "Order Placed"),
-            "docstatus":1 if order_data.get("status")== 'Completed' else 0
+            "docstatus":1 if order_data.get("status")== 'Completed' else 0,
+            'is_paid': 1 if order_data.get("is_paid") else 0
             # Default to "Order Placed"
         })
 
@@ -335,7 +336,19 @@ def get_running_order_list():
         order["item_list"] = get_order_item_list(order.name)
     return order_list
 
-
+@frappe.whitelist(allow_guest=True)
+def get_running_order_item_list(table_id):
+    order_list = frappe.get_all("Table Order",fields=["*"],filters=[["status","!=","Completed"],["status","!=","Canceled"],["table", "=", table_id]],order_by="creation desc")
+    for order in order_list:
+        order["item_list"] = get_order_item_list(order.name)
+    if len(order_list) > 0:
+        return order_list[0].item_list
+    else:
+        return []
+@frappe.whitelist(allow_guest=True)
+def get_tax_rate():
+    settings = frappe.get_doc("Restaurant Settings")
+    return int(settings.tax_rate)/100
 @frappe.whitelist()
 def get_order_list(status=None):
     if status:
@@ -351,7 +364,7 @@ def get_chef_order_list():
     # Define the filters correctly using "or" condition
     filters = [
         ["status", "=", "Work in progress"],
-        ["status", "=", "Ready for Pickup"]
+        ["status", "=", "Ready to Serve"]
     ]
     
     # Get the table orders using the OR condition with "|"
@@ -379,5 +392,40 @@ def get_roles(user):
     """, {"user": user}, as_dict=True)
     
     return roles
+
+@frappe.whitelist(allow_guest=True)
+def check_coupon_code(data):
+    coupon_code = frappe.parse_json(data).get("coupon_code")
+    if not coupon_code:
+        return {'status':'error',"message":"Invalid"}
+    try:
+        if frappe.session.user == "Guest":
+            result = frappe.db.get_value(
+                "Restaurant Coupon", {'is_active': 1, 'is_public': 1, "coupon_code": coupon_code}, ['discount_type', 'amount']
+            )
+            if result and len(result) == 2:  # Ensure result is a tuple with two elements
+                discount_type, amount = result
+                return {'status':'success',"discount_type": discount_type, "amount": amount}
+            else:
+                return {'status':'error',"message":"Invalid"}
+        
+        # Check for logged-in user
+        result = frappe.db.get_value(
+            "Restaurant Coupon", {'is_active': 1, "coupon_code": coupon_code}, ['discount_type', 'amount']
+        )
+        if result and len(result) == 2:  # Ensure result is a tuple with two elements
+            discount_type, amount = result
+            return {'status':'success',"discount_type": discount_type, "amount": amount}
+        else:
+            return {'status':'error',"message":"Invalid"}
+
+    except Exception as e:
+        frappe.log_error(f"Error in check_coupon_code: {str(e)}")
+        return "An error occurred while checking the coupon code."
+    
+    
+
+
+
 
 

@@ -13,18 +13,22 @@ import { styles } from "../../utilities/cn";
 import nameProfile from "../../utilities/name-to-profile";
 import Calculator from "../calculator/Calculator";
 import { useFrappeAuth, useFrappeGetDoc } from "frappe-react-sdk";
+import { FaRegUserCircle } from "react-icons/fa";
 
 type Props = {};
 
-const Header = ({ }: Props) => {
-  const { logout,currentUser } = useFrappeAuth();
-  const {data:getFullName}= useFrappeGetDoc("User", currentUser ?? undefined,["full_name"])
+const Header = ({}: Props) => {
+  const { logout, currentUser } = useFrappeAuth();
+  const { data: getFullName } = useFrappeGetDoc(
+    "User",
+    currentUser ?? undefined,
+    ["full_name"]
+  );
 
-  console.log({fullName:getFullName?.full_name});
+  console.log({ fullName: getFullName?.full_name });
   // get First letter of first name and last name
   const firstLetter = getFullName?.full_name?.split(" ")[0]?.[0] ?? "";
 
-  
   // action dispatcher
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -43,7 +47,6 @@ const Header = ({ }: Props) => {
     await logout();
     navigate(URLLogin());
   };
-
 
   // handle click outside
   useEffect(() => {
@@ -108,13 +111,13 @@ const Header = ({ }: Props) => {
           </Link>
         </div>
         <div className="flex items-center gap-2">
-          {`/${pathDashboard}` === URLItems() && (
+          {/* {`/${pathDashboard}` === URLItems() && (
             <input
               type="search"
               placeholder="Search..."
               className="focus:outline-none border border-borderColor px-2 py-1.5 rounded text-xs w-[137px] sm:w-44 2xl:w-60"
             />
-          )}
+          )} */}
 
           {pathDashboard === "admin" && (
             <button
@@ -137,7 +140,7 @@ const Header = ({ }: Props) => {
                   hidden: !dropdownCalculator,
                 }
               )}
-            // ref={inputRef}
+              // ref={inputRef}
             >
               <Calculator isOpen={dropdownCalculator} />
             </div>
@@ -161,7 +164,7 @@ const Header = ({ }: Props) => {
                     {/* <FaUserCircle
                   className={`w-[30px] h-[30px] text-grayColor bg-lightBlue rounded-full cursor-pointer `}
                 /> */}
-                    {firstLetter || "D"}
+                    <FaRegUserCircle color="#1e647a" size={23} />
                   </div>
                 )}
 
@@ -176,9 +179,7 @@ const Header = ({ }: Props) => {
                   {/* USER ROLE */}
                   <p
                     className={`text-lightGrayColor text-[10px] font-medium text-start `}
-                  >
-                  
-                  </p>
+                  ></p>
                 </div>
               </button>
 
@@ -190,33 +191,35 @@ const Header = ({ }: Props) => {
                 )}
               >
                 {/* USER NAME AND ROLE */}
-                <div className="text-center flex flex-col border-b py-2 2xl:py-4 text-textColor capitalize text-sm 2xl:text-base">
+                {currentUser ? (
+                  <div className="text-center flex flex-col border-b py-2 2xl:py-4 text-textColor capitalize text-sm 2xl:text-base">
                     {getFullName?.full_name}
-                  <span className="lowercase text-xs 2xl:text-sm text-lightGrayColor">
-                    {currentUser}
-                  </span>
-                </div>
-
+                    <span className="lowercase text-xs 2xl:text-sm text-lightGrayColor">
+                      {currentUser}
+                    </span>
+                  </div>
+                ) : (
+                  <></>
+                )}
                 {/* Dashboard */}
                 <NavLink
                   className="border-b py-2 2xl:py-3 text-textColor text-[11px] 2xl:text-[13px] flex hover:bg-primaryColor hover:text-white rounded-none px-5 items-center gap-2"
                   to={URLDashboard()}
                   onClick={() => setDropDown(!dropdown)}
                 >
-                 {currentUser ? <RxDashboard /> :<BiLogIn/>  } {currentUser ? "Dashboard" : "Login"}
+                  {currentUser ? <RxDashboard /> : <BiLogIn />}{" "}
+                  {currentUser ? "Dashboard" : "Login"}
                 </NavLink>
 
                 {/* LOGOUT */}
-                {
-                  currentUser && (
-                    <button
-                      className="border-b py-2 w-full 2xl:py-3 text-textColor text-[11px] 2xl:text-[13px] flex hover:bg-primaryColor hover:text-white rounded-none px-5 items-center gap-2"
-                      onClick={handleLogout}
-                    >
-                      <BiLogOut /> Logout
-                    </button>
-                  )
-                }
+                {currentUser && (
+                  <button
+                    className="border-b py-2 w-full 2xl:py-3 text-textColor text-[11px] 2xl:text-[13px] flex hover:bg-primaryColor hover:text-white rounded-none px-5 items-center gap-2"
+                    onClick={handleLogout}
+                  >
+                    <BiLogOut /> Logout
+                  </button>
+                )}
               </div>
             </div>
           </div>

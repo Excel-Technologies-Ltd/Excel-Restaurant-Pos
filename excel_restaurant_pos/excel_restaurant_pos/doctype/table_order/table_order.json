@@ -23,7 +23,8 @@
   "customer_name",
   "remarks",
   "status",
-  "discount_type"
+  "discount_type",
+  "is_paid"
  ],
  "fields": [
   {
@@ -70,24 +71,24 @@
   },
   {
    "fieldname": "tax",
-   "fieldtype": "Data",
+   "fieldtype": "Currency",
    "label": "Tax"
   },
   {
    "fieldname": "discount",
-   "fieldtype": "Data",
+   "fieldtype": "Currency",
    "label": "Discount"
   },
   {
    "fieldname": "amount",
-   "fieldtype": "Data",
+   "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Amount",
    "reqd": 1
   },
   {
    "fieldname": "total_amount",
-   "fieldtype": "Data",
+   "fieldtype": "Currency",
    "label": "Total Amount",
    "reqd": 1
   },
@@ -125,19 +126,26 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "\nOrder Placed\nSent to Kitchen\nWork in progress\nPreparing\nReady for Pickup\nServed\nCompleted\nCanceled"
+   "options": "\nOrder Placed\nSent to Kitchen\nWork in progress\nPreparing\nReady to Serve\nServed\nCompleted\nCanceled"
   },
   {
    "fieldname": "discount_type",
    "fieldtype": "Select",
    "label": "Discount Type",
-   "options": "\npercentage\nflat amount"
+   "options": "\npercentage\nflat\ncoupon"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_paid",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Paid"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-30 13:36:51.712403",
+ "modified": "2024-12-05 08:29:19.904675",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Table Order",

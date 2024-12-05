@@ -5,7 +5,11 @@ import { FiPlus } from "react-icons/fi";
 import { LuMinus } from "react-icons/lu";
 import { RxCross2 } from "react-icons/rx";
 import { useCartContext } from "../../context/cartContext";
-import { useFrappeGetDocList, useFrappePostCall } from "frappe-react-sdk";
+import {
+  useFrappeGetCall,
+  useFrappeGetDocList,
+  useFrappePostCall,
+} from "frappe-react-sdk";
 
 type Props = {
   isOpen: boolean;
@@ -41,6 +45,8 @@ const AllCarts = ({
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [discount, setDiscount] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [coupon, setCoupon] = useState("");
+
   const [discountError, setDiscountError] = useState<string>("");
   const [discountType, setDiscountType] = useState<"flat" | "percentage">(
     "percentage"
@@ -50,13 +56,26 @@ const AllCarts = ({
   const [fullName, setFullName] = useState<string>("");
   const [tableId, setTableId] = useState<string>("");
   const [tableIdError, setTableIdError] = useState<string>("");
-  const defaultTableId = localStorage.getItem("table_id") 
-  const { data: tableIds } = useFrappeGetDocList('Restaurant Table', {
-    fields: ["name"]
-  })
-  const selectedTableId =  defaultTableId ? [defaultTableId] : tableIds?.map((item: any) => item?.name)
+  const defaultTableId = localStorage.getItem("table_id");
+  const { data: tax_rate } = useFrappeGetCall(
+    "excel_restaurant_pos.api.item.get_tax_rate"
+  );
+  const taxRate = tax_rate?.message;
+  const { call: checkCoupon } = useFrappePostCall(
+    "excel_restaurant_pos.api.item.check_coupon_code"
+  );
 
-  const {call:createOrder,loading,error,result}=useFrappePostCall("excel_restaurant_pos.api.item.create_order")
+  const { data: running_items, mutate: mutateRunningItems } = useFrappeGetCall(
+    `excel_restaurant_pos.api.item.get_running_order_item_list?table_id=${tableId}`
+  );
+  const runningItems = running_items?.message;
+  console.log({ runningItems });
+  const {
+    call: createOrder,
+    loading,
+    error,
+    result,
+  } = useFrappePostCall("excel_restaurant_pos.api.item.create_order");
 
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -78,51 +97,55 @@ const AllCarts = ({
   }, [cartCount]);
 
   // Increment product quantity based on item ID
-const increment = (item_code: string) => {
-  setQuantities((prevQuantities) => ({
-    ...prevQuantities,
-    [item_code]: (prevQuantities[item_code] || 0) + 1,
-  }));
-  
-  setCartItems((prevItems) => {
-    const updatedItems = prevItems.map((item) =>
-      item.item_code === item_code
-        ? { ...item, quantity: (quantities[item_code] || 0) + 1 }
-        : item
-    );
+  const increment = (item_code: string) => {
+    setQuantities((prevQuantities) => ({
+      ...prevQuantities,
+      [item_code]: (prevQuantities[item_code] || 0) + 1,
+    }));
 
-    // Save updated cart items to localStorage
-    localStorage.setItem("cart", JSON.stringify(updatedItems));
-    updateCartCount()
-    return updatedItems;
-  });
-};
+    setCartItems((prevItems) => {
+      const updatedItems = prevItems?.map((item) =>
+        item.item_code === item_code
+          ? { ...item, quantity: (quantities[item_code] || 0) + 1 }
+          : item
+      );
 
-// Decrement product quantity based on item_code
-const decrement = (item_code: string) => {
-  setQuantities((prevQuantities) => ({
-    ...prevQuantities,
-    [item_code]: (prevQuantities[item_code] || 1) > 1 ? prevQuantities[item_code] - 1 : 1,
-  }));
+      // Save updated cart items to localStorage
+      localStorage.setItem("cart", JSON.stringify(updatedItems));
+      updateCartCount();
+      return updatedItems;
+    });
+  };
 
-  setCartItems((prevItems) => {
-    const updatedItems = prevItems.map((item) =>
-      item.item_code === item_code && item.quantity > 1
-        ? { ...item, quantity: quantities[item_code] - 1 }
-        : item
-    );
+  // Decrement product quantity based on item_code
+  const decrement = (item_code: string) => {
+    setQuantities((prevQuantities) => ({
+      ...prevQuantities,
+      [item_code]:
+        (prevQuantities[item_code] || 1) > 1
+          ? prevQuantities[item_code] - 1
+          : 1,
+    }));
 
-    // Save updated cart items to localStorage
-    localStorage.setItem("cart", JSON.stringify(updatedItems));
-    updateCartCount()
-    return updatedItems;
-  });
-};
+    setCartItems((prevItems) => {
+      const updatedItems = prevItems.map((item) =>
+        item.item_code === item_code && item.quantity > 1
+          ? { ...item, quantity: quantities[item_code] - 1 }
+          : item
+      );
 
+      // Save updated cart items to localStorage
+      localStorage.setItem("cart", JSON.stringify(updatedItems));
+      updateCartCount();
+      return updatedItems;
+    });
+  };
 
   // Remove item from cart
   const removeItem = (item_code: string) => {
-    const updatedCartItems = cartItems.filter((item) => item.item_code !== item_code);
+    const updatedCartItems = cartItems.filter(
+      (item) => item.item_code !== item_code
+    );
     setCartItems(updatedCartItems);
     localStorage.setItem("cart", JSON.stringify(updatedCartItems));
     updateCartCount();
@@ -130,105 +153,105 @@ const decrement = (item_code: string) => {
 
   const carts = JSON.parse(localStorage.getItem("cart") || "[]");
 
-  const taxRate = 0.1; // 10% tax rate
-  console.log({cartItems})
+  // 10% tax rate
+  console.log({ cartItems });
   // Calculate the subtotal price based on items and their quantities
   const subtotal = cartItems.reduce(
     (acc, item) => acc + Number(item.price || 0) * Number(item.quantity || 0),
     0
   );
-  console.log({subtotal})
+  console.log({ subtotal });
 
   // Calculate the tax based on the subtotal
-  const tax = subtotal * taxRate;
+  const tax = (subtotal - Number(discount)) * taxRate;
 
   // Calculate discount based on selected type
-  const discountAmount =
-    discountType === "percentage"
-      ? (subtotal * Number(discount || 0)) / 100
-      : Number(discount || 0);
- const payableAmount = isNaN(subtotal - discountAmount + tax) ? 0 : subtotal - discountAmount + tax;
 
+  const payableAmount = isNaN(subtotal - Number(discount) + tax)
+    ? 0
+    : subtotal - Number(discount) + tax;
 
- const handleCheckout = () => {
-  if (cartItems.length === 0) {
-    toast.error("Your cart is empty! Please add items to checkout.");
-    return;
-  }
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      toast.error("Your cart is empty! Please add items to checkout.");
+      return;
+    }
 
-  // Open checkout confirmation modal
-  setCheckoutModalOpen(true);
-};
-const handleParcelChange = (e: React.ChangeEvent<HTMLInputElement>,item: string) => {
-  const isChecked = e.target.checked;
-  setCartItems((prevItems) =>
-    prevItems.map((cartItem) =>
+    // Open checkout confirmation modal
+    setCheckoutModalOpen(true);
+  };
+  const handleParcelChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    item: string
+  ) => {
+    const isChecked = e.target.checked;
+    setCartItems((prevItems) =>
+      prevItems.map((cartItem) =>
+        cartItem.item_code == item
+          ? { ...cartItem, isParcel: isChecked }
+          : cartItem
+      )
+    );
+
+    // Update localStorage with the new value of isParcel
+    const updatedCart = cartItems.map((cartItem) =>
       cartItem.item_code == item
         ? { ...cartItem, isParcel: isChecked }
         : cartItem
-    )
-  );
+    );
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  };
+  const confirmCheckout = async () => {
+    const getCartItems = JSON.parse(localStorage.getItem("cart") || "[]");
+    const formatedCartItems = getCartItems?.map((item: any) => ({
+      item: item?.item_code,
+      qty: item?.quantity,
+      rate: item?.price,
+      amount: item?.price * item?.quantity,
+      is_parcel: item?.isParcel ? 1 : 0,
+    }));
 
-  // Update localStorage with the new value of isParcel
-  const updatedCart = cartItems.map((cartItem) =>
-    cartItem.item_code == item
-      ? { ...cartItem, isParcel: isChecked }
-      : cartItem
-  );
-  localStorage.setItem("cart", JSON.stringify(updatedCart));
-}
-const confirmCheckout = async () => {
-  const getCartItems = JSON.parse(localStorage.getItem("cart") || "[]");
-  const formatedCartItems = getCartItems?.map((item: any) => ({
-    item: item?.item_code,
-    qty: item?.quantity,
-    rate: item?.price,
-    amount: item?.price * item?.quantity,
-    is_parcel: item?.isParcel ? 1 :0
-  }))
+    const payload = {
+      customer: "Room One",
+      item_list: formatedCartItems,
+      table: tableId ? tableId : localStorage.getItem("table_id"),
+      full_name: fullName ? fullName : "Test User",
+      remarks: notes,
+      discount_type: discountType,
+      total_amount: Number(payableAmount),
+      tax: Number(tax),
+      discount: Number(discount),
+      amount: Number(subtotal),
+    };
+    try {
+      const result = await createOrder({ data: payload });
+      if (result?.message?.status === "success") {
+        // toast.success(result?.message?.message)
 
+        setDiscount("");
+        setDiscountType("percentage");
+        setDiscountError("");
+        setCartItems([]);
+        setQuantities({});
+        setNotes("");
+        localStorage.removeItem("cart");
+        localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
+        setShowPopup(true);
+        toggleDrawer();
+        updateCartCount();
+        mutateRunningItems();
 
-  const payload={
-    customer:"Room One",
-    item_list: formatedCartItems,
-    table: tableId ? tableId : localStorage.getItem("table_id"),
-    full_name: fullName ? fullName : "Test User",
-    remarks: notes,
-    discount_type: discountType,
-    total_amount: payableAmount,
-    tax: tax,
-    discount: discountAmount,
-    amount: subtotal
-  }
-  try {
-    const result = await createOrder({data:payload})
-    if(result?.message?.status==="success"){
-      // toast.success(result?.message?.message)
-      setDiscount("");
-      setDiscountType("percentage");
-      setDiscountError("");
-      setCartItems([]);
-      setQuantities({});
-      setNotes("");
-      localStorage.removeItem("cart");
-      localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
-      localStorage.removeItem("table_id")
-      setShowPopup(true);
-      toggleDrawer();
-      updateCartCount();
-    
-      // Close modal after checkout
-      setCheckoutModalOpen(false)
-    }else{
-      toast.error(result?.message?.message)
+        // Close modal after checkout
+        setCheckoutModalOpen(false);
+      } else {
+        toast.error(result?.message?.message);
+      }
+    } catch (error) {
+      console.log("error", error);
     }
-  } catch (error) {
-    console.log("error", error);
-  }
 
-  // Proceed with checkout
-;
-};
+    // Proceed with checkout
+  };
 
   const closeModal = () => {
     setDiscount("");
@@ -239,33 +262,27 @@ const confirmCheckout = async () => {
     setNotes("");
   };
 
-
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-
     const value = e.target.value;
 
     const numericValue = Number(value);
 
-
-
-    if (discountType === "percentage" && (numericValue < 0 || numericValue > 100)) {
-
+    if (
+      discountType === "percentage" &&
+      (numericValue < 0 || numericValue > 100)
+    ) {
       setDiscountError("Discount must be between 0 and 100.");
 
       return;
-
     } else if (discountType === "flat" && numericValue < 0) {
-
       setDiscountError("Flat discount cannot be negative.");
 
       return;
-
     }
 
     setDiscountError("");
 
     setDiscount(value);
-
   };
   // main : 379 , add : 29 , another : 199
   const handleDiscountTypeChange = (
@@ -275,10 +292,30 @@ const confirmCheckout = async () => {
     setDiscount(""); // Reset discount when type changes
     setDiscountError(""); // Reset discount error when type changes
   };
+  const verifyCoupon = () => {
+    if (coupon) {
+      checkCoupon({ data: { coupon_code: coupon } }).then((res) => {
+        if (res?.message?.status === "success") {
+          console.log("res", res?.message);
+          setDiscountError("");
+          const discountAmount =
+            res?.message?.discount_type === "percentage"
+              ? (subtotal * Number(res?.message?.amount ?? 0)) / 100
+              : Number(res?.message?.amount ?? 0);
+          setDiscount(String(discountAmount));
+          setCoupon("");
+        } else {
+          setDiscountError(res?.message?.message);
+          setDiscount("");
+        }
+      });
+    }
+  };
 
   const [isLargeDevice, setIsLargeDevice] = useState(window.innerWidth > 768);
 
   useEffect(() => {
+    mutateRunningItems();
     const handleResize = () => {
       setIsLargeDevice(window.innerWidth > 768);
     };
@@ -313,17 +350,27 @@ const confirmCheckout = async () => {
       foodsBody?.classList.add("modal-scrollable");
     };
   }, [isOpen]);
-  useEffect(()=>{
-    setTableId(defaultTableId || "")
-  },[defaultTableId])
+  const getTableId = async () => {
+    const table = await localStorage.getItem("table_id");
+    setTableId(table || "");
+  };
+
+  useEffect(() => {
+    getTableId();
+
+    if (tableId) {
+      mutateRunningItems();
+    }
+  }, [isCheckoutModalOpen]);
 
   return (
     <ItemsDrawer isOpen={isOpen} isLargeDevice={isLargeDevice}>
       <div
-        className={`overflow-y-auto p-4 z-50 ${isLargeDevice
-          ? " max-h-[calc(100vh-100px)] pb-24"
-          : "max-h-[100vh] pb-20"
-          }`} //max-h-[calc(100vh-100px)]r
+        className={`overflow-y-auto p-4 z-50 ${
+          isLargeDevice
+            ? " max-h-[calc(100vh-100px)] pb-24"
+            : "max-h-[100vh] pb-20"
+        }`} //max-h-[calc(100vh-100px)]r
       >
         <div className="flex justify-between border-b">
           <h2 className="font-semibold">
@@ -336,15 +383,49 @@ const confirmCheckout = async () => {
             <RxCross2 />
           </button>
         </div>
-        <h2 className="font-semibold mt-3">Your Foods</h2>
+        <div className="mt-3">
+          {runningItems?.length > 0 && (
+            <h2 className="font-semibold mt-3">Existing Order</h2>
+          )}
+          {runningItems?.length > 0 &&
+            runningItems?.map((item: any) => (
+              <div
+                key={item?.item}
+                className="border p-2 rounded-md mb-3 w-full"
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex justify-between w-full">
+                    <p className="text-xs lg:text-sm font-semibold text-gray-800 w-3/5">
+                      {item?.item}
+                    </p>
+                    <p className="text-xs lg:text-sm font-medium text-primaryColor w-1/5">
+                      {item?.qty}x{item?.rate}
+                    </p>
+                    <p className="text-xs lg:text-sm font-medium text-primaryColor w-1/5 text-right">
+                      ৳{item?.qty * item?.rate}
+                    </p>
+                  </div>
+                  {/* <div className="flex flex-col justify-center items-center gap-2">
+                  <span className="text-xs">{item?.qty} pcs</span>
+                </div> */}
+                </div>
+              </div>
+            ))}
+        </div>
+        <h2 className="font-semibold mt-3">
+          {runningItems?.length > 0 ? "Newly Added" : ""}
+        </h2>
         {cartItems?.length === 0 && (
           <div className="flex items-center justify-center h-12 rounded-md border mt-3 text-sm">
-            No data found
+            You haven't added anything to your cart!
           </div>
         )}
         <div className="mt-3">
           {cartItems?.map((item) => (
-            <div key={item?.item_code} className="border p-2 rounded-md mb-3 w-full">
+            <div
+              key={item?.item_code}
+              className="border p-2 rounded-md mb-3 w-full"
+            >
               <div className="flex justify-between items-center">
                 <div className="flex">
                   <img
@@ -362,20 +443,20 @@ const confirmCheckout = async () => {
                   </div>
                 </div>
                 <div>
-               <div className="flex items-center ">
-               <label className="flex items-center mt-2 text-xs">
-          <input
-            type="checkbox"
-            checked={item?.isParcel}
-            onChange={(e) => handleParcelChange(e,item?.item_code)}
-            className="mr-2"
-          />
-                  Parcel
-                </label>
-               </div>
+                  <div className="flex items-center ">
+                    <label className="flex items-center mt-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={item?.isParcel}
+                        onChange={(e) => handleParcelChange(e, item?.item_code)}
+                        className="mr-2"
+                      />
+                      Parcel
+                    </label>
+                  </div>
                 </div>
                 <div className="col-span-1 flex flex-col justify-center items-center gap-2">
-                  <div className="flex items-center rounded-md h-fit">
+                  <div className="flex items-center rounded-md ">
                     {quantities[item?.item_code] === 1 ? (
                       <button
                         onClick={() => decrement(item?.item_code)}
@@ -391,8 +472,8 @@ const confirmCheckout = async () => {
                         <LuMinus className="text-xs" />
                       </button>
                     )}
-                    <span className="px-2 text-xs h-full flex items-center border">
-                      { item?.quantity}
+                    <span className="px-2 text-xs h-full flex items-center ">
+                      {item?.quantity}
                     </span>
                     {quantities[item?.item_code] > 0 && (
                       <button
@@ -416,17 +497,50 @@ const confirmCheckout = async () => {
         </div>
 
         {/* Note */}
-        <label className="form-control w-full mt-2">
-          <div className="label">
-            <h2 className="font-semibold text-xs">Note</h2>
-          </div>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)} // Update state on change
-            className="focus:outline-none border rounded-md p-2 text-xs md:text-sm"
-            placeholder="Special instructions"
-          ></textarea>
-        </label>
+        {cartItems?.length > 0 && (
+          <label className="form-control w-full mt-2">
+            <div className="label">
+              <h2 className="font-semibold text-xs">Note</h2>
+            </div>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)} // Update state on change
+              className="focus:outline-none border rounded-md p-2 text-xs md:text-sm"
+              placeholder="Special instructions"
+            ></textarea>
+          </label>
+        )}
+        {cartItems?.length > 0 && runningItems?.length === 0 && (
+          <>
+            <div className="label">
+              <h2 className="font-semibold text-xs">Coupon</h2>
+            </div>
+            <div className="flex gap-2 w-full text-sm relative">
+              <input
+                type={"text"}
+                value={coupon}
+                onChange={(e) => setCoupon(e.target.value)}
+                className={`border rounded-md p-1 focus:outline-none px-3 w-full ${
+                  discountError ? "border-red-500" : ""
+                }`}
+                placeholder={`Enter coupon code`}
+              />
+              {discountError && (
+                <p className="text-red-500 text-xs right-0 -bottom-5 pt-2 absolute">
+                  {discountError}
+                </p>
+              )}
+              {coupon && (
+                <button
+                  onClick={verifyCoupon}
+                  className="absolute right-3 top-1  px-2 py-1 bg-blue-500 text-xs text-white rounded-md hover:bg-blue-600"
+                >
+                  Verify
+                </button>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Display discount input */}
         {isAdmin && (
@@ -445,10 +559,12 @@ const confirmCheckout = async () => {
                 type="number"
                 value={discount}
                 onChange={handleDiscountChange}
-                className={`border rounded-md p-1 focus:outline-none px-3 w-full ${discountError ? "border-red-500" : ""
-                  }`}
-                placeholder={`Enter ${discountType === "percentage" ? "percentage" : "flat amount"
-                  }`}
+                className={`border rounded-md p-1 focus:outline-none px-3 w-full ${
+                  discountError ? "border-red-500" : ""
+                }`}
+                placeholder={`Enter ${
+                  discountType === "percentage" ? "percentage" : "flat amount"
+                }`}
               />
               {discountError && (
                 <p className="text-red-500 text-xs right-0 -bottom-5 pt-2 absolute">
@@ -459,32 +575,35 @@ const confirmCheckout = async () => {
           </div>
         )}
         {/* Display cart summary */}
-        <div className="p-3 border rounded-md mt-5">
-          <div className="flex justify-between text-xs">
-            <h1>Subtotal</h1>
-            <h1>৳{subtotal.toFixed(2)}</h1>
-          </div>
-          {isAdmin && (
-            <div className="flex justify-between text-xs mt-2">
-              <h1>Discount (%)</h1>
-              <h1>৳{discountAmount.toFixed(2)}</h1>
+        {cartItems?.length > 0 && (
+          <div className="p-3 border rounded-md mt-5">
+            <div className="flex justify-between text-xs">
+              <h1>Subtotal</h1>
+              <h1>৳{subtotal.toFixed(2)}</h1>
             </div>
-          )}
-          <div className="flex justify-between text-xs mt-2">
-            <h1>Tax (10%)</h1>
-            <h1>৳{tax.toFixed(2)}</h1>
+            {Number(discount) > 0 && (
+              <div className="flex justify-between text-xs mt-2">
+                <h1>Discount (%)</h1>
+                <h1>৳{discount}</h1>
+              </div>
+            )}
+            <div className="flex justify-between text-xs mt-2">
+              <h1>Tax ({taxRate * 100}%)</h1>
+              <h1>৳{tax.toFixed(2)}</h1>
+            </div>
+            <div className="flex justify-between text-xs font-semibold mt-2">
+              <h1>Payable Amount</h1>
+              <h1>৳{payableAmount.toFixed(2)}</h1>
+            </div>
           </div>
-          <div className="flex justify-between text-xs font-semibold mt-2">
-            <h1>Payable Amount</h1>
-            <h1>৳{payableAmount.toFixed(2)}</h1>
-          </div>
-        </div>
+        )}
       </div>
 
       {carts.length !== 0 && (
         <div
-          className={`p-4 py-2 border bottom-0 absolute w-full bg-white ${isLargeDevice ? "rounded-b-lg" : ""
-            }`}
+          className={`p-4 py-2 border bottom-0 absolute w-full bg-white ${
+            isLargeDevice ? "rounded-b-lg" : ""
+          }`}
         >
           <div className="flex justify-between items-center">
             <p className="text-sm font-semibold">
@@ -498,9 +617,8 @@ const confirmCheckout = async () => {
             </button>
           </div>
         </div>
-        
       )}
-        {isCheckoutModalOpen && (
+      {isCheckoutModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
             <h2 className="text-lg font-semibold mb-4">Confirm Checkout</h2>
@@ -561,12 +679,14 @@ const ItemsDrawer = ({ children, isOpen, isLargeDevice }: DrawerProps) => {
     return (
       <div
         style={{ zIndex: 999 }}
-        className={`fixed inset-0 z-50 flex items-center justify-center p-4  ${isOpen ? "bg-black bg-opacity-50" : "hidden"
-          }`}
+        className={`fixed inset-0 z-50 flex items-center justify-center p-4  ${
+          isOpen ? "bg-black bg-opacity-50" : "hidden"
+        }`}
       >
         <div
-          className={`bg-white rounded-lg shadow-lg transition-transform duration-500 ease-in-out ${isOpen ? "scale-100" : "scale-0"
-            } md:max-w-lg w-full h-auto`}
+          className={`bg-white rounded-lg shadow-lg transition-transform duration-500 ease-in-out ${
+            isOpen ? "scale-100" : "scale-0"
+          } md:max-w-lg w-full h-auto`}
         >
           {children}
         </div>
@@ -577,8 +697,9 @@ const ItemsDrawer = ({ children, isOpen, isLargeDevice }: DrawerProps) => {
       <div className="h-[100vh] w-full" style={{ zIndex: 999 }}>
         <div
           style={{ zIndex: 999 }}
-          className={`drawer-bottom bg-white shadow-lg transition-transform duration-500 ease-in-out z-50 ${isOpen ? "translate-y-0" : "translate-y-full"
-            } fixed bottom-0 left-0 w-full min-h-full `} //min-h-[100%]
+          className={`drawer-bottom bg-white shadow-lg transition-transform duration-500 ease-in-out z-50 ${
+            isOpen ? "translate-y-0" : "translate-y-full"
+          } fixed bottom-0 left-0 w-full min-h-full `} //min-h-[100%]
         >
           {children}
         </div>

@@ -16,9 +16,24 @@ import TruncateText from "../../../components/common/TruncateText";
 import { useCartContext } from "../../../context/cartContext";
 import useWindowWidth from "../../../hook/useWindowWidth";
 import { Food } from "../../../data/items";
-import { useFrappeDocTypeEventListener, useFrappeDocumentEventListener, useFrappeGetCall, useFrappeGetDocList, useFrappePostCall } from "frappe-react-sdk";
-import { useSearchParams } from "react-router-dom";
+import {
+  useFrappeAuth,
+  useFrappeDocTypeEventListener,
+  useFrappeGetCall,
+  useFrappeGetDoc,
+  useFrappeGetDocList,
+  useFrappePostCall,
+} from "frappe-react-sdk";
 
+// Add this interface near the top of your file
+interface CartItem {
+  item_code?: string;
+  item_name?: string;
+  price?: number;
+  quantity?: number;
+  isParcel?: boolean;
+  // Add other properties your cart items have
+}
 
 const Pos = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -26,43 +41,68 @@ const Pos = () => {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [showCart, setShowCart] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [discount, setDiscount] = useState<string>("");
+  const [coupon, setCoupon] = useState<string>("");
   const [discountError, setDiscountError] = useState<string>("");
-  const [discountType, setDiscountType] = useState<"flat" | "percentage">(
-    "percentage"
-  );
-  const [foodCategories, setFoodCategories] = useState<any[]>([])
+  const [discountType, setDiscountType] = useState<
+    "flat" | "percentage" | "coupon"
+  >("percentage");
+  const [foodCategories, setFoodCategories] = useState<any[]>([]);
   const [notes, setNotes] = useState<string>("");
   const [isParcel, setIsParcel] = useState<boolean>(false);
   const [directCheckout, setDirectCheckout] = useState<boolean>(false);
+  const [discountLimit, setDiscountLimit] = useState<number>(0);
 
+  const { data: settings, error: settingsError } = useFrappeGetDoc(
+    "Restaurant Settings",
+    "Restaurant Settings",
+    {
+      fields: ["*"],
+    }
+  );
+  console.log("settings", settings?.discount_allocation);
+  const taxRate = parseInt(settings?.tax_rate || "0") / 100;
+  const { currentUser } = useFrappeAuth();
+  const { data: roles } = useFrappeGetCall(
+    `excel_restaurant_pos.api.item.get_roles?user=${currentUser}`
+  );
+  const userRoles = roles?.message?.map((role: any) => role?.Role);
+  console.log("userRoles", userRoles);
 
+  const { data: categories, isLoading: isLoadingCategories } = useFrappeGetCall(
+    "excel_restaurant_pos.api.item.get_category_list",
+    {
+      fields: ["*"],
+    }
+  );
 
+  const { call: checkCoupon } = useFrappePostCall(
+    "excel_restaurant_pos.api.item.check_coupon_code"
+  );
 
-  // useFrappeGetCall
-  const { data: categories, isLoading: isLoadingCategories } = useFrappeGetCall('excel_restaurant_pos.api.item.get_category_list', {
-    fields: ["*"]
-  })
-
-  const {call:createOrder,loading,error,result}=useFrappePostCall("excel_restaurant_pos.api.item.create_order")
-  const { data:foods, mutate } = useFrappeGetCall(
+  const {
+    call: createOrder,
+    loading,
+    error,
+    result,
+  } = useFrappePostCall("excel_restaurant_pos.api.item.create_order");
+  const { data: foods, mutate } = useFrappeGetCall(
     `excel_restaurant_pos.api.item.get_food_item_list?category=${selectedCategory}`,
     { fields: ["*"] }
   );
-  const { data: tableIds } = useFrappeGetDocList('Restaurant Table', {
-    fields: ["name"]
-  })
-  const selectedTableId = tableIds?.map((item: any) => item?.name)
-
+  const { data: tableIds } = useFrappeGetDocList("Restaurant Table", {
+    fields: ["name"],
+  });
+  const selectedTableId = tableIds?.map((item: any) => item?.name);
 
   useEffect(() => {
     if (categories) {
-      setFoodCategories(categories.message)
+      setFoodCategories(categories.message);
     }
-  }, [categories])
+  }, [categories]);
 
   const handleCategoryClick = (category: string) => {
     console.log("category", category);
@@ -74,18 +114,9 @@ const Pos = () => {
   const [tableId, setTableId] = useState<string>("");
   const [tableIdError, setTableIdError] = useState<string>("");
 
- // Table IDs
-
-  
-
-  console.log("categories", foodCategories);
-
-
   // Toggle drawer visibility
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Food | null>(
-    null
-  );
+  const [selectedItem, setSelectedItem] = useState<Food | null>(null);
 
   const { cartCount } = useCartContext();
 
@@ -96,7 +127,10 @@ const Pos = () => {
 
   // const { cartItems } = useCartContext();
 
-  const { updateCartCount, cartItems } = useCartContext();
+  const {
+    updateCartCount,
+    cartItems,
+  }: { updateCartCount: () => void; cartItems: CartItem[] } = useCartContext();
 
   // Toggle drawer visibility
   const toggleDrawer = () => {
@@ -110,8 +144,11 @@ const Pos = () => {
   };
 
   // Get the quantity of an item in the cart
-  const getItemQuantity = (itemId: string) => {
-    const cartItem = cartItems?.find((cartItem) => cartItem?.item_code === itemId);
+  const getItemQuantity = (itemId: string | undefined) => {
+    if (!itemId) return 0;
+    const cartItem = cartItems?.find(
+      (cartItem) => cartItem?.item_code === itemId
+    );
     return cartItem ? cartItem?.quantity : 0;
   };
 
@@ -138,7 +175,7 @@ const Pos = () => {
   useEffect(() => {
     if (cartItems?.length > 0) {
       const initialQuantities = cartItems?.reduce((acc: any, item: any) => {
-        acc[item?.id] = item?.quantity;
+        acc[item?.item_code] = item?.quantity;
         return acc;
       }, {});
       setQuantities(initialQuantities);
@@ -148,47 +185,80 @@ const Pos = () => {
   // Checkout
 
   // Increment product quantity based on item ID
-  const increment = (id: number) => {
+  const increment = (id: string | undefined) => {
+    if (!id) return;
     setQuantities((prevQuantities) => ({
       ...prevQuantities,
-      [id]: (prevQuantities[id] || 0) + 1,
+      [id]: (prevQuantities[id] || 1) + 1,
     }));
+    // update with new quantity
+    const updatedCartItems = cartItems?.map((item) =>
+      item?.item_code === id
+        ? { ...item, quantity: (quantities[id] || 1) + 1 }
+        : item
+    );
+    localStorage.setItem("cart", JSON.stringify(updatedCartItems));
+    updateCartCount();
   };
 
   // Decrement product quantity based on item ID
-  const decrement = (id: number) => {
+  const decrement = (id: string | undefined) => {
+    if (!id) return;
+    // first find the item in the cart
+    const item = cartItems?.find((item) => item?.item_code === id);
+    console.log("item", item);
     setQuantities((prevQuantities) => ({
       ...prevQuantities,
-      [id]: (prevQuantities[id] || 1) > 1 ? prevQuantities[id] - 1 : 1,
+      [id]:
+        (prevQuantities[id] ?? item?.quantity) > 1
+          ? (prevQuantities[id] ?? item?.quantity) - 1
+          : 1,
     }));
+    // update with new quantity
+    const updatedCartItems = cartItems?.map((item) =>
+      item?.item_code === id
+        ? {
+            ...item,
+            quantity: (quantities[id] || 1) > 1 ? quantities[id] - 1 : 1,
+          }
+        : item
+    );
+    localStorage.setItem("cart", JSON.stringify(updatedCartItems));
   };
 
   // Remove item from cart
-  const removeItem = (id: number) => {
+  const removeItem = (id: string) => {
     const updatedCartItems = cartItems.filter((item) => item?.item_code !== id);
+    setQuantities((prevQuantities) => {
+      const newQuantities = { ...prevQuantities };
+      delete newQuantities[id];
+      return newQuantities;
+    });
+    console.log({ quantities });
     // setCartItems(updatedCartItems);
     localStorage.setItem("cart", JSON.stringify(updatedCartItems));
 
     updateCartCount();
   };
-
-  const taxRate = 0.1; // 10% tax rate
+  // 10% tax rate
 
   // Calculate the subtotal price based on items and their quantities
-  const subtotal = cartItems.reduce(
-    (acc, item) => acc + item?.price * (quantities[item?.item_code] || item?.quantity),
-    0
-  );
-
+  const subtotal = cartItems.reduce((acc, item) => {
+    const itemCode = item?.item_code;
+    const quantity = itemCode ? quantities[itemCode] || item?.quantity || 0 : 0;
+    return acc + (item?.price ?? 0) * quantity;
+  }, 0);
+  console.log("subtotal", typeof subtotal);
   // Calculate the tax based on the subtotal
-  const tax = subtotal * taxRate;
 
   // Calculate discount based on selected type
-  const discountAmount =
+  let discountAmount =
     discountType === "percentage"
-      ? (subtotal * Number(discount)) / 100
+      ? (subtotal * Number(discount)) / 100 > discountLimit
+        ? discountLimit
+        : (subtotal * Number(discount)) / 100
       : Number(discount);
-
+  const tax = (subtotal - discountAmount) * taxRate;
   const payableAmount = subtotal - discountAmount + tax;
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,26 +267,76 @@ const Pos = () => {
     // Validate the discount value based on the type
     if (discountType === "percentage") {
       const numericValue = Number(value);
+      const percentAmount = subtotal * (Number(value) / 100);
       if (value && (numericValue < 0 || numericValue > 100)) {
         setDiscountError("Discount must be between 0 and 100.");
         return;
-      } else {
-        setDiscountError("");
       }
-    } else {
-      // For flat amount, you can customize your validation logic as needed
-      if (value && Number(value) < 0) {
-        setDiscountError("Flat discount cannot be negative.");
+      if (percentAmount >= subtotal) {
+        setDiscountError("Discount cannot be greater than the total amount.");
+        return;
       } else {
         setDiscountError("");
+        setDiscount(value);
       }
     }
 
-    setDiscount(value);
+    if (discountType === "flat") {
+      // For flat amount, you can customize your validation logic as needed
+      if (value && Number(value) < 0) {
+        setDiscountError("Flat discount cannot be negative.");
+      } else if (Number(value) > discountLimit) {
+        setDiscountError(`Discount cannot be greater than ${discountLimit}.`);
+        return;
+      } else if (Number(value) >= subtotal) {
+        setDiscountError("Discount cannot be greater than the total amount.");
+        return;
+      } else {
+        setDiscountError("");
+        setDiscount(value);
+      }
+    } else {
+      setDiscountError("");
+    }
   };
-  const handleParcelChange = (e: React.ChangeEvent<HTMLInputElement>,item: string) => {
+  const getDiscountPlaceholder = () => {
+    switch (discountType) {
+      case "percentage":
+        return "percentage";
+      case "flat":
+        return "flat amount";
+      case "coupon":
+        return "coupon code";
+      default:
+        return "";
+    }
+  };
+  const verifyCoupon = () => {
+    if (coupon) {
+      checkCoupon({ data: { coupon_code: coupon } }).then((res) => {
+        if (res?.message?.status === "success") {
+          console.log("res", res?.message);
+          setDiscountError("");
+          discountAmount =
+            res?.message?.discount_type === "percentage"
+              ? (subtotal * Number(res?.message?.amount ?? 0)) / 100
+              : Number(res?.message?.amount ?? 0);
+          setDiscount(String(discountAmount));
+          setCoupon("");
+        } else {
+          setDiscountError(res?.message?.message);
+          setDiscount("");
+        }
+      });
+    }
+  };
+
+  const handleParcelChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    item: string
+  ) => {
     const isChecked = e.target.checked;
-  
+
     // Update localStorage with the new value of isParcel
     const updatedCart = cartItems?.map((cartItem) =>
       cartItem.item_code == item
@@ -224,11 +344,11 @@ const Pos = () => {
         : cartItem
     );
     localStorage.setItem("cart", JSON.stringify(updatedCart));
-  }
+  };
   const handleDiscountTypeChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    setDiscountType(e.target.value as "flat" | "percentage");
+    setDiscountType(e.target.value as "flat" | "percentage" | "coupon");
     setDiscount("");
     setDiscountError("");
   };
@@ -248,32 +368,28 @@ const Pos = () => {
       toast.error("Your cart is empty! Please add items to checkout.");
       return;
     }
-    console.log(notes ? notes : "not found")
-    setDirectCheckout(true)
-    setIsParcel(true)
+    console.log(notes ? notes : "not found");
+    setDirectCheckout(true);
+    setIsParcel(true);
     setCheckoutModalOpen(true); // Open confirmation modal
   };
 
   const confirmCheckout = async () => {
-    
-
     if (!isParcel && !tableId) {
       toast.error("Please select a table ID.");
       return;
     }
-  
+
     const getCartItems = JSON.parse(localStorage.getItem("cart") || "[]");
     const formatedCartItems = getCartItems?.map((item: any) => ({
       item: item?.item_code,
       qty: item?.quantity,
       rate: item?.price,
       amount: item?.price * item?.quantity,
-      is_parcel: tableId ?  (item?.isParcel ? 1 : 0): 1,
-      is_ready: directCheckout ? 1: 0
-    }))
+      is_parcel: tableId ? (item?.isParcel ? 1 : 0) : 1,
+    }));
 
-
-    const payload={
+    const payload = {
       item_list: formatedCartItems,
       table: tableId ? tableId : "",
       full_name: fullName ? fullName : "Customer",
@@ -283,44 +399,83 @@ const Pos = () => {
       tax: tax,
       discount: discountAmount,
       amount: subtotal,
-      status: directCheckout ? "Completed": "Work in progress"
-    }
+      status: "Work in progress",
+      is_paid: directCheckout ? 1 : 0,
+    };
     try {
-      const result = await createOrder({data:payload})
+      const result = await createOrder({ data: payload });
       console.log("result", result?.message?.status);
-      if(result?.message?.status==="success"){
+      if (result?.message?.status === "success") {
         // toast.success(result?.message?.message)
         setQuantities({});
         localStorage.removeItem("cart");
         localStorage.setItem("checkoutPrice", JSON.stringify(payableAmount));
-    
+
         setShowPopup(true);
         setDiscountType("percentage");
         setDiscount("");
         setNotes("");
         updateCartCount();
-        setIsParcel(false)
-        setTableId("")
-    
+        setIsParcel(false);
+        setTableId("");
+        setDirectCheckout(false);
+
         setCheckoutModalOpen(false);
-      }else{
-        toast.error(result?.message?.message)
+      } else {
+        toast.error(result?.message?.message);
       }
-  
     } catch (error) {
       console.log("error", error);
       toast.error("Failed to create order");
     }
-     // Close modal after checkout
+    // Close modal after checkout
   };
-  useFrappeDocTypeEventListener("Item",()=>{
-    console.log("New Created Item")
-    mutate()
+  useFrappeDocTypeEventListener("Item", () => {
+    mutate();
   }),
-useEffect(() => {
-  mutate()
-}, [selectedCategory])
+    useEffect(() => {
+      mutate();
+    }, [selectedCategory]);
+  // get discount limit
+  useEffect(() => {
+    const setRoleDiscount = (role: string) => {
+      if (settings?.discount_allocation) {
+        // Find the discount allocation for the specific role
+        const discount = settings.discount_allocation.find(
+          (allocation: any) => allocation?.role === role
+        );
 
+        // If a discount exists and has a non-zero amount, set the discount limit
+        if (discount && discount.amount > 0) {
+          setDiscountLimit(discount?.amount);
+          return true; // Indicate that a discount has been set
+        }
+      }
+      return false; // No discount set for this role
+    };
+
+    if (
+      userRoles?.includes("Restaurant Manager") &&
+      setRoleDiscount("Restaurant Manager")
+    ) {
+      return; // Exit early if the discount for Restaurant Manager is set
+    }
+
+    if (
+      userRoles?.includes("Restaurant Cashier") &&
+      setRoleDiscount("Restaurant Cashier")
+    ) {
+      return; // Exit early if the discount for Restaurant Cashier is set
+    }
+
+    if (
+      userRoles?.includes("Restaurant Waiter") &&
+      setRoleDiscount("Restaurant Waiter")
+    ) {
+      return; // Exit early if the discount for Restaurant Waiter is set
+    }
+  }, [userRoles, settings?.discount_allocation]);
+  console.log("discountLimit", discountLimit);
 
   return (
     <div className="p-2 foodsBody" id="foodsBody">
@@ -354,7 +509,7 @@ useEffect(() => {
 
           {/* Foods Cards */}
           <div className="grid grid-cols-1 xsm:grid-cols-2 lg:grid-cols-3 gap-4 xl:grid-cols-4 mt-5">
-            {foods?.message?.map((item, index) => {
+            {foods?.message?.map((item: any, index: any) => {
               return (
                 <div
                   key={index}
@@ -378,18 +533,22 @@ useEffect(() => {
                       ৳{item?.price}
                     </p>
                     <div className="text-xs lg:text-sm text-gray-500">
-                      <TruncateText content={item?.description || ""} length={100} />
+                      <TruncateText
+                        content={item?.description || ""}
+                        length={100}
+                      />
                     </div>
                   </div>
-                  {getItemQuantity(item?.id) > 0 && (
+                  {item?.item_code && getItemQuantity(item?.item_code) > 0 && (
                     <div
-                      title={`${getItemQuantity(item?.id)} items in cart`}
+                      title={`${getItemQuantity(
+                        item?.item_code
+                      )} items in cart`}
                       className="w-5 h-5 rounded-full bg-primaryColor absolute top-2 right-2 flex justify-center items-center text-xs md:text-sm text-white border shadow-md"
                     >
-                      {getItemQuantity(item?.id)}
+                      {getItemQuantity(item?.item_code)}
                     </div>
                   )}
-
                 </div>
               );
             })}
@@ -411,28 +570,35 @@ useEffect(() => {
                   {cartItems?.map((item) => (
                     <div className="accordion mb-1">
                       <div className="border rounded-md p-2">
-                        <div className="flex justify-between transition font-medium">
+                        {/* <div className="flex justify-between items-center transition font-medium">
                           <div className="block">
-                            <p title={item?.item_name} className="font-semibold">
-                              {item?.item_name?.substring(0, textDot)}
-                              {item?.item_name?.length > textDot ? "..." : ""}
+                            <p
+                              title={item?.item_name}
+                              className="font-semibold"
+                            >
+                              {(item?.item_name ?? "").substring(0, textDot)}
+                              {(item?.item_name ?? "").length > textDot
+                                ? "..."
+                                : ""}
                             </p>
                             <p className="font-semibold mt-1">৳{item?.price}</p>
                           </div>
-                           <div className="flex items-center ">
-               <label className="flex items-center mt-2 text-xs">
-          <input
-            type="checkbox"
-            checked={item?.isParcel}
-            onChange={(e) => handleParcelChange(e,item?.item_code)}
-            className="mr-2"
-          />
-                  Parcel
-                </label>
-               </div>
-                          <div className="flex gap-2">
+                          <div className="flex items-center w-25">
+                            <label className="flex items-center mt-2 text-xs">
+                              <input
+                                type="checkbox"
+                                checked={item?.isParcel}
+                                onChange={(e) =>
+                                  handleParcelChange(e, item?.item_code || "")
+                                }
+                                className="mr-2"
+                              />
+                              Parcel
+                            </label>
+                          </div>
+                          <div className="flex gap-2 w-25">
                             <div className="flex items-center rounded-md h-fit border w-fit">
-                              {quantities[item?.item_code] === 1 ? (
+                              {quantities[item?.item_code ?? ""] === 1 ? (
                                 <button
                                   onClick={() => decrement(item?.item_code)}
                                   className="px-1 rounded-md rounded-e-none text-xs bg-gray-200 cursor-not-allowed h-fit py-1.5 "
@@ -448,7 +614,8 @@ useEffect(() => {
                                 </button>
                               )}
                               <span className="px-2 text-xs h-full flex items-center">
-                                {quantities[item?.item_code] || item?.quantity}
+                                {quantities[item?.item_code ?? ""] ||
+                                  item?.quantity}
                               </span>
                               <button
                                 onClick={() => increment(item?.item_code)}
@@ -458,8 +625,72 @@ useEffect(() => {
                               </button>
                             </div>
                             <button
-                              onClick={() => removeItem(item?.item_code)}
+                              onClick={() => removeItem(item?.item_code || "")}
                               className="text-redColor px-1.5 rounded-md text-xs bg-gray-200 h-fit py-1.5 border"
+                            >
+                              <FaRegTrashCan />
+                            </button>
+                          </div>
+                        </div> */}
+                        <div className="flex justify-between items-center transition font-medium">
+                          <div className="block w-1/3">
+                            <p
+                              title={item?.item_name}
+                              className="font-semibold truncate"
+                            >
+                              {(item?.item_name ?? "").substring(0, textDot)}
+                              {(item?.item_name ?? "").length > textDot
+                                ? "..."
+                                : ""}
+                            </p>
+                            <p className="font-semibold mt-1">৳{item?.price}</p>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <label className="flex items-center text-xs">
+                              <input
+                                type="checkbox"
+                                checked={item?.isParcel}
+                                onChange={(e) =>
+                                  handleParcelChange(e, item?.item_code || "")
+                                }
+                                className="mr-2"
+                              />
+                              Parcel
+                            </label>
+                          </div>
+
+                          <div className="flex items-center gap-2 w-1/3">
+                            <div className="flex items-center rounded-md h-fit border w-full">
+                              {quantities[item?.item_code ?? ""] === 1 ? (
+                                <button
+                                  onClick={() => decrement(item?.item_code)}
+                                  className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 cursor-not-allowed h-fit py-1.5"
+                                >
+                                  <LuMinus className="text-xs" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => decrement(item?.item_code)}
+                                  className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 h-fit py-1.5"
+                                >
+                                  <LuMinus className="text-xs" />
+                                </button>
+                              )}
+                              <span className="px-2 text-xs h-full flex items-center">
+                                {quantities[item?.item_code ?? ""] ||
+                                  item?.quantity}
+                              </span>
+                              <button
+                                onClick={() => increment(item?.item_code)}
+                                className="px-2 rounded-md rounded-s-none bg-gray-200 h-fit py-1.5"
+                              >
+                                <FiPlus className="text-xs" />
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => removeItem(item?.item_code || "")}
+                              className="text-red-500 px-2 rounded-md text-xs bg-gray-200 h-fit py-1.5 border"
                             >
                               <FaRegTrashCan />
                             </button>
@@ -491,22 +722,33 @@ useEffect(() => {
                   >
                     <option value="percentage">Percentage</option>
                     <option value="flat">Flat Amount</option>
+                    <option value="coupon">Coupon</option>
                   </select>
                   <input
-                    type="number"
-                    value={discount}
-                    onChange={handleDiscountChange}
-                    className={`border rounded-md p-1 focus:outline-none px-3 w-full ${discountError ? "border-red-500" : ""
-                      }`}
-                    placeholder={`Enter ${discountType === "percentage"
-                      ? "percentage"
-                      : "flat amount"
-                      }`}
+                    type={discountType === "coupon" ? "text" : "number"}
+                    value={discountType === "coupon" ? coupon : discount}
+                    onChange={
+                      discountType === "coupon"
+                        ? (e) => setCoupon(e.target.value)
+                        : handleDiscountChange
+                    }
+                    className={`border rounded-md p-1 focus:outline-none px-3 w-full ${
+                      discountError ? "border-red-500" : ""
+                    }`}
+                    placeholder={`Enter ${getDiscountPlaceholder()}`}
                   />
                   {discountError && (
                     <p className="text-red-500 text-xs right-0 -bottom-5 pt-2 absolute">
                       {discountError}
                     </p>
+                  )}
+                  {discountType === "coupon" && (
+                    <button
+                      onClick={verifyCoupon}
+                      className="absolute right-3 top-1  px-2 py-1 bg-blue-500 text-xs text-white rounded-md hover:bg-blue-600"
+                    >
+                      Verify
+                    </button>
                   )}
                 </div>
               </div>
@@ -518,11 +760,11 @@ useEffect(() => {
                   <h1>৳{subtotal.toFixed(2)}</h1>
                 </div>
                 <div className="flex justify-between text-xs mt-2">
-                  <h1>Discount (%)</h1>
+                  <h1>Discount ({<span className="font-bold">৳</span>})</h1>
                   <h1>৳{discountAmount.toFixed(2)}</h1>
                 </div>
                 <div className="flex justify-between text-xs mt-2">
-                  <h1>Tax (10%)</h1>
+                  <h1>Tax ({taxRate * 100}%)</h1>
                   <h1>৳{tax.toFixed(2)}</h1>
                 </div>
                 <div className="flex justify-between text-xs font-semibold mt-2">
@@ -531,88 +773,110 @@ useEffect(() => {
                 </div>
               </div>
               <div className="flex  justify-between gap-3 ">
-              <button
-                onClick={handleCheckout}
-                className="bg-primaryColor text-white w-full p-2 rounded-md mt-3 text-sm"
-              >
-                Create Order
-              </button>
-              <button
-                onClick={handleDirectCheckout}
-                className="bg-primaryColor text-white w-full p-2 rounded-md mt-3 text-sm"
-              >
-                Checkout
-              </button>
+                <button
+                  onClick={handleCheckout}
+                  className="bg-primaryColor text-white w-full p-2 rounded-md mt-3 text-sm"
+                >
+                  Create Order
+                </button>
+                <button
+                  disabled={
+                    !userRoles?.includes("Restaurant Manager") ||
+                    !userRoles?.includes("Restaurant Cashier")
+                  }
+                  onClick={handleDirectCheckout}
+                  className={`bg-primaryColor text-white w-full p-2 rounded-md mt-3 text-sm ${
+                    !userRoles?.includes("Restaurant Manager") ||
+                    !userRoles?.includes("Restaurant Cashier")
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                >
+                  Checkout
+                </button>
               </div>
-              
             </div>
           </div>
         )}
-         {isCheckoutModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-lg font-semibold mb-4">Confirm {directCheckout ? "Checkout" : "Order"}</h2>
-            <label className="block mb-2">
-              Full Name (optional)
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full border rounded p-2 mt-1"
-              />
-            </label>
-           <div>
-          
-            <label className="block my-3">
-              <input
-                type="checkbox"
-                checked={isParcel}
-                onChange={(e) => {
-                  if(directCheckout){
-                    setIsParcel(true)
-                  }else{
-                    setIsParcel(e.target.checked)
-                  }
-                }}
-                 />
-             {" "} Is Parcel?
-            </label>
-
-           </div>
-            {
-              !isParcel && (
+        {isCheckoutModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+              <h2 className="text-lg font-semibold mb-4">
+                Confirm {directCheckout ? "Checkout" : "Order"}
+              </h2>
+              <label className="block mb-2">
+                Full Name (optional)
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full border rounded p-2 mt-1"
+                />
+              </label>
+              <div>
+                {directCheckout || (
+                  <label className="block my-3">
+                    <input
+                      type="checkbox"
+                      checked={isParcel}
+                      onChange={(e) => {
+                        if (directCheckout) {
+                          setIsParcel(true);
+                        } else {
+                          setIsParcel(e.target.checked);
+                        }
+                      }}
+                    />{" "}
+                    Is Parcel?
+                  </label>
+                )}
+              </div>
+              {!isParcel && (
                 <label className="block mb-2">
-              Table ID <span className="text-red-500">*</span>
-              <select
-                value={tableId}
-                onChange={(e) => {
-                  setTableId(e.target.value);
-                  setTableIdError("");
-                }}
-                className={`w-full border rounded p-2 mt-1 ${tableIdError ? "border-red-500" : ""}`}
-              >
-                <option value="">Select Table ID</option>
-                {selectedTableId?.map((id) => (
-                  <option key={id} value={id}>
-                    {id}
-                  </option>
-                ))}
-              </select>
-              {tableIdError && <p className="text-red-500 text-xs mt-1">{tableIdError}</p>}
-            </label>
-              )
-            }
-            <div className="flex justify-end mt-4">
-              <button onClick={() => {setCheckoutModalOpen(false);setDirectCheckout(false);setIsParcel(false)}} className="mr-2 bg-gray-200 px-4 py-2 rounded">
-                Cancel
-              </button>
-              <button onClick={confirmCheckout} className="bg-primaryColor px-4 py-2 rounded text-white">
-                Confirm
-              </button>
+                  Table ID <span className="text-red-500">*</span>
+                  <select
+                    value={tableId}
+                    onChange={(e) => {
+                      setTableId(e.target.value);
+                      setTableIdError("");
+                    }}
+                    className={`w-full border rounded p-2 mt-1 ${
+                      tableIdError ? "border-red-500" : ""
+                    }`}
+                  >
+                    <option value="">Select Table ID</option>
+                    {selectedTableId?.map((id) => (
+                      <option key={id} value={id}>
+                        {id}
+                      </option>
+                    ))}
+                  </select>
+                  {tableIdError && (
+                    <p className="text-red-500 text-xs mt-1">{tableIdError}</p>
+                  )}
+                </label>
+              )}
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => {
+                    setCheckoutModalOpen(false);
+                    setDirectCheckout(false);
+                    setIsParcel(false);
+                  }}
+                  className="mr-2 bg-gray-200 px-4 py-2 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmCheckout}
+                  className="bg-primaryColor px-4 py-2 rounded text-white"
+                >
+                  Confirm
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
       {w1280 && (
         <button
@@ -629,7 +893,7 @@ useEffect(() => {
       )}
       {isOpen && (
         <SingleItemModal
-          selectedItem={selectedItem}
+          selectedItem={selectedItem ?? ""}
           toggleDrawer={toggleDrawer}
           isOpen={isOpen}
         />
