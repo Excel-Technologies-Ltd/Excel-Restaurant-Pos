@@ -8,8 +8,10 @@ import {
 } from "frappe-react-sdk";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
+import { useLoading } from "../../context/loadingContext";
 
 const ChefOrders = () => {
+  const { startLoading, stopLoading } = useLoading();
   const { currentUser } = useFrappeAuth();
   const { data: roles } = useFrappeGetCall(
     `excel_restaurant_pos.api.item.get_roles?user=${currentUser}`
@@ -117,17 +119,19 @@ const ChefOrders = () => {
       if (nextState === "Completed") {
         updateData.docstatus = 1;
       }
-
+      startLoading();
       updateDoc("Table Order", orderId, updateData)
         .then((res) => {
           if (res) {
-            toast.success("Order status updated successfully!");
             mutate();
           }
         })
         .catch((error) => {
           toast.error("Error updating order status.");
           console.log("Error updating order status:", error);
+        })
+        .finally(() => {
+          stopLoading();
         });
     } else {
       toast.error("Invalid transition for the current state and role.");
@@ -145,12 +149,15 @@ const ChefOrders = () => {
     return colors[orderIndex % colors.length];
   };
   const handlemarkItemReady = async (order_id: string, item_name: string) => {
+    startLoading();
     try {
       const result = await markAsReady({ body: { order_id, item_name } });
       toast.success("Marked as Ready");
       console.log(result);
     } catch (error) {
       console.log(error);
+    } finally {
+      stopLoading();
     }
   };
   useFrappeDocTypeEventListener("Table Order", () => {

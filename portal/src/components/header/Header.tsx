@@ -12,12 +12,20 @@ import { URLDashboard, URLItems, URLLogin } from "../../routes/routes-link";
 import { styles } from "../../utilities/cn";
 import nameProfile from "../../utilities/name-to-profile";
 import Calculator from "../calculator/Calculator";
-import { useFrappeAuth, useFrappeGetDoc } from "frappe-react-sdk";
+import {
+  useFrappeAuth,
+  useFrappeGetCall,
+  useFrappeGetDoc,
+} from "frappe-react-sdk";
 import { FaRegUserCircle } from "react-icons/fa";
 
 type Props = {};
 
 const Header = ({}: Props) => {
+  const { data: getLogoAndTitle } = useFrappeGetCall(
+    "excel_restaurant_pos.api.item.get_logo_and_title",
+    { fields: ["*"] }
+  );
   const { logout, currentUser } = useFrappeAuth();
   const { data: getFullName } = useFrappeGetDoc(
     "User",
@@ -106,8 +114,13 @@ const Header = ({}: Props) => {
               <MdOutlineMenu size={22} className="text-grayColor" />
             </button>
           )}
-          <Link to={"/"} className="cursor-pointer">
-            Restaurant Pos
+          <Link to={"/"} className="cursor-pointer flex items-center gap-2">
+            <img
+              src={getLogoAndTitle?.message?.logo}
+              alt="Restaurant Pos Logo"
+              className="w-8 h-8 object-contain"
+            />
+            <span>{getLogoAndTitle?.message?.title}</span>
           </Link>
         </div>
         <div className="flex items-center gap-2">

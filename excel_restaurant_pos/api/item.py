@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import get_url
 @frappe.whitelist(allow_guest=True)
 def test():
     return "test"
@@ -429,3 +430,11 @@ def check_coupon_code(data):
 
 
 
+@frappe.whitelist(allow_guest=True)
+def get_logo_and_title():
+    hostname= get_url()
+    settings = frappe.get_doc("Restaurant Settings")
+    return {
+        "logo": f"{settings.logo}",
+        "title": settings.title
+    }

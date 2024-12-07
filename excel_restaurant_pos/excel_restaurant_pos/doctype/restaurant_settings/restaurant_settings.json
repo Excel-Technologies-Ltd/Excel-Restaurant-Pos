@@ -12,6 +12,7 @@
   "banner_image_list",
   "customer",
   "company",
+  "logo",
   "taxes_and_charges_template",
   "tax_rate",
   "charge_type",
@@ -88,13 +89,18 @@
    "fieldtype": "Table",
    "label": "Code List",
    "options": "Restaurant Coupon"
+  },
+  {
+   "fieldname": "logo",
+   "fieldtype": "Attach Image",
+   "label": "Logo"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2024-12-03 15:44:01.691354",
+ "modified": "2024-12-08 01:57:15.454333",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Settings",

@@ -7,9 +7,7 @@ import { TbRotate2 } from "react-icons/tb"; // Rotate icon
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import Select from "../../components/form-elements/Select";
-import {
-  closeRightModal,
-} from "../../redux/features/modal/foodsModal";
+import { closeRightModal } from "../../redux/features/modal/foodsModal";
 import { RootState } from "../../redux/store/Store";
 import { styles } from "../../utilities/cn";
 import Pos from "../Admin/Pos/Pos";
@@ -18,8 +16,18 @@ import DraggableTableCreate from "./DraggableTableCreate";
 import DraggableTableDetails from "./DraggableTableDetails";
 import DraggableTableEdit from "./DraggableTableEdit";
 import ModalRightToLeft from "./ModalRightToLeft";
-import { useFrappeCreateDoc, useFrappeDeleteDoc, useFrappeDocTypeEventListener, useFrappeDocumentEventListener, useFrappeGetCall, useFrappeGetDoc, useFrappeGetDocList, useFrappeUpdateDoc } from "frappe-react-sdk";
+import {
+  useFrappeCreateDoc,
+  useFrappeDeleteDoc,
+  useFrappeDocTypeEventListener,
+  useFrappeDocumentEventListener,
+  useFrappeGetCall,
+  useFrappeGetDoc,
+  useFrappeGetDocList,
+  useFrappeUpdateDoc,
+} from "frappe-react-sdk";
 import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
+import { useLoading } from "../../context/loadingContext";
 
 // Interface for table shape
 export interface TableShape {
@@ -44,42 +52,51 @@ const DraggableTable: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedTable, setSelectedTable] = useState<RestaurantTable | null>(null);
+  const [selectedTable, setSelectedTable] = useState<RestaurantTable | null>(
+    null
+  );
   const [newTableShape, setNewTableShape] = useState<
     "Rectangle" | "Circle" | "Road"
   >("Rectangle");
   const tableToUpdate = useRef<RestaurantTable[]>([]);
-  const [selectedFloor, setSelectedFloor] = useState<string>('')
+  const [selectedFloor, setSelectedFloor] = useState<string>("");
   const { updateDoc } = useFrappeUpdateDoc<RestaurantTable>();
-  const {deleteDoc}=useFrappeDeleteDoc()
+  const { deleteDoc } = useFrappeDeleteDoc();
   const [draggableTable, setDraggableTable] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null); // Order details for modal
   const [showOrderModal, setShowOrderModal] = useState<boolean>(false); // Modal visibility
 
-
-  const {data,error}=useFrappeGetDoc('Restaurant Settings', 'Restaurant Settings', {
-    fields: ['*']
-  })
-  const company=data?.company
-  const { data: floors, mutate: mutateFloors } = useFrappeGetDocList("Restaurant Floor");
-  const { data: tablesFromERP, mutate: mutateTables } = useFrappeGetDocList("Restaurant Table", {
-    fields: ["*"],
-    filters: [
-      ["company", "=", company],
-      ["restaurant_floor", "=", selectedFloor]
-    ]
-  })
+  const { startLoading, stopLoading } = useLoading();
+  const { data, error } = useFrappeGetDoc(
+    "Restaurant Settings",
+    "Restaurant Settings",
+    {
+      fields: ["*"],
+    }
+  );
+  const company = data?.company;
+  const { data: floors, mutate: mutateFloors } =
+    useFrappeGetDocList("Restaurant Floor");
+  const { data: tablesFromERP, mutate: mutateTables } = useFrappeGetDocList(
+    "Restaurant Table",
+    {
+      fields: ["*"],
+      filters: [
+        ["company", "=", company],
+        ["restaurant_floor", "=", selectedFloor],
+      ],
+    }
+  );
 
   useFrappeDocTypeEventListener("Restaurant Floor", async (doc) => {
     await mutateFloors();
-   
   });
 
   // console.log("selectedFloor", selectedFloor);
 
-
   const updateTable = async () => {
     try {
+      startLoading();
       for (const table of tableToUpdate.current) {
         console.log("table", table);
         if (table?.name) {
@@ -87,42 +104,38 @@ const DraggableTable: React.FC = () => {
         }
       }
       await mutateTables();
-      toast.success("Table updated successfully.")
+      toast.success("Table updated successfully.");
       tableToUpdate.current = [];
+      stopLoading();
     } catch (error) {
       console.log("error in updateTable", error);
     }
-  }
-  const { data: result ,mutate} = useFrappeGetCall("excel_restaurant_pos.api.item.get_running_order_list",["*"])
-  const orders = result?.message
-console.log(orders)
-  
+  };
+  const { data: result, mutate } = useFrappeGetCall(
+    "excel_restaurant_pos.api.item.get_running_order_list",
+    ["*"]
+  );
+  const orders = result?.message;
+  console.log(orders);
 
   useEffect(() => {
     console.log("selectedFloor in useEffect", selectedFloor);
-    mutateTables()
+    mutateTables();
     if (selectedFloor) {
       console.log("selectedFloor in useEffect", selectedFloor);
-      setNewTableData(prev => ({
+      setNewTableData((prev) => ({
         ...prev,
-        restaurant_floor: selectedFloor
-      }))
+        restaurant_floor: selectedFloor,
+      }));
     }
-   
-  }, [selectedFloor])
+  }, [selectedFloor]);
 
-  const { createDoc, } = useFrappeCreateDoc<RestaurantTable>()
-
+  const { createDoc } = useFrappeCreateDoc<RestaurantTable>();
 
   // useFrappeDocTypeEventListener("Restaurant Table", (doc) => {
   //   mutateTables();
   //   console.log("doc", doc);
   // });
-
-
-
-
-
 
   // useEffect(() => {
   //   if (floors?.length) {
@@ -142,12 +155,13 @@ console.log(orders)
   useEffect(() => {
     // Initialize tables with booking status
     if (tablesFromERP && orders) {
-          if (floors?.length) {
-      if (!selectedFloor)
-        setSelectedFloor(floors?.[0]?.name)
-    }
+      if (floors?.length) {
+        if (!selectedFloor) setSelectedFloor(floors?.[0]?.name);
+      }
       const updatedTables = tablesFromERP?.map((table) => {
-        const isBooked = orders?.some((order:any) => order?.table === table?.name);
+        const isBooked = orders?.some(
+          (order: any) => order?.table === table?.name
+        );
         return {
           ...table,
           length: +table.length,
@@ -163,11 +177,12 @@ console.log(orders)
   useEffect(() => {
     if (tablesFromERP) {
       // if the table is already in the state, then don't add it again
-      const newTables = tablesFromERP?.filter(table => !tables.some(t => t.name === table.name))
-      setTables(prev => [...prev, ...newTables])
+      const newTables = tablesFromERP?.filter(
+        (table) => !tables.some((t) => t.name === table.name)
+      );
+      setTables((prev) => [...prev, ...newTables]);
     }
-  }, [])
-
+  }, []);
 
   // console.log(floors);
 
@@ -176,12 +191,7 @@ console.log(orders)
     (state: RootState) => state.foodsModal.rightModalOpen
   );
 
-
-
-
-
-  const initialNewTable: RestaurantTable =
-  {
+  const initialNewTable: RestaurantTable = {
     id: new Date().toISOString(),
     table_no: "",
     type: "Rectangle",
@@ -190,19 +200,13 @@ console.log(orders)
     position: { x: 10, y: 55 },
     seat: "",
     company: company,
-    restaurant_floor: '',
-    rotation: '',
+    restaurant_floor: "",
+    rotation: "",
     bg_color: newTableShape == "Road" ? "#BFBFBF" : "#155e75",
-  }
+  };
 
-
-  const [newTableData, setNewTableData] = useState<RestaurantTable>(
-    initialNewTable
-  );
-
-
-
-
+  const [newTableData, setNewTableData] =
+    useState<RestaurantTable>(initialNewTable);
 
   // console.log({ tables });
 
@@ -219,7 +223,7 @@ console.log(orders)
       pathname: location.pathname,
       search: params.toString(),
     });
-  }
+  };
   const handleCloseModal = () => {
     const params = new URLSearchParams(location.search);
     params.delete("table");
@@ -243,60 +247,65 @@ console.log(orders)
     localStorage.setItem("tables", JSON.stringify(tables));
   }, [tables]);
 
-
-
-
   const openCreateTableModal = () => {
     if (!floors?.length) return toast.error("Please create a floor first.");
     // console.log("initialNewTable", initialNewTable);
     console.log("selectedFloor", selectedFloor);
-    setNewTableData(prev => {
+    setNewTableData((prev) => {
       console.log("prev", prev);
       return {
         ...prev,
-        restaurant_floor: selectedFloor
-      }
-    })
+        restaurant_floor: selectedFloor,
+      };
+    });
     setIsCreateModalOpen(true);
   };
 
-  const createTable = () => {
-    // console.log("newTableData in createTable", newTableData);
+  const createTable = async () => {
+    try {
+      startLoading();
+      // console.log("newTableData in createTable", newTableData);
 
-    if (!newTableData?.seat || !newTableData?.restaurant_floor || !newTableData?.type) {
-      toast.error("Please fill in all the details before creating the table.");
-      return;
+      if (
+        !newTableData?.seat ||
+        !newTableData?.restaurant_floor ||
+        !newTableData?.type
+      ) {
+        toast.error(
+          "Please fill in all the details before creating the table."
+        );
+        return;
+      }
+
+      const newTable = {
+        ...newTableData,
+        id: new Date().toISOString(),
+      };
+
+      createDoc("Restaurant Table", newTable);
+
+      setTables((prev) => [...prev, newTable]);
+
+      // const newTable: RestaurantTable = {
+      //   ...newTableData,
+      // };
+
+      // setTables((prev) => [...prev, newTable]);
+      setIsCreateModalOpen(false);
+      setNewTableData(initialNewTable);
+      stopLoading();
+    } catch (error) {
+      console.log("error in createTable", error);
     }
-
-    const newTable = {
-      ...newTableData,
-      id: new Date().toISOString(),
-    }
-
-    createDoc(
-      "Restaurant Table",
-      newTable
-    )
-
-    setTables(prev => [...prev, newTable])
-
-    // const newTable: RestaurantTable = {
-    //   ...newTableData,
-    // };
-
-    // setTables((prev) => [...prev, newTable]);
-    setIsCreateModalOpen(false);
-    setNewTableData(initialNewTable);
   };
 
   const deleteTable = async (name: string) => {
     try {
-
-      await deleteDoc("Restaurant Table", name)
-      toast.success("Table deleted successfully.")
-      mutateTables()
-    } catch (error:any) {
-      toast.error(error?.message)
+      await deleteDoc("Restaurant Table", name);
+      toast.success("Table deleted successfully.");
+      mutateTables();
+    } catch (error: any) {
+      toast.error(error?.message);
     }
   };
 
@@ -318,11 +327,11 @@ console.log(orders)
         prev.map((table) =>
           table.idx === selectedTable.idx
             ? {
-              ...table,
-              seat: newTableData?.seat || table.seat,
-              table_no: newTableData?.table_no || table.table_no,
-              bg_color: newTableData?.bg_color || table.bg_color,
-            }
+                ...table,
+                seat: newTableData?.seat || table.seat,
+                table_no: newTableData?.table_no || table.table_no,
+                bg_color: newTableData?.bg_color || table.bg_color,
+              }
             : table
         )
       );
@@ -330,14 +339,16 @@ console.log(orders)
     }
   };
 
-  console.log({tables});
-  
+  console.log({ tables });
 
   const openFloorCreateModal = () => {
     setIsOpenFloorCreate(true);
   };
 
-  const handleRotate = (e: React.MouseEvent | React.TouchEvent, name: string) => {
+  const handleRotate = (
+    e: React.MouseEvent | React.TouchEvent,
+    name: string
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -357,9 +368,13 @@ console.log(orders)
 
     const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
       const clientX =
-        "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+        "touches" in moveEvent
+          ? moveEvent.touches[0].clientX
+          : moveEvent.clientX;
       const clientY =
-        "touches" in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
+        "touches" in moveEvent
+          ? moveEvent.touches[0].clientY
+          : moveEvent.clientY;
 
       const currentAngle = Math.atan2(clientY - centerY, clientX - centerX);
       const degrees = ((currentAngle - initialAngle) * 180) / Math.PI;
@@ -367,7 +382,12 @@ console.log(orders)
       setTables((prev) =>
         prev.map((t) =>
           t.name === name
-            ? { ...t, rotation: (parseFloat(targetedTable.rotation || '0') + degrees).toString() }
+            ? {
+                ...t,
+                rotation: (
+                  parseFloat(targetedTable.rotation || "0") + degrees
+                ).toString(),
+              }
             : t
         )
       );
@@ -400,7 +420,10 @@ console.log(orders)
   };
 
   // Custom Resize Functionality
-  const handleResize = (e: React.MouseEvent | React.TouchEvent, name: string) => {
+  const handleResize = (
+    e: React.MouseEvent | React.TouchEvent,
+    name: string
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -414,21 +437,29 @@ console.log(orders)
 
     const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
       const clientX =
-        "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+        "touches" in moveEvent
+          ? moveEvent.touches[0].clientX
+          : moveEvent.clientX;
       const clientY =
-        "touches" in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
+        "touches" in moveEvent
+          ? moveEvent.touches[0].clientY
+          : moveEvent.clientY;
 
       const newLength = Math.max(initialLength + clientX - initialClientX, 50);
-      const newBreadth = Math.max(initialBreadth + clientY - initialClientY, 50);
+      const newBreadth = Math.max(
+        initialBreadth + clientY - initialClientY,
+        50
+      );
 
       setTables((prev) =>
         prev.map((t) =>
           t.name === name
             ? {
-              ...t,
-              length: targetedTable.type === "Circle" ? newLength : newLength,
-              breadth: targetedTable.type === "Circle" ? newLength : newBreadth,
-            }
+                ...t,
+                length: targetedTable.type === "Circle" ? newLength : newLength,
+                breadth:
+                  targetedTable.type === "Circle" ? newLength : newBreadth,
+              }
             : t
         )
       );
@@ -439,7 +470,6 @@ console.log(orders)
       document.removeEventListener("mouseup", onMouseUp);
       document.removeEventListener("touchmove", onMouseMove);
       document.removeEventListener("touchend", onMouseUp);
-
 
       // Add the table to the array to be updated if it is not already in the array then add the table to the state
       if (!tableToUpdate.current.some((table) => table.name === name)) {
@@ -460,8 +490,6 @@ console.log(orders)
     document.addEventListener("touchend", onMouseUp);
   };
 
-
-
   const handleDrag = (e: React.MouseEvent | React.TouchEvent, name: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -475,9 +503,13 @@ console.log(orders)
 
     const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
       const clientX =
-        "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+        "touches" in moveEvent
+          ? moveEvent.touches[0].clientX
+          : moveEvent.clientX;
       const clientY =
-        "touches" in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
+        "touches" in moveEvent
+          ? moveEvent.touches[0].clientY
+          : moveEvent.clientY;
 
       const newX = targetedTable.position.x + (clientX - initialX);
       const newY = Math.max(
@@ -523,8 +555,7 @@ console.log(orders)
   const handleDragEnd = () => {
     setDraggableTable(null);
   };
-  
-  
+
   const handleTableClick = (tableName: string) => {
     const order = orders?.find((order: any) => order.table === tableName);
     if (order) {
@@ -548,20 +579,18 @@ console.log(orders)
   //   debouncedSaveData(updatedTable); // Debounce API call to reduce frequency
   // };
 
-
   // useEffect(() => {
   //   return () => {
   //     // Cancel the debounced function on unmount to avoid memory leaks
   //     debouncedSaveData.cancel();
   //   };
   // }, [debouncedSaveData]);
-  useFrappeDocTypeEventListener("Table Order",()=>{
-    mutate()
-  })
-  useFrappeDocumentEventListener("Table Order",'on_update',()=>{
-    mutate()
-  })
-
+  useFrappeDocTypeEventListener("Table Order", () => {
+    mutate();
+  });
+  useFrappeDocumentEventListener("Table Order", "on_update", () => {
+    mutate();
+  });
 
   return (
     <div className="flex flex-col items-center bg-gray-200 h-[calc(100vh-48px)] w-full relative overflow-x-auto ">
@@ -583,27 +612,30 @@ console.log(orders)
           >
             Create Table
           </button>
-          <button
-            onClick={() => updateTable()}
-            className="main_btn"
-          >
+          <button onClick={() => updateTable()} className="main_btn">
             Update Table
           </button>
         </div>
-        {floors?.length && <div className="flex">
-          <Select className="w-32 text-xs md:text-base" isHideSelect onChange={(e) => {
-            setSelectedFloor(e.target.value)
-            setNewTableData(prev => ({
-              ...prev,
-              restaurant_floor: e.target.value
-            }))
-          }}>
-            {floors?.map((floor) => (
-              <option value={floor?.name}>{floor?.name}</option>
-            ))}
-          </Select>
-          {/* <button className="main_btn h-fit">Save</button> */}
-        </div>}
+        {floors?.length && (
+          <div className="flex">
+            <Select
+              className="w-32 text-xs md:text-base"
+              isHideSelect
+              onChange={(e) => {
+                setSelectedFloor(e.target.value);
+                setNewTableData((prev) => ({
+                  ...prev,
+                  restaurant_floor: e.target.value,
+                }));
+              }}
+            >
+              {floors?.map((floor) => (
+                <option value={floor?.name}>{floor?.name}</option>
+              ))}
+            </Select>
+            {/* <button className="main_btn h-fit">Save</button> */}
+          </div>
+        )}
       </div>
 
       <div className="w-full mt-8 absolute border-5">
@@ -617,7 +649,8 @@ console.log(orders)
               top: `${table.position.y}px`,
               borderRadius: table.type === "Circle" ? "50%" : "8px",
               // backgroundColor: table?.is_booked ? bookedColor : table.bg_color,
-              backgroundColor: draggableTable === table.name ? "green" : table.bg_color,
+              backgroundColor:
+                draggableTable === table.name ? "green" : table.bg_color,
               transform: `rotate(${table.rotation || 0}deg)`,
             }}
             className="absolute cursor-move group"
@@ -635,13 +668,12 @@ console.log(orders)
             onTouchEnd={handleDragEnd}
             onClick={() => table?.isBooked && handleTableClick(table?.name)}
           >
-           
             <div className="relative h-full w-full justify-center items-center flex">
-            {table?.isBooked && (
-              <div className="absolute top-[-40px] left-0 w-full h-full flex justify-center items-center  text-white text-lg font-bold">
-                Booked
-              </div>
-            )}
+              {table?.isBooked && (
+                <div className="absolute top-[-40px] left-0 w-full h-full flex justify-center items-center  text-white text-lg font-bold">
+                  Booked
+                </div>
+              )}
               {table?.seat && (
                 <div className="absolute space-x-2 group-hover:visible visible z-30">
                   <button
@@ -653,7 +685,9 @@ console.log(orders)
                   </button>
                   <button
                     onClick={() => handleRightSideModal(table?.name as string)}
-                    onTouchEnd={() => handleRightSideModal(table?.name as string)}
+                    onTouchEnd={() =>
+                      handleRightSideModal(table?.name as string)
+                    }
                     className="bg-green-500 bg-opacity-40 text-white px-2 py-1 rounded"
                   >
                     <IoMdEye />
@@ -679,7 +713,6 @@ console.log(orders)
                             // )}
                             className="w-10 h-3 bg-primaryColor rounded-t"
                           ></div>
-
                         );
                       }
                     )}
@@ -718,7 +751,7 @@ console.log(orders)
                           <div
                             key={i}
                             className={styles(
-                              "w-3 h-10 bg-primaryColor rounded-e",
+                              "w-3 h-10 bg-primaryColor rounded-e"
                               // `bg[${table?.is_booked ? "bg-" + bookedColor : ""
                               // }]`
                             )}
@@ -739,7 +772,7 @@ console.log(orders)
                           <div
                             key={i}
                             className={styles(
-                              "w-3 h-10 bg-primaryColor rounded-s",
+                              "w-3 h-10 bg-primaryColor rounded-s"
                               // `bg[${table?.is_booked ? "bg-" + bookedColor : ""
                               // }]`
                             )}
@@ -788,7 +821,7 @@ console.log(orders)
                       table.type === "Circle",
                   }
                 )}
-              // className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded invisible group-hover:visible"
+                // className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded invisible group-hover:visible"
               >
                 <RxCross2 />
               </button>
@@ -818,7 +851,7 @@ console.log(orders)
                       table?.type === "Circle",
                   }
                 )}
-              // className="absolute top-0 left-0 w-6 h-6 cursor-pointer rounded-full flex justify-center items-center invisible group-hover:visible bg-primaryColor text-white"
+                // className="absolute top-0 left-0 w-6 h-6 cursor-pointer rounded-full flex justify-center items-center invisible group-hover:visible bg-primaryColor text-white"
               >
                 <TbRotate2 />
               </div>
@@ -853,7 +886,10 @@ console.log(orders)
       )}
 
       {isOpenFloorCreate && (
-        <CreateFloor setIsOpenFloorCreate={setIsOpenFloorCreate} mutate={mutateFloors} />
+        <CreateFloor
+          setIsOpenFloorCreate={setIsOpenFloorCreate}
+          mutate={mutateFloors}
+        />
       )}
 
       {rightModalOpen && (
@@ -865,85 +901,93 @@ console.log(orders)
         </ModalRightToLeft>
       )}
       {/* Order Details Modal */}
-{showOrderModal && selectedOrder && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-    <div className="bg-white rounded-lg shadow-2xl w-96 p-6 relative">
-      {/* Close Button */}
-      <button
-        className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
-        onClick={() => setShowOrderModal(false)}
-      >
-        <RxCross2 size={24} />
-      </button>
+      {showOrderModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-2xl w-96 p-6 relative">
+            {/* Close Button */}
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+              onClick={() => setShowOrderModal(false)}
+            >
+              <RxCross2 size={24} />
+            </button>
 
-      {/* Modal Header */}
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center border-b pb-4">
-        Order Details
-      </h2>
+            {/* Modal Header */}
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center border-b pb-4">
+              Order Details
+            </h2>
 
-      {/* Order Information */}
-      <div className="space-y-4">
-        <div className="flex justify-between">
-          <span className="font-semibold text-gray-600">Order ID:</span>
-          <span className="text-gray-800">{selectedOrder?.name}</span>
-        </div>
-        {/* <div className="flex justify-between">
+            {/* Order Information */}
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span className="font-semibold text-gray-600">Order ID:</span>
+                <span className="text-gray-800">{selectedOrder?.name}</span>
+              </div>
+              {/* <div className="flex justify-between">
           <span className="font-semibold text-gray-600">Customer:</span>
           <span className="text-gray-800">{selectedOrder?.customer_name}</span>
         </div> */}
-        <div className="flex justify-between">
-          <span className="font-semibold text-gray-600">Table:</span>
-          <span className="text-gray-800">{selectedOrder?.table}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-semibold text-gray-600">Status:</span>
-          <span
-            className={`text-sm font-semibold px-2 py-1 rounded ${
-              selectedOrder?.status === "Ready for Pickup"
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            {selectedOrder?.status}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-semibold text-gray-600">Total Amount:</span>
-          <span className="text-lg font-bold text-gray-900">
-            ৳{selectedOrder?.total_amount}
-          </span>
-        </div>
-      </div>
-
-      {/* Item List */}
-      <div className="mt-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">Items:</h3>
-        <ul className="divide-y divide-gray-200">
-          {selectedOrder?.item_list?.map((item: any, index: number) => (
-            <li key={index} className="py-2 flex justify-between items-center">
-              <div>
-                <p className="font-medium text-gray-800">{item?.item}</p>
-                <p className="text-sm text-gray-600">
-                  {item?.qty} x ৳{item?.rate}
-                </p>
+              <div className="flex justify-between">
+                <span className="font-semibold text-gray-600">Table:</span>
+                <span className="text-gray-800">{selectedOrder?.table}</span>
               </div>
-              <span className="text-gray-800 font-semibold">৳{item?.amount}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+              <div className="flex justify-between">
+                <span className="font-semibold text-gray-600">Status:</span>
+                <span
+                  className={`text-sm font-semibold px-2 py-1 rounded ${
+                    selectedOrder?.status === "Ready for Pickup"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}
+                >
+                  {selectedOrder?.status}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold text-gray-600">
+                  Total Amount:
+                </span>
+                <span className="text-lg font-bold text-gray-900">
+                  ৳{selectedOrder?.total_amount}
+                </span>
+              </div>
+            </div>
 
-      {/* Close Button */}
-      <button
-        className="w-full bg-primaryColor mt-6 text-white py-2 rounded-lg font-semibold"
-        onClick={() => setShowOrderModal(false)}
-      >
-        Close
-      </button>
-    </div>
-  </div>
-)}
+            {/* Item List */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                Items:
+              </h3>
+              <ul className="divide-y divide-gray-200">
+                {selectedOrder?.item_list?.map((item: any, index: number) => (
+                  <li
+                    key={index}
+                    className="py-2 flex justify-between items-center"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-800">{item?.item}</p>
+                      <p className="text-sm text-gray-600">
+                        {item?.qty} x ৳{item?.rate}
+                      </p>
+                    </div>
+                    <span className="text-gray-800 font-semibold">
+                      ৳{item?.amount}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
+            {/* Close Button */}
+            <button
+              className="w-full bg-primaryColor mt-6 text-white py-2 rounded-lg font-semibold"
+              onClick={() => setShowOrderModal(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -7,21 +7,20 @@ import { CartProvider } from "./context/cartContext.tsx";
 import "./index.css";
 import { store } from "./redux/store/Store.ts";
 import Loading from "./components/common/Loading.tsx";
+import { LoadingProvider } from "./context/loadingContext.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Suspense
-      fallback={
-        <Loading />
-      }
-    >
+    <Suspense fallback={<Loading />}>
       <Toaster />
-      <CartProvider>
-        <Provider store={store}>
-          <App />
-          {/* <RightClickImageAndSound /> */}
-        </Provider>
-      </CartProvider>
+      <LoadingProvider>
+        <CartProvider>
+          <Provider store={store}>
+            <App />
+            {/* <RightClickImageAndSound /> */}
+          </Provider>
+        </CartProvider>
+      </LoadingProvider>
     </Suspense>
   </StrictMode>
 );

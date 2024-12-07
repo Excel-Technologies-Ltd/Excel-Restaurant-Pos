@@ -8,12 +8,14 @@ import {
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import SingleOrderModal from "./SingleOrderModal";
+import { useLoading } from "../../context/loadingContext";
 
 const Orders = () => {
   const { currentUser } = useFrappeAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState("");
   const [discount, setDiscount] = useState(0);
+  const { startLoading, stopLoading } = useLoading();
 
   const { data: roles } = useFrappeGetCall(
     `excel_restaurant_pos.api.item.get_roles?user=${currentUser}`
@@ -157,7 +159,7 @@ const Orders = () => {
       if (nextState === "Completed") {
         updateData.docstatus = 1;
       }
-
+      startLoading();
       updateDoc("Table Order", orderId, updateData)
         .then((res) => {
           if (res) {
@@ -168,6 +170,9 @@ const Orders = () => {
         .catch((error) => {
           toast.error("Error updating order status.");
           console.log("Error updating order status:", error);
+        })
+        .finally(() => {
+          stopLoading();
         });
     } else {
       toast.error("Invalid transition for the current state and role.");
@@ -186,6 +191,7 @@ const Orders = () => {
     };
 
     try {
+      startLoading();
       await updateDoc("Table Order", selectedOrder, updateData);
       toast.success("Order completed and discount applied!");
       setIsModalOpen(false); // Close the modal
@@ -193,6 +199,8 @@ const Orders = () => {
     } catch (error) {
       toast.error("Error completing order with discount.");
       console.log("Error:", error);
+    } finally {
+      stopLoading();
     }
   };
 
@@ -363,49 +371,13 @@ const Orders = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-semibold mb-4">
-              Set Discount for Completed Order
-            </h2>
-
-            <div className="mb-4">
-              <label
-                htmlFor="discount"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Discount (%)
-              </label>
-              <input
-                id="discount"
-                type="number"
-                min="0"
-                max="100"
-                value={discount}
-                onChange={(e) => setDiscount(Number(e.target.value))}
-                className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md"
+            {selectedOrder && (
+              <SingleOrderModal
+                orderId={selectedOrder}
+                closeModal={() => setIsModalOpen(false)}
               />
-            </div>
-
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="bg-gray-300 text-gray-700 py-2 px-4 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleApplyDiscount}
-                className="bg-primaryColor text-white py-2 px-4 rounded"
-              >
-                Apply Discount
-              </button>
-            </div>
+            )}
           </div>
-          {selectedOrder && (
-            <SingleOrderModal
-              orderId={selectedOrder}
-              closeModal={() => setIsModalOpen(false)}
-            />
-          )}
         </div>
       )}
     </div>

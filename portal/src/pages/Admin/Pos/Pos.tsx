@@ -24,6 +24,7 @@ import {
   useFrappeGetDocList,
   useFrappePostCall,
 } from "frappe-react-sdk";
+import { useLoading } from "../../../context/loadingContext";
 
 // Add this interface near the top of your file
 interface CartItem {
@@ -55,6 +56,8 @@ const Pos = () => {
   const [isParcel, setIsParcel] = useState<boolean>(false);
   const [directCheckout, setDirectCheckout] = useState<boolean>(false);
   const [discountLimit, setDiscountLimit] = useState<number>(0);
+  const [disabledCheckout, setDisabledCheckout] = useState<boolean>(false);
+  const { startLoading, stopLoading } = useLoading();
 
   const { data: settings, error: settingsError } = useFrappeGetDoc(
     "Restaurant Settings",
@@ -403,6 +406,7 @@ const Pos = () => {
       is_paid: directCheckout ? 1 : 0,
     };
     try {
+      startLoading();
       const result = await createOrder({ data: payload });
       console.log("result", result?.message?.status);
       if (result?.message?.status === "success") {
@@ -427,9 +431,21 @@ const Pos = () => {
     } catch (error) {
       console.log("error", error);
       toast.error("Failed to create order");
+    } finally {
+      stopLoading();
     }
     // Close modal after checkout
   };
+  useEffect(() => {
+    //
+    // check manager  or cashier
+    const isManagerOrCashier =
+      userRoles?.includes("Restaurant Manager") ||
+      userRoles?.includes("Restaurant Cashier");
+    if (isManagerOrCashier) setDisabledCheckout(false);
+    else setDisabledCheckout(true);
+    console.log("isManagerOrCashier", isManagerOrCashier);
+  }, [userRoles]);
   useFrappeDocTypeEventListener("Item", () => {
     mutate();
   }),
@@ -780,16 +796,10 @@ const Pos = () => {
                   Create Order
                 </button>
                 <button
-                  disabled={
-                    !userRoles?.includes("Restaurant Manager") ||
-                    !userRoles?.includes("Restaurant Cashier")
-                  }
+                  disabled={disabledCheckout}
                   onClick={handleDirectCheckout}
                   className={`bg-primaryColor text-white w-full p-2 rounded-md mt-3 text-sm ${
-                    !userRoles?.includes("Restaurant Manager") ||
-                    !userRoles?.includes("Restaurant Cashier")
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
+                    disabledCheckout ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
                   Checkout

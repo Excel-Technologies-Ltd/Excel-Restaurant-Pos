@@ -11,6 +11,7 @@ import { FiPlus } from "react-icons/fi";
 import { LuMinus } from "react-icons/lu";
 import { AiTwotoneDelete } from "react-icons/ai";
 import toast from "react-hot-toast";
+import { useLoading } from "../../context/loadingContext";
 interface OrderItem {
   name?: string;
   qty?: number;
@@ -56,6 +57,7 @@ const SingleOrderModal = ({
   const [coupon, setCoupon] = useState("");
   const [discountError, setDiscountError] = useState("");
   const [discount, setDiscount] = useState<string>("");
+  const { startLoading, stopLoading } = useLoading();
   const { data: order } = useFrappeGetDoc("Table Order", orderId);
   console.log({ order });
   // 10% tax rate
@@ -197,6 +199,7 @@ const SingleOrderModal = ({
       status: "Completed",
       is_paid: 1,
     };
+    startLoading();
     updateDoc("Table Order", orderId, payload)
       .then((res) => {
         if (res) {
@@ -207,26 +210,34 @@ const SingleOrderModal = ({
       .catch((error) => {
         toast.error("Error updating order status.");
         console.log("Error updating order status:", error);
+      })
+      .finally(() => {
+        stopLoading();
       });
     console.log({ payload });
   };
   const verifyCoupon = () => {
     if (coupon) {
-      checkCoupon({ data: { coupon_code: coupon } }).then((res) => {
-        if (res?.message?.status === "success") {
-          console.log("res", res?.message);
-          setDiscountError("");
-          discountAmount =
-            res?.message?.discount_type === "percentage"
-              ? (subTotal * Number(res?.message?.amount ?? 0)) / 100
-              : Number(res?.message?.amount ?? 0);
-          setDiscount(String(discountAmount));
-          setCoupon("");
-        } else {
-          setDiscountError(res?.message?.message);
-          setDiscount("");
-        }
-      });
+      startLoading();
+      checkCoupon({ data: { coupon_code: coupon } })
+        .then((res) => {
+          if (res?.message?.status === "success") {
+            console.log("res", res?.message);
+            setDiscountError("");
+            discountAmount =
+              res?.message?.discount_type === "percentage"
+                ? (subTotal * Number(res?.message?.amount ?? 0)) / 100
+                : Number(res?.message?.amount ?? 0);
+            setDiscount(String(discountAmount));
+            setCoupon("");
+          } else {
+            setDiscountError(res?.message?.message);
+            setDiscount("");
+          }
+        })
+        .finally(() => {
+          stopLoading();
+        });
     }
   };
   let discountAmount =
