@@ -24,7 +24,10 @@
   "remarks",
   "status",
   "discount_type",
-  "is_paid"
+  "is_paid",
+  "sales_invoice",
+  "credit_sales",
+  "payment_methods"
  ],
  "fields": [
   {
@@ -140,12 +143,30 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Is Paid"
+  },
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "label": "Sales Invoice",
+   "options": "Sales Invoice"
+  },
+  {
+   "default": "0",
+   "fieldname": "credit_sales",
+   "fieldtype": "Check",
+   "label": "Credit Sales"
+  },
+  {
+   "fieldname": "payment_methods",
+   "fieldtype": "Table",
+   "label": "Payment Methods",
+   "options": "Payment Mode"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-05 08:29:19.904675",
+ "modified": "2025-10-09 14:12:57.113360",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Table Order",

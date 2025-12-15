@@ -1,2 +1,4 @@
 # frappe -- https://github.com/frappe/frappe is installed via 'bench init'
-qrcode
+qrcode==7.4.2
+PyJWT==2.8.0
+

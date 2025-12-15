@@ -1,4 +1,7 @@
-import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
+import { useFrappeGetDocList } from "frappe-react-sdk";
+import Input from "../../components/form-elements/Input";
+import Select from "../../components/form-elements/Select";
+import { RestaurantTable, TableType } from "../../types/ExcelRestaurantPos/RestaurantTable";
 
 
 interface DraggableTableEditProps {
@@ -14,39 +17,65 @@ const DraggableTableEdit = ({
   setIsEditModalOpen,
   saveEdit,
 }: DraggableTableEditProps) => {
+
+  const { data: floors } = useFrappeGetDocList("Restaurant Floor");
+
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50"
+      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
       style={{ zIndex: 999 }}
     >
-      <div className="bg-white p-6 rounded-lg shadow-lg">
+      <div className="bg-white w-full max-w-[400px] p-6 rounded-lg shadow-lg">
         <h2 className="text-lg font-semibold mb-4">Edit Table</h2>
-        <div>
-          <label className="block mb-2">
-            Table No:
-            <input
-              type="text"
-              value={newTableData.table_no}
-              onChange={(e) =>
+        <div className="w-full grid gap-3">
+          <Select
+            value={newTableData.type}
+            onChange={(e) => {
+              setNewTableData({
+                ...newTableData,
+                type: e.target.value as TableType,
+              });
+              if (e.target.value === "Road") {
                 setNewTableData({
                   ...newTableData,
-                  table_no: e.target.value,
-                })
+                  bg_color: "#BFBFBF",
+                });
+              } else {
+                setNewTableData({
+                  ...newTableData,
+                  type: e.target.value as TableType,
+                  bg_color: "#155e75",
+                });
               }
-              className="border p-2 w-full"
-            />
-          </label>
-          <label className="block mb-2">
-            Seat:
-            <input
-              type="text"
-              value={newTableData.seat}
-              onChange={(e) =>
-                setNewTableData({ ...newTableData, seat: e.target.value })
-              }
-              className="border p-2 w-full"
-            />
-          </label>
+            }}
+            className="md:text-sm"
+          >
+            <option value="Rectangle">Rectangle</option>
+            <option value="Circle">Circle</option>
+            <option value="Road">Road</option>
+          </Select>
+          <Select label="Floor" value={newTableData.restaurant_floor} onChange={(e) => {
+            setNewTableData({
+              ...newTableData,
+              restaurant_floor: e.target.value,
+            });
+          }}
+          disabled
+          >
+            {floors?.map((floor) => (
+              <option value={floor.name}>{floor.name}</option>
+            ))}
+          </Select>
+          <Input
+            label="Seat"
+            value={newTableData.seat}
+            onChange={(e) =>
+              setNewTableData({
+                ...newTableData,
+                seat: e.target.value,
+              })
+            }
+          />
           <div className="block mb-2">
             Background Color:
             <input

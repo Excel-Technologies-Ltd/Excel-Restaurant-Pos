@@ -1,13 +1,10 @@
+import { useFrappeDocTypeEventListener, useFrappeGetCall } from "frappe-react-sdk";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { IoFastFoodOutline } from "react-icons/io5";
+import { useSearchParams } from "react-router-dom";
 import ItemsPageBottom from "../../components/header/ItemsPageBottom";
 import ItemList from "../../components/ItemList/ItemList";
-import { useParams, useSearchParams } from "react-router-dom";
-import Drawer from "../../components/Drawer/Drawer";
-import Select from "../../components/form-elements/Select";
-import Button from "../../components/Button/Button";
-import { useFrappeDocTypeEventListener, useFrappeGetCall, useFrappeGetDocList } from "frappe-react-sdk";
-import toast from "react-hot-toast";
 
 type FoodCategory = {
   id?: number;
@@ -91,7 +88,7 @@ useEffect(() => {
               <div
                 onClick={() => setSelectedCategory(String(category?.name))}
                 key={index}
-                className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor ${String(category?.id) === selectedCategory
+                className={`p-2 cursor-pointer flex flex-col justify-center items-center border border-primaryColor rounded-md h-20 mt-2 hover:bg-lightPrimaryColor ${String(category?.name) === selectedCategory
                   ? "bg-lightPrimaryColor"
                   : ""
                   }`}
@@ -117,52 +114,6 @@ useEffect(() => {
         </div>
       </div>
       <ItemsPageBottom />
-      {/* <Drawer isOpen={isOpen} isLargeDevice={isLargeDevice}>
-        <div
-          className={`overflow-y-auto p-4 ${isLargeDevice
-            ? "max-h-[calc(100vh-100px)] "
-            : "max-h-[100vh]"
-            }`}
-        >
-          <div className="p-4">
-            <label className="text-sm font-medium">How would you like to order?</label>
-            <Select className="mt-2" onChange={(e) => {
-              setSearchParams({ order_type: e.target.value })
-              if (e.target.value === OrderType.DineIn)
-                setIsTableSelectShow(true)
-              else
-                setIsTableSelectShow(false)
-
-            }}
-            >
-              <option value={OrderType.DineIn}>Dine In</option>
-              <option value={OrderType.TakeAway}>Take Away</option>
-            </Select>
-          </div>
-          {isTableSelectShow && (
-            <div className="mb-3 p-4">
-              <label className="text-sm font-medium">Select Table</label>
-              <Select className="mt-2" onChange={(e) => setSearchParams({ table_id: e.target.value })}>
-                <option value={OrderType.DineIn}>Dine In</option>
-                <option value={OrderType.TakeAway}>Take Away</option>
-              </Select>
-            </div>
-          )}
-
-          <div className="flex justify-end mt-4">
-            <button className="mr-2 cancel_btn" onClick={() => {
-              toggleDrawer()
-            }} >
-              Cancel
-            </button>
-
-            <Button className="main_btn" label="Start Order" onClick={() => {
-              toggleDrawer()
-            }} />
-
-          </div>
-        </div>
-      </Drawer > */}
     </div >
   );
 };

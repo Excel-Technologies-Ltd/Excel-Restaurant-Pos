@@ -1,17 +1,15 @@
-import { useCallback, useEffect, useState, memo } from "react";
-import toast from "react-hot-toast";
-import { FaMinus } from "react-icons/fa";
-import { FiPlus } from "react-icons/fi";
+import { useFrappeGetCall } from "frappe-react-sdk";
+import { memo, useCallback, useEffect, useState } from "react";
+import { FiMinus, FiPlus } from "react-icons/fi";
 import { RxCross2 } from "react-icons/rx";
 import { useCartContext } from "../../context/cartContext";
 import { Food } from "../../data/items";
 import AddOnsItemCard from "./components/AddOnsItemCard";
-import { useFrappeGetCall } from "frappe-react-sdk";
 
 type Props = {
   isOpen: boolean;
   toggleDrawer: () => void;
-  selectedItem: string;
+  selectedItem: Food | null;
 };
 
 type DrawerProps = {
@@ -256,24 +254,24 @@ const getDescription = (description: string) => {
         <div className={`p-4 pt-2 border bottom-0 absolute w-full bg-white z-50 ${isLargeDevice ? "rounded-b-lg" : ""}`}>
           <div className="flex justify-between items-center">
           <div className="flex items-center border rounded-md text-sm bg-gray-100">
-  <button
-    onClick={decrement}
-    className="px-4 py-2 rounded-l-md text-lg bg-gray-300 transition-colors duration-200 hover:bg-gray-400 focus:outline-none"
-  >
-    <FaMinus size={18} />
-  </button>
-  <span className="px-4 text-gray-800 font-medium">{quantity}</span>
-  <button
-    onClick={increment}
-    className="px-4 py-2 rounded-r-md text-lg bg-gray-300 transition-colors duration-200 hover:bg-gray-400 focus:outline-none"
-  >
-    <FiPlus size={18} />
-  </button>
-</div>
+            <button
+              onClick={decrement}
+              className="px-4 py-2 rounded-l-md text-base bg-gray-300 transition-colors duration-200 hover:bg-gray-400 focus:outline-none"
+            >
+              <FiMinus className="text-xs md:text-sm" />
+            </button>
+            <span className="px-4 text-gray-800 font-medium">{quantity}</span>
+            <button
+              onClick={increment}
+              className="px-4 py-2 rounded-r-md text-xs md:text-sm bg-gray-300 transition-colors duration-200 hover:bg-gray-400 focus:outline-none"
+            >
+              <FiPlus />
+            </button>
+          </div>
 
             <div className="text-sm font-semibold">Total: ৳{calculateTotalPrice()}</div>
 
-            <button onClick={()=> addToCart()} className="bg-primaryColor px-3 py-1.5 rounded-md text-white h-fit text-sm">
+            <button onClick={()=> addToCart()} className="bg-primaryColor px-3 py-1.5 rounded-md text-white h-fit text-xs md:text-sm">
               Add to cart
             </button>
           </div>

@@ -54,8 +54,9 @@ export default {
       },
     },
     fontFamily: {
-      sans: ["Graphik", "sans-serif"],
+      sans2: ["Graphik", "sans-serif"],
       serif: ["Merriweather", "serif"],
+      sans: ['Open Sans', 'sans-serif'],
     },
   },
   daisyui: {

@@ -4,6 +4,7 @@ import "@fontsource/ubuntu/400.css";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes/router.js";
 import { FrappeProvider } from "frappe-react-sdk";
+
 import { LoadingProvider, useLoading } from "./context/loadingContext.js";
 import LoadingOverlay from "./components/loadingOverlay/loadingOverlay.js";
 import { useEffect } from "react";
@@ -25,7 +26,7 @@ export default function App() {
 
   return (
     <div className="relative">
-      <FrappeProvider siteName={getSiteName()} socketPort="9000">
+      <FrappeProvider siteName={'http://devlopment.localhost:8006'} socketPort="9007">
         {isLoading && <LoadingOverlay />}
         <RouterProvider router={router} />
       </FrappeProvider>

@@ -1,5 +1,11 @@
+import {
+  useFrappeAuth,
+  useFrappeGetCall,
+  useFrappeGetDoc,
+} from "frappe-react-sdk";
 import { useEffect, useState } from "react";
 import { BiLogIn, BiLogOut } from "react-icons/bi";
+import { FaRegUserCircle } from "react-icons/fa";
 import { ImCalculator } from "react-icons/im";
 import { MdOutlineMenu } from "react-icons/md";
 import { RxDashboard } from "react-icons/rx";
@@ -8,16 +14,9 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { zIndex } from "../../data/zIndex";
 import { setSidebarOpen } from "../../redux/features/sidebar/sidebar";
 import { RootState } from "../../redux/store/Store";
-import { URLDashboard, URLItems, URLLogin } from "../../routes/routes-link";
+import { URLDashboard, URLLogin } from "../../routes/routes-link";
 import { styles } from "../../utilities/cn";
-import nameProfile from "../../utilities/name-to-profile";
 import Calculator from "../calculator/Calculator";
-import {
-  useFrappeAuth,
-  useFrappeGetCall,
-  useFrappeGetDoc,
-} from "frappe-react-sdk";
-import { FaRegUserCircle } from "react-icons/fa";
 
 type Props = {};
 
@@ -33,9 +32,8 @@ const Header = ({}: Props) => {
     ["full_name"]
   );
 
-  console.log({ fullName: getFullName?.full_name });
   // get First letter of first name and last name
-  const firstLetter = getFullName?.full_name?.split(" ")[0]?.[0] ?? "";
+  // const firstLetter = getFullName?.full_name?.split(" ")[0]?.[0] ?? "";
 
   // action dispatcher
   const dispatch = useDispatch();
@@ -51,7 +49,6 @@ const Header = ({}: Props) => {
   const [dropdownCalculator, setDropDownCalculator] = useState(false);
 
   const handleLogout = async () => {
-    console.log("logout");
     await logout();
     navigate(URLLogin());
   };
@@ -72,31 +69,31 @@ const Header = ({}: Props) => {
     };
   }, [dropdown]);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    const key = e.key;
+  // const handleKeyDown = (e: KeyboardEvent) => {
+  //   const key = e.key;
 
-    if (pathDashboard !== "admin") return;
+  //   if (pathDashboard !== "admin") return;
 
-    if ((e.ctrlKey || e.metaKey) && key === "/") {
-      e.preventDefault();
-      setDropDownCalculator(true);
-    } else if (key === "Escape") {
-      setDropDownCalculator(false);
-      // } else if (key === "Backspace") {
-      //   e.preventDefault();
-    } else if (["+", "-", "*", "%"].includes(key)) {
-      e.preventDefault();
-    } else if (!isNaN(Number(key)) || key === ".") {
-    }
-  };
+  //   if ((e.ctrlKey || e.metaKey) && key === "/") {
+  //     e.preventDefault();
+  //     setDropDownCalculator(true);
+  //   } else if (key === "Escape") {
+  //     setDropDownCalculator(false);
+  //     // } else if (key === "Backspace") {
+  //     //   e.preventDefault();
+  //   } else if (["+", "-", "*", "%"].includes(key)) {
+  //     e.preventDefault();
+  //   } else if (!isNaN(Number(key)) || key === ".") {
+  //   }
+  // };
 
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown); // Listen to keyboard events
+  // useEffect(() => {
+  //   document.addEventListener("keydown", handleKeyDown); // Listen to keyboard events
 
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown); // Cleanup listener
-    };
-  }, []);
+  //   return () => {
+  //     document.removeEventListener("keydown", handleKeyDown); // Cleanup listener
+  //   };
+  // }, []);
 
   return (
     <div

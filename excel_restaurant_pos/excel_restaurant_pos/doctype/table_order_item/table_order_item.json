@@ -7,11 +7,19 @@
  "engine": "InnoDB",
  "field_order": [
   "item",
+  "is_recipe_item",
   "qty",
   "rate",
   "amount",
   "is_ready",
-  "is_parcel"
+  "is_parcel",
+  "is_accepted",
+  "is_create_recipe",
+  "remarks",
+  "order_placed_time",
+  "order_accepted_time",
+  "order_ready_time",
+  "order_confirm_time"
  ],
  "fields": [
   {
@@ -46,12 +54,57 @@
    "fieldname": "is_parcel",
    "fieldtype": "Check",
    "label": "Is Parcel"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "is_create_recipe",
+   "fieldtype": "Check",
+   "label": "Is Create Recipe"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "order_placed_time",
+   "fieldtype": "Datetime",
+   "label": "Item Placed Time"
+  },
+  {
+   "fieldname": "order_accepted_time",
+   "fieldtype": "Datetime",
+   "label": "Item Accepted Time"
+  },
+  {
+   "fieldname": "order_ready_time",
+   "fieldtype": "Datetime",
+   "label": "Item Ready Time"
+  },
+  {
+   "fieldname": "order_confirm_time",
+   "fieldtype": "Datetime",
+   "label": "Item Confirm Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_accepted",
+   "fieldtype": "Check",
+   "label": "Is Accepted"
+  },
+  {
+   "default": "0",
+   "fetch_from": "item.custom_is_recipe",
+   "fieldname": "is_recipe_item",
+   "fieldtype": "Check",
+   "label": "Is Recipe Item"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-11-26 12:49:27.171291",
+ "modified": "2025-09-25 12:22:36.946286",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Table Order Item",

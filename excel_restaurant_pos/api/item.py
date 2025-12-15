@@ -1,5 +1,7 @@
+
+from frappe.utils import get_url,nowdate, add_days, get_first_day, get_year_start
+import datetime
 import frappe
-from frappe.utils import get_url
 @frappe.whitelist(allow_guest=True)
 def test():
     return "test"
@@ -200,7 +202,39 @@ def make_as_ready_item(body):
         for item in order_doc.item_list:
             # Check if the item matches the name
             if item.name.lower() == data["item_name"].lower():  # Case-insensitive match
-                item.is_ready = 1  # Mark the item as Ready
+                item.is_ready = 1  
+                item.order_ready_time = frappe.utils.now_datetime()
+                order_doc.save(ignore_permissions=True)  # Save the order document
+                frappe.db.commit()  # Commit the transaction
+                return {
+                    "status": "success",
+                }
+
+        # If the item wasn't found, return failure response
+        return {
+            "status": "failed",
+        }
+
+    except Exception as e:
+        # Log error and return failure message
+        return {
+            "status": "failure",
+            "message": e
+        }
+        
+@frappe.whitelist(allow_guest=True)
+def make_as_accepted_item(body):
+    try:
+        data=frappe.parse_json(body)
+        # Fetch the order document using the order_id
+        order_doc = frappe.get_doc("Table Order", data["order_id"])
+
+        # Loop through the items in the order
+        for item in order_doc.item_list:
+            # Check if the item matches the name
+            if item.name.lower() == data["item_name"].lower():  # Case-insensitive match
+                item.is_accepted = 1  
+                item.order_accepted_time = frappe.utils.now_datetime()
                 order_doc.save(ignore_permissions=True)  # Save the order document
                 frappe.db.commit()  # Commit the transaction
                 return {
@@ -219,6 +253,39 @@ def make_as_ready_item(body):
             "message": "An error occurred while processing your request."
         }
 
+@frappe.whitelist(allow_guest=True)
+def make_as_create_recipe_item(order_id=None,item_name=None):
+    if not order_id or not item_name:
+        return False
+    try:
+        order_doc = frappe.get_doc("Table Order", order_id)
+        for item in order_doc.item_list:
+            if item.item.lower() == item_name.lower():
+                item.is_create_recipe = 1
+                item.remarks = "Recipe created"
+                order_doc.save(ignore_permissions=True)
+                frappe.db.commit()
+                return True
+    except Exception as e:
+        print(e)
+        return False
+
+
+@frappe.whitelist(allow_guest=True)
+def make_as_unready_recipe_item(order_id="Order-11-051",item_name="Beef Burger",remarks="Insufficient ingredients"):
+    try:
+        order_doc = frappe.get_doc("Table Order", order_id)
+        for item in order_doc.item_list:
+            if item.item.lower() == item_name.lower():
+                item.is_ready = 0
+                order_doc.status = "Work in progress"
+                item.remarks = remarks
+                order_doc.save()
+                frappe.db.commit()
+                return f"Product {item_name.lower()} made as unready for order {order_id} {item.item.lower()}"
+    except Exception as e:
+        print(e)
+        return False
 
 @frappe.whitelist(allow_guest=True)  # Makes the endpoint publicly accessible
 def create_order(data):
@@ -278,7 +345,7 @@ def create_order(data):
             }
 
         # Mandatory fields check
-        required_fields = ["amount", "total_amount", "item_list"]
+        required_fields = ["amount", "item_list"]
         for field in required_fields:
             if not order_data.get(field):
                 return {"status": "error", "message": _("Field '{0}' is required.").format(field)}
@@ -286,12 +353,12 @@ def create_order(data):
         # Create a new 'Table Order' document if no existing order
         order_doc = frappe.get_doc({
             "doctype": "Table Order",
-            "customer": settings.customer,
+            "customer": order_data.get("customer") or settings.customer,
+            "credit_sales":order_data.get("credit_sales") or 0,
             "table": order_data["table"],
             "amount": float(order_data["amount"]),
-            "total_amount": float(order_data["total_amount"]),
+            "total_amount": float(order_data["total_amount"]) or 0,
             "item_list": order_data["item_list"],
-            # Optional fields with default values
             "floor": order_data.get("floor"),
             "address": order_data.get("address") or "Test Address",  # Corrected typo from "adresss"
             "tax": order_data.get("tax") or 0,
@@ -339,6 +406,9 @@ def get_running_order_list():
 
 @frappe.whitelist(allow_guest=True)
 def get_running_order_item_list(table_id):
+    print("table_id",table_id)
+    if not table_id:
+        return []
     order_list = frappe.get_all("Table Order",fields=["*"],filters=[["status","!=","Completed"],["status","!=","Canceled"],["table", "=", table_id]],order_by="creation desc")
     for order in order_list:
         order["item_list"] = get_order_item_list(order.name)
@@ -350,38 +420,123 @@ def get_running_order_item_list(table_id):
 def get_tax_rate():
     settings = frappe.get_doc("Restaurant Settings")
     return int(settings.tax_rate)/100
+
+# def get_order_list(status=None):
+#     if status:
+#         order_list = frappe.get_all("Table Order",fields=["*"],filters=[["status","in",[status]]],order_by="creation desc")
+#     else:
+#         order_list = frappe.get_all("Table Order",fields=["*"],order_by="creation desc")
+#     for order in order_list:
+#         order["item_list"] = get_order_item_list(order.name)
+#     return order_list
 @frappe.whitelist()
-def get_order_list(status=None):
-    if status:
-        print(status)
-        order_list = frappe.get_all("Table Order",fields=["*"],filters=[["status","in",[status]]],order_by="creation desc")
-    else:
-        order_list = frappe.get_all("Table Order",fields=["*"],order_by="creation desc")
-    for order in order_list:
-        order["item_list"] = get_order_item_list(order.name)
-    return order_list
+def get_order_list(status=None, page=1, page_size=10):
+    try:
+        # Calculate offset
+        page = int(page) if page else 1
+        page_size = int(page_size) if page_size else 10
+        start = (page - 1) * page_size
+
+        # Apply filters and fetch data
+        filters = [["status", "in", [status]]] if status else []
+        order_list = frappe.get_all(
+            "Table Order",
+            fields=["*"],
+            filters=filters,
+            order_by="modified desc",
+            limit_start=start,
+            limit_page_length=page_size,
+        )
+
+        # Get total count for pagination metadata
+        total_count = frappe.db.count("Table Order", filters=filters)
+
+        # Add item list to each order
+        for order in order_list:
+            order["item_list"] = get_order_item_list(order.name)
+
+        # Prepare response
+        response = {
+            "data": order_list,
+            "currentPage": page,
+            "totalPages": (total_count + page_size - 1) // page_size,  # Ceiling division
+            "totalDataCount": total_count,
+            "itemsPerPage": page_size,
+        }
+        return response
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "get_order_list API Error")
+        return {"error": str(e)}
+
+# @frappe.whitelist()
+# def get_chef_order_list():
+#     # Define the filters correctly using "or" condition
+#     filters = [
+#         ["status", "=", "Work in progress"],
+#         ["status", "=", "Ready to Serve"]
+#     ]
+    
+#     # Get the table orders using the OR condition with "|"
+#     order_list = frappe.get_all("Table Order", fields=["*"], or_filters= filters, order_by="creation desc")
+    
+#     # Add item list to each order
+#     for order in order_list:
+#         order["item_list"] = get_order_item_list(order.name)
+    
+#     return order_list
 @frappe.whitelist()
-def get_chef_order_list():
-    # Define the filters correctly using "or" condition
-    filters = [
-        ["status", "=", "Work in progress"],
-        ["status", "=", "Ready to Serve"]
-    ]
-    
-    # Get the table orders using the OR condition with "|"
-    order_list = frappe.get_all("Table Order", fields=["*"], or_filters= filters, order_by="creation desc")
-    
-    # Add item list to each order
-    for order in order_list:
-        order["item_list"] = get_order_item_list(order.name)
-    
-    return order_list
+def get_chef_order_list(page=1, page_size=10):
+    try:
+        # Convert page and page_size to integers
+        page = int(page) if page else 1
+        page_size = int(page_size) if page_size else 10
+        start = (page - 1) * page_size
+
+        # Define filters with OR conditions
+        or_filters = [
+            ["status", "=", "Work in progress"],
+            ["status", "=", "Preparing"],
+            ["status", "=", "Ready to Serve"]
+        ]
+
+        # Fetch the orders with pagination
+        order_list = frappe.get_all(
+            "Table Order",
+            fields=["*"],
+            or_filters=or_filters,
+            order_by="modified desc",
+            limit_start=start,
+            limit_page_length=page_size,
+        )
+
+        # Get total count for pagination
+        total_count = frappe.db.sql("""
+            SELECT COUNT(*)
+            FROM `tabTable Order`
+            WHERE status IN (%s, %s)
+        """, ("Work in progress", "Ready to Serve"))[0][0]
+        # Add item list to each order
+        for order in order_list:
+            order["item_list"] = get_order_item_list(order.name)
+
+        # Prepare response
+        response = {
+            "data": order_list,
+            "currentPage": page,
+            "totalPages": (total_count + page_size - 1) // page_size,  # Ceiling division
+            "totalDataCount": total_count,
+            "itemsPerPage": page_size,
+        }
+        return response
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "get_chef_order_list API Error")
+        return {"error": str(e)}
 
 
 
 @frappe.whitelist()
 def get_order_item_list(order_id):
-    return frappe.get_all("Table Order Item",filters={"parent":order_id},fields=['item','qty','amount','rate',"is_parcel","is_ready","name","parent"],order_by="creation desc")
+    return frappe.get_all("Table Order Item",filters={"parent":order_id},fields=['item','qty','amount','rate',"is_parcel","is_ready","name","parent","remarks","is_accepted","is_create_recipe","is_recipe_item"],order_by="creation desc")
 
 @frappe.whitelist(allow_guest=True)
 def get_roles(user):
@@ -438,3 +593,194 @@ def get_logo_and_title():
         "logo": f"{settings.logo}",
         "title": settings.title
     }
+    
+@frappe.whitelist(allow_guest=True)
+def get_last_seven_days_sales():
+    """
+    Returns a list of dictionaries for the last 7 days (including today) with:
+        - posting_date (YYYY-MM-DD)
+        - day_name (e.g., Monday, Tuesday)
+        - total_sales (grand_total sum for that day, or 0 if no sales)
+    """
+    today = datetime.date.today()
+    
+    # Create a map for each of the last 7 days, defaulting to 0 sales
+    daily_sales_map = {}
+    for i in range(7):
+        day = today - datetime.timedelta(days=i)
+        daily_sales_map[day] = 0.0
+    
+    # We'll query from 6 days ago up to today (total 7 days, including the present)
+    start_date = today - datetime.timedelta(days=6)
+    
+    # Fetch actual sales from the database
+    query_results = frappe.db.sql("""
+        SELECT 
+            DATE(posting_date) AS posting_date,
+            SUM(grand_total) AS total_sales
+        FROM `tabPOS Invoice`
+        WHERE 
+            docstatus = 1
+            AND posting_date BETWEEN %s AND %s
+        GROUP BY DATE(posting_date)
+        ORDER BY posting_date
+    """, (start_date, today), as_dict=True)
+    
+    # Update our map with actual totals
+    for row in query_results:
+        if row.posting_date in daily_sales_map:
+            daily_sales_map[row.posting_date] = row.total_sales or 0.0
+    
+    # Convert map to a sorted list of dicts
+    output = []
+    for day in sorted(daily_sales_map.keys()):
+        output.append({
+            "posting_date": str(day),
+            "day_name": day.strftime("%A"),  # E.g. "Saturday", "Sunday", etc.
+            "total_sales": daily_sales_map[day]
+        })
+    
+    return output
+
+
+@frappe.whitelist(allow_guest=True)
+def get_top_items_by_sales_period(period="weekly", item_count=5):
+    """
+    Fetch the Top N Items (default 5) by total sales amount 
+    from POS Invoices for a given period ("weekly", "monthly", "yearly", etc.).
+    
+    Returns a list of dicts with:
+        - item_code
+        - total_sales
+        - item_name
+    """
+    # Ensure item_count is an integer
+    item_count = int(item_count) if item_count else 5
+    
+    start_date = get_start_date_for_period(period)
+
+    # Use f-string for dynamic LIMIT
+    query = f"""
+        SELECT 
+            pii.item_code AS item_code,
+            SUM(pii.amount) AS total_sales
+        FROM `tabPOS Invoice Item` pii
+        JOIN `tabPOS Invoice` pi ON pi.name = pii.parent
+        WHERE 
+            pi.docstatus = 1
+            AND pi.posting_date >= %s
+        GROUP BY pii.item_code
+        ORDER BY total_sales DESC
+        LIMIT {item_count}
+    """
+    
+    data = frappe.db.sql(query, (start_date,), as_dict=True)
+
+    # Fetch item_name for readability
+    for row in data:
+        row["item_name"] = frappe.db.get_value("Item", row["item_code"], "item_name") or row["item_code"]
+
+    return data
+@frappe.whitelist(allow_guest=True)
+def get_top_item_groups_by_sales_period(period="weekly", group_count=5):
+    """
+    Fetch the Top N Item Groups (default 5) by total sales amount 
+    from POS Invoices for a given period ("weekly", "monthly", "yearly", etc.).
+    
+    Returns a list of dicts with:
+        - item_group
+        - total_sales
+    """
+    group_count = int(group_count) if group_count else 5
+    
+    start_date = get_start_date_for_period(period)
+
+    # Build a query grouped by item_group
+    query = f"""
+        SELECT 
+            i.item_group AS item_group,
+            SUM(pii.amount) AS total_sales
+        FROM `tabPOS Invoice Item` pii
+        JOIN `tabPOS Invoice` pi ON pi.name = pii.parent
+        JOIN `tabItem` i ON pii.item_code = i.item_code
+        WHERE 
+            pi.docstatus = 1
+            AND pi.posting_date >= %s
+        GROUP BY 
+            i.item_group
+        ORDER BY 
+            total_sales DESC
+        LIMIT {group_count}
+    """
+
+    data = frappe.db.sql(query, (start_date,), as_dict=True)
+    return data
+
+def get_start_date_for_period(period):
+    """
+    Utility function to calculate start_date based on the 'period' parameter.
+    Adjust as needed (e.g., to use start of current month/year instead of X days ago).
+    """
+    today = nowdate()
+    
+    if period == "weekly":
+        # Last 7 days
+        return add_days(today, -7)
+
+    elif period == "monthly":
+        # Option A: Last 30 days
+        return add_days(today, -30)
+        
+        # Option B (alternate): From start of current month
+        # return get_first_day(today)
+
+    elif period == "yearly":
+        # Option A: Last 365 days
+        return add_days(today, -365)
+        
+        # Option B (alternate): From start of current year
+        # return get_year_start(today)
+
+    else:
+        # Default fallback if unknown period is passed
+        return add_days(today, -7)
+    
+    
+    
+@frappe.whitelist(allow_guest=True)
+def dashboard_data():
+    chef_orders_count = frappe.db.sql("""
+            SELECT COUNT(*)
+            FROM `tabTable Order`
+            WHERE status IN (%s, %s)
+        """, ("Work in progress", "Ready to Serve"))[0][0]
+    paid_orders_count = frappe.db.count("Table Order",filters={"status":"Completed"})
+    canceled_orders_count = frappe.db.count("Table Order",filters={"status":"Canceled"})
+    unpaid_orders_count = frappe.db.sql("""
+            SELECT COUNT(*)
+            FROM `tabTable Order`
+            WHERE status IN (%s, %s, %s)
+        """, ("Work in progress", "Ready to Serve", "Order Placed"))[0][0]
+    top_monthly_items = get_top_items_by_sales_period(period="monthly", item_count=1)[0]
+    top_weekly_items = get_top_items_by_sales_period(period="weekly", item_count=1)[0]
+    top_yearly_items = get_top_items_by_sales_period(period="yearly", item_count=1)[0]
+    top_monthly_item_groups = get_top_item_groups_by_sales_period(period="monthly", group_count=1)[0]
+    top_weekly_item_groups = get_top_item_groups_by_sales_period(period="weekly", group_count=1)[0]
+
+    top_yearly_item_groups = get_top_item_groups_by_sales_period(period="yearly", group_count=1)[0]
+
+    return {
+        "chef_orders_count": chef_orders_count,
+        "total_orders_count": paid_orders_count,
+        "canceled_orders_count": canceled_orders_count,
+        "unpaid_orders_count": unpaid_orders_count,
+        "top_monthly_item": top_monthly_items.get("item_code"),
+        "top_weekly_item": top_weekly_items.get("item_code"),
+        "top_yearly_item": top_yearly_items.get("item_code"),
+        "top_monthly_category": top_monthly_item_groups.get("item_group"),
+        "top_weekly_category": top_weekly_item_groups.get("item_group"),
+        "top_yearly_category": top_yearly_item_groups.get("item_group"),
+    }
+    
+
+

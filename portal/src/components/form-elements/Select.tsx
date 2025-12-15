@@ -61,7 +61,7 @@ function Select({
         className={styles(
           `custom_input appearance-none`,
           { "disabled_bg placeholder:!text-grayColor": disabled },
-          { default_option: emptyValue },
+          // { default_option: emptyValue },
           className
         )}
         // className={`custom_input appearance-none ${

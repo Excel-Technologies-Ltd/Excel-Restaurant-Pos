@@ -1,6 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 @layer base {
   :root {
@@ -34,9 +37,13 @@ body.modal-open {
 .modal-scrollable {
   overflow-y: auto;
 }
+.no-scroll {
+  overflow: hidden;
+  height: 100%;
+}
 
 body {
-  font-family: "Ubuntu";
+  font-family: 'Open Sans', sans-serif;
 }
 
 @layer components {

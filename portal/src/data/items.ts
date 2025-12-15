@@ -15,6 +15,7 @@ export interface Food {
   relatedItems?: Food[];
   categoryId?: number;
   is_add_on?: boolean;
+  isComplimentary?: boolean;
 }
 
 export const foods: Food[] = [

@@ -30,7 +30,8 @@ fixtures = [
                 "Item Group-is_restaurant_pos",
                 "Item-default_variant",
                 "Item Group-column_break_qf15o",
-                "Item Group-column_break_uytx9"
+                "Item Group-column_break_uytx9",
+                "Item-custom_is_recipe"
             ]
         ]
     ]},
@@ -144,9 +145,10 @@ fixtures = [
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+
+override_doctype_class = {
+"ToDo": "excel_restaurant_pos.overrides.todo.ToDo"
+}
 
 # Document Events
 # ---------------
@@ -162,30 +164,19 @@ doc_events = {
 		"on_update": "excel_restaurant_pos.doc_event.tax_and_charges.on_doctype_update",
 	},
     "Table Order": {
-        "on_update": "excel_restaurant_pos.doc_event.pos_invoice.create_pos_invoice"
+        # "on_update": "excel_restaurant_pos.doc_event.pos_invoice.create_pos_invoice",
+        "on_update": "excel_restaurant_pos.doc_event.sales_invoice.create_sales_invoice"
     }
 }
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"excel_restaurant_pos.tasks.all"
-# 	],
-# 	"daily": [
-# 		"excel_restaurant_pos.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"excel_restaurant_pos.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"excel_restaurant_pos.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"excel_restaurant_pos.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"daily": [
+		"excel_restaurant_pos.utils.jwt_auth.cleanup_expired_blacklist"
+	]
+}
 
 # Testing
 # -------
@@ -198,6 +189,10 @@ doc_events = {
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "excel_restaurant_pos.event.get_events"
 # }
+
+override_whitelisted_methods = {
+    "frappe.core.doctype.user.user.sign_up": "excel_restaurant_pos.overrides.user.sign_up"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

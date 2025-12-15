@@ -13,7 +13,9 @@ import { MdOutlineTableRestaurant } from "react-icons/md";
 import { PiChefHatFill, PiListChecksFill } from "react-icons/pi";
 import { RiFileUserFill } from "react-icons/ri";
 import { TbCategoryFilled } from "react-icons/tb";
-import { URLAdminPos, URLCategories, URLChefOrders, URLDashboard, URLOrders, URLTableManagement, URLUsers } from "../../../routes/routes-link";
+import { FaIndustry } from "react-icons/fa";
+import { URLAdminPos, URLCategories, URLChefOrders, URLDashboard, URLOrders, URLProduction, URLStockTransfer, URLTableManagement, URLUsers, URLWastage } from "../../../routes/routes-link";
+import { MdCompareArrows } from "react-icons/md";
 
 
 interface MenuItem {
@@ -43,7 +45,7 @@ export const GetMenuItems = () => {
       requiredRoles: ["Restaurant Manager","Restaurant Waiter","Restaurant Cashier","Restaurant Chef"],
     },
     {
-      label: "Pos",
+      label: "POS",
       url: URLAdminPos(),
       icon: <IoFastFoodSharp size={19} />,
       isModuleAccess: true,
@@ -69,6 +71,27 @@ export const GetMenuItems = () => {
       icon: <PiChefHatFill size={19} />,
       isModuleAccess: true,
       requiredRoles: ["Restaurant Chef"],
+    },
+    {
+      label: "Production",
+      url: URLProduction(),
+      icon: <FaIndustry size={19} />,
+      isModuleAccess: true,
+      requiredRoles: ["Restaurant Manager", "Restaurant Chef"],
+    },
+    {
+      label: "Stock Transfer",
+      url: URLStockTransfer(),
+      icon: <MdCompareArrows size={19} />,
+      isModuleAccess: true,
+      requiredRoles: ["Restaurant Manager", "Restaurant Chef"],
+    },
+    {
+      label: "Wastage Management",
+      url: URLWastage(),
+      icon: <FaIndustry size={19} />,
+      isModuleAccess: true,
+      requiredRoles: ["Restaurant Manager", "Restaurant Chef"],
     },
     {
       label: "Categories ",

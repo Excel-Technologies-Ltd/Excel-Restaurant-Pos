@@ -1,0 +1,106 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "naming_series:",
+    "creation": "2025-01-15 10:00:00.000000",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+     "naming_series",
+     "bom_id",
+     "item_code",
+     "status",
+     "process_date",
+     "log"
+    ],
+    "fields": [
+     {
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "BPL-.YYYY.-",
+      "reqd": 1
+     },
+     {
+      "fieldname": "bom_id",
+      "fieldtype": "Link",
+      "label": "BOM ID",
+      "options": "BOM",
+      "reqd": 1
+     },
+     {
+      "fieldname": "item_code",
+      "fieldtype": "Link",
+      "label": "Item Code",
+      "options": "Item",
+      "reqd": 1
+     },
+     {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Success\nFailed\nIn Progress",
+      "reqd": 1
+     },
+     {
+      "fieldname": "process_date",
+      "fieldtype": "Datetime",
+      "label": "Process Date",
+      "reqd": 1
+     },
+     {
+      "fieldname": "log",
+      "fieldtype": "Text",
+      "label": "Process Log",
+      "reqd": 1
+     }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2025-01-15 10:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "Excel Restaurant POS",
+    "name": "BOM Process Log",
+    "naming_rule": "By \"Naming Series\" field",
+    "owner": "Administrator",
+    "permissions": [
+     {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Manufacturing Manager",
+      "share": 1,
+      "write": 1
+     },
+     {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Manufacturing User",
+      "share": 1,
+      "write": 1
+     },
+     {
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Stock User",
+      "share": 1
+     }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
+   }

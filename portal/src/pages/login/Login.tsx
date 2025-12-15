@@ -1,14 +1,18 @@
-import Input from "../../components/form-elements/Input";
-import Password from "../../components/form-elements/Password";
-import Button from "../../components/Button/Button";
+import { useFrappeAuth, useFrappeGetCall } from "frappe-react-sdk";
 import { useState } from "react";
-import { useFrappeAuth } from "frappe-react-sdk";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
+import Button from "../../components/Button/Button";
+import Input from "../../components/form-elements/Input";
+import Password from "../../components/form-elements/Password";
 
 
 
 const Login = () => {
+    const { data: getLogoAndTitle } = useFrappeGetCall(
+        "excel_restaurant_pos.api.item.get_logo_and_title",
+        { fields: ["*"] }
+      );
     const { login, currentUser, isLoading, } = useFrappeAuth();
     const navigate = useNavigate();
     if (currentUser) {
@@ -50,31 +54,16 @@ const Login = () => {
 
     }
     return (
-        <div className="h-screen w-full bg-bg sm:p-5 overflow-auto">
-            <div className="max-w-[500px] h-full sm:h-auto sm:mt-[40px] md:mt-[80px] bg-whiteColor w-full rounded px-5 sm:px-10 py-10 flex flex-col justify-top items-center main-body relative m-auto">
+        <div className="h-screen w-full bg:whiteColor sm:bg-bg sm:p-5 overflow-auto">
+            <div className="max-w-[500px] h-full sm:h-auto sm:mt-[40px] md:mt-[80px] bg-whiteColor w-full rounded px-5 sm:px-10 py-10 flex flex-col justify-center items-center main-body relative m-auto">
+                <div className=""></div>
                 {/* <ModeSwitcher /> */}
-                {/* {isWhite ? (
-                    <img
-                        src="/logo.png"
-                        className="w-[130px] object-contain sm:w-[200px]"
-                        alt=""
-                    />
-                ) : ( */}
                 <img
-                    src="/logo-white.png"
-                    className="w-[130px] object-contain sm:w-[200px]"
-                    alt=""
+                    src={getLogoAndTitle?.message?.logo}
+                    alt="Restaurant Pos Logo"
+                    className="w-24 h-24 object-contain"
                 />
-                {/* )} */}
-
-                <div className="mt-5 sm:mt-10 w-auto">
-                    <div className="flex gap-4 items-center justify-between w-full">
-                        <img className="object-contain" src="/title-img.png" alt="" />
-                        <h1 className="text-[18px] sm:text-[30px] font-[700] text-primaryColor">
-                            Welcome to Restaurant POS
-                        </h1>
-                    </div>
-                </div>
+                <span className="text-[18px] sm:text-[30px] font-[700] text-primaryColor text-center">{getLogoAndTitle?.message?.title}</span>
 
 
                 <div className="mt-5 sm:mt-10 w-full">

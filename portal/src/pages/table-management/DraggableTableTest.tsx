@@ -50,6 +50,8 @@ const DraggableTableTest: React.FC = () => {
     bgColor: newTableShape == "road" ? "#BFBFBF" : "#155e75",
   });
 
+  console.log({newTableData, newTableShape});
+
   const bookedColor = "#880000";
 
   const navigate = useNavigate();
@@ -161,7 +163,11 @@ const DraggableTableTest: React.FC = () => {
   const createTable = () => {
     if (!newTableShape) return;
 
-    if (!newTableData.seat || !newTableData.tableNo) {
+    if (!newTableData.tableNo) {
+      toast.error("Please fill in all the details before creating the table.");
+      return;
+    }
+    if (!newTableData.seat && newTableShape !== "road") {
       toast.error("Please fill in all the details before creating the table.");
       return;
     }

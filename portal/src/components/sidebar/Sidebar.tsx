@@ -7,6 +7,7 @@
  * Date Reviewed:
  */
 
+import { useFrappeAuth, useFrappeGetCall } from "frappe-react-sdk";
 import { useEffect, useState } from "react";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { MdOutlineMenu } from "react-icons/md";
@@ -23,7 +24,6 @@ import { RootState } from "../../redux/store/Store";
 import { styles } from "../../utilities/cn";
 import MobileSidebar from "./MobileSidebar";
 import { GetMenuItems } from "./sidebar-routes-array/sidebar-array";
-import { useFrappeAuth, useFrappeGetCall } from "frappe-react-sdk";
 
 // sidebar props type
 type Props = {
@@ -176,7 +176,7 @@ const Sidebar = ({ children }: Props) => {
                         {menuItem?.icon}
                         <span
                           className={styles(
-                            "ms-3  text-[12px] 2xl:text-[14px]",
+                            "ms-3 text-[12px] 2xl:text-[14px]",
                             {
                               "text-primaryColor": selectedMenu === index,
                             }
@@ -242,7 +242,7 @@ const Sidebar = ({ children }: Props) => {
                     }}
                     to={menuItem?.url}
                     className={styles(
-                      "flex items-center justify-between p-2 text-grayTextColor text-base rounded-md group hover:text-primaryColor hover:bg-lightPrimaryColor",
+                      "flex items-center justify-between p-2 text-gray-700 text-base rounded-md group hover:text-primaryColor hover:bg-lightPrimaryColor",
                       {
                         "active font-semibold": menuItem?.moduleName?.includes(
                           routeArray[1]?.toLowerCase()
@@ -252,7 +252,7 @@ const Sidebar = ({ children }: Props) => {
                   >
                     <div className="flex items-center">
                       {menuItem?.icon}
-                      <span className="ms-3 text-xs">{menuItem?.label}</span>
+                      <span className="ms-3 text-[12px] 2xl:text-[14px]">{menuItem?.label}</span>
                     </div>
                     {menuItem?.badge && menuItem?.badge}
                   </NavLink>

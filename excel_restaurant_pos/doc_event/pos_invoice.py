@@ -1,6 +1,6 @@
 import frappe
 from frappe.utils import flt
-
+from excel_restaurant_pos.api.bom import run_bom_process
 @frappe.whitelist(allow_guest=True)
 def create_pos_invoice(data, method=None):
     frappe.msgprint('create_pos_invoice')
@@ -35,6 +35,7 @@ def create_pos_invoice(data, method=None):
             "apply_discount_on": "Net Total",
             "set_posting_time": 1,  # Allow posting at a specific time
             "is_pos": 1,  # Flag for POS
+            "update_stock":1,
             "pos_profile": frappe.db.get_value(
                 "POS Profile", {"company": data.get("company")}, "name"
             ),  # Assuming one profile per company
@@ -72,15 +73,8 @@ def create_pos_invoice(data, method=None):
 
         # Insert the document into the database
         invoice_doc.insert(ignore_permissions=True)
+        
 
-        # Optionally, submit the document if needed
-        # invoice_doc.submit(ignore_permissions=True)
-
-        return {
-            "status": "success",
-            "invoice_name": invoice_doc.name,
-            "message": f"POS Invoice {invoice_doc.name} created successfully."
-        }
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "POS Invoice Creation Error")
@@ -90,3 +84,5 @@ def create_pos_invoice(data, method=None):
             "status": "error",
             "message": str(e),
         }
+
+

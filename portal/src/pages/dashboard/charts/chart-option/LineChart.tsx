@@ -3,17 +3,9 @@ import HighchartsReact from "highcharts-react-official";
 
 // chart option components
 const LineChart = ({ chartData }: any) => {
-  console.log({ chartData });
-  return (
-    <div className="">
-      <HighchartsReact highcharts={Highcharts} options={chartOptions} />
-    </div>
-  );
-};
+  
+const formattedChartData = chartData?.message
 
-export default LineChart;
-
-// Chart configuration for last week's sales
 const chartOptions = {
   chart: {
     type: "line",
@@ -27,16 +19,7 @@ const chartOptions = {
     },
   },
   xAxis: {
-    // categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    categories: [
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-      "Sunday",
-    ],
+    categories: formattedChartData?.map((item: any) => item?.day_name),
   },
   yAxis: {
     title: {
@@ -61,7 +44,17 @@ const chartOptions = {
   series: [
     {
       name: "Sales",
-      data: [120, 440, 780, 330, 790, 800, 980],
+      data: formattedChartData?.map((item: any) => item?.total_sales),
     },
   ],
 };
+
+  return (
+    <div className="">
+      <HighchartsReact highcharts={Highcharts} options={chartOptions} />
+    </div>
+  );
+};
+
+export default LineChart;
+

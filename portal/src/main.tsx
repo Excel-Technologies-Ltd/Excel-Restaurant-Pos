@@ -8,6 +8,7 @@ import "./index.css";
 import { store } from "./redux/store/Store.ts";
 import Loading from "./components/common/Loading.tsx";
 import { LoadingProvider } from "./context/loadingContext.tsx";
+// import 'sweetalert2/src/sweetalert2.scss'
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

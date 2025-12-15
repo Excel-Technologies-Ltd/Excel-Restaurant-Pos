@@ -1,5 +1,5 @@
-import { styles } from "../../utilities/cn";
 import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
+import { styles } from "../../utilities/cn";
 
 interface DraggableTableDetailsProps {
   setIsDetailsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;

@@ -1,3 +1,7 @@
+import {
+  useFrappeGetCall,
+  useFrappePostCall
+} from "frappe-react-sdk";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaRegTrashCan } from "react-icons/fa6";
@@ -5,11 +9,6 @@ import { FiPlus } from "react-icons/fi";
 import { LuMinus } from "react-icons/lu";
 import { RxCross2 } from "react-icons/rx";
 import { useCartContext } from "../../context/cartContext";
-import {
-  useFrappeGetCall,
-  useFrappeGetDocList,
-  useFrappePostCall,
-} from "frappe-react-sdk";
 
 type Props = {
   isOpen: boolean;
@@ -60,6 +59,7 @@ const AllCarts = ({
   const { data: tax_rate } = useFrappeGetCall(
     "excel_restaurant_pos.api.item.get_tax_rate"
   );
+
   const taxRate = tax_rate?.message;
   const { call: checkCoupon } = useFrappePostCall(
     "excel_restaurant_pos.api.item.check_coupon_code"
@@ -69,7 +69,6 @@ const AllCarts = ({
     `excel_restaurant_pos.api.item.get_running_order_item_list?table_id=${tableId}`
   );
   const runningItems = running_items?.message;
-  console.log({ runningItems });
   const {
     call: createOrder,
     loading,
@@ -79,7 +78,6 @@ const AllCarts = ({
 
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    console.log({ storedCart });
 
     if (storedCart.length > 0) {
       setCartItems(storedCart);
@@ -153,14 +151,11 @@ const AllCarts = ({
 
   const carts = JSON.parse(localStorage.getItem("cart") || "[]");
 
-  // 10% tax rate
-  console.log({ cartItems });
   // Calculate the subtotal price based on items and their quantities
   const subtotal = cartItems.reduce(
     (acc, item) => acc + Number(item.price || 0) * Number(item.quantity || 0),
     0
   );
-  console.log({ subtotal });
 
   // Calculate the tax based on the subtotal
   const tax = (subtotal - Number(discount)) * taxRate;
@@ -296,7 +291,6 @@ const AllCarts = ({
     if (coupon) {
       checkCoupon({ data: { coupon_code: coupon } }).then((res) => {
         if (res?.message?.status === "success") {
-          console.log("res", res?.message);
           setDiscountError("");
           const discountAmount =
             res?.message?.discount_type === "percentage"
@@ -329,8 +323,6 @@ const AllCarts = ({
   useEffect(() => {
     const foodsBody = document.querySelector(".modal-scrollable");
 
-    console.log(foodsBody);
-
     if (isOpen) {
       document.body.classList.add("modal-open");
 
@@ -350,6 +342,7 @@ const AllCarts = ({
       foodsBody?.classList.add("modal-scrollable");
     };
   }, [isOpen]);
+
   const getTableId = async () => {
     const table = await localStorage.getItem("table_id");
     setTableId(table || "");
@@ -385,7 +378,7 @@ const AllCarts = ({
         </div>
         <div className="mt-3">
           {runningItems?.length > 0 && (
-            <h2 className="font-semibold mt-3">Existing Order</h2>
+            <h2 className="font-semibold mt-3 mb-1">Existing Order</h2>
           )}
           {runningItems?.length > 0 &&
             runningItems?.map((item: any) => (
@@ -429,9 +422,9 @@ const AllCarts = ({
               <div className="flex justify-between items-center">
                 <div className="flex">
                   <img
-                    src="https://images.deliveryhero.io/image/fd-bd/Products/5331721.jpg??width=400"
+                    src={item?.image ? item?.image : "https://images.deliveryhero.io/image/fd-bd/Products/5331721.jpg??width=400"}
                     alt={item?.item_name}
-                    className="h-10 w-10 lg:h-20 lg:w-20 object-cover rounded-lg"
+                    className="h-14 w-14 lg:h-20 lg:w-20 object-cover rounded-lg"
                   />
                   <div className="flex flex-col items-start justify-center ps-2">
                     <p className="text-xs lg:text-sm font-semibold text-gray-800">
@@ -440,27 +433,28 @@ const AllCarts = ({
                     <p className="text-xs lg:text-base font-medium text-primaryColor">
                       ৳{item?.price}
                     </p>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center ">
-                    <label className="flex items-center mt-2 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={item?.isParcel}
-                        onChange={(e) => handleParcelChange(e, item?.item_code)}
-                        className="mr-2"
-                      />
-                      Parcel
-                    </label>
+                    <div>
+                      <div className="flex items-center ">
+                        <label className="flex items-center mt-2 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={item?.isParcel}
+                            onChange={(e) => handleParcelChange(e, item?.item_code)}
+                            className="mr-2"
+                          />
+                          Takeaway
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="col-span-1 flex flex-col justify-center items-center gap-2">
-                  <div className="flex items-center rounded-md ">
+                  <div className="flex">
+                  <div className="flex items-center rounded-md border ms-1.5">
                     {quantities[item?.item_code] === 1 ? (
                       <button
                         onClick={() => decrement(item?.item_code)}
-                        className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 cursor-not-allowed h-fit py-2 border ms-1.5"
+                        className="px-2 rounded-md rounded-e-none text-xs bg-gray-200 cursor-not-allowed h-fit py-2 border"
                       >
                         <LuMinus className="text-xs" />
                       </button>
@@ -472,7 +466,7 @@ const AllCarts = ({
                         <LuMinus className="text-xs" />
                       </button>
                     )}
-                    <span className="px-2 text-xs h-full flex items-center ">
+                    <span className="px-2 text-xs h-full flex items-center">
                       {item?.quantity}
                     </span>
                     {quantities[item?.item_code] > 0 && (
@@ -483,6 +477,7 @@ const AllCarts = ({
                         <FiPlus className="text-xs" />
                       </button>
                     )}
+                  </div>
                     <button
                       onClick={() => removeItem(item?.item_code)} // Call removeItem function on click
                       className="text-redColor px-2 rounded-md text-xs bg-gray-200 h-fit py-2 ms-1.5 border"
@@ -577,21 +572,21 @@ const AllCarts = ({
         {/* Display cart summary */}
         {cartItems?.length > 0 && (
           <div className="p-3 border rounded-md mt-5">
-            <div className="flex justify-between text-xs">
+            <div className="flex justify-between text-xs md:text-sm">
               <h1>Subtotal</h1>
               <h1>৳{subtotal.toFixed(2)}</h1>
             </div>
             {Number(discount) > 0 && (
-              <div className="flex justify-between text-xs mt-2">
+              <div className="flex justify-between text-xs md:text-sm mt-2">
                 <h1>Discount (%)</h1>
                 <h1>৳{discount}</h1>
               </div>
             )}
-            <div className="flex justify-between text-xs mt-2">
+            <div className="flex justify-between text-xs md:text-sm mt-2">
               <h1>Tax ({taxRate * 100}%)</h1>
               <h1>৳{tax.toFixed(2)}</h1>
             </div>
-            <div className="flex justify-between text-xs font-semibold mt-2">
+            <div className="flex justify-between text-xs md:text-sm font-semibold mt-2">
               <h1>Payable Amount</h1>
               <h1>৳{payableAmount.toFixed(2)}</h1>
             </div>
@@ -619,7 +614,7 @@ const AllCarts = ({
         </div>
       )}
       {isCheckoutModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center px-3" style={{zIndex: 999}}>
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
             <h2 className="text-lg font-semibold mb-4">Confirm Checkout</h2>
             <label className="block mb-2">

@@ -36,6 +36,7 @@ export interface RestaurantTable {
   rotation?: string;
   /**	Table No : Int	*/
   table_no: number | string;
+  isBooked?: boolean;
 }
 
 export type TableType = "Rectangle" | "Circle" | "Road";

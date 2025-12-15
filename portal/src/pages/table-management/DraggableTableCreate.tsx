@@ -10,6 +10,7 @@ interface DraggableTableCreateProps {
   setNewTableData: React.Dispatch<React.SetStateAction<RestaurantTable>>;
   setIsCreateModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   createTable: () => void; // This can also be more specific if it has parameters
+  setNewTableShape?: (shape: string) => void;
 }
 
 // * DraggableTableCreate component
@@ -18,12 +19,12 @@ const DraggableTableCreate = ({
   setNewTableData,
   setIsCreateModalOpen,
   createTable,
+  setNewTableShape
 }: DraggableTableCreateProps) => {
 
 
 
   const { data: floors } = useFrappeGetDocList("Restaurant Floor");
-  console.log(newTableData);
 
   return (
     <div
@@ -37,10 +38,15 @@ const DraggableTableCreate = ({
             }`
             : "Create table"}
         </h2>
+
         <div className="space-y-3">
           <Select
           
             onChange={(e) => {
+              // Uncaught TypeError: setNewTableShape is not a function
+              if (setNewTableShape) {
+                setNewTableShape(e.target.value as string);
+              }
               
               setNewTableData({
                 ...newTableData,

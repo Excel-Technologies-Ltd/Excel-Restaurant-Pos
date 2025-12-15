@@ -1,21 +1,3 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
-import { BiSolidEdit } from "react-icons/bi";
-import { IoMdEye } from "react-icons/io";
-import { RxCross2 } from "react-icons/rx";
-import { TbRotate2 } from "react-icons/tb"; // Rotate icon
-import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router-dom";
-import Select from "../../components/form-elements/Select";
-import { closeRightModal } from "../../redux/features/modal/foodsModal";
-import { RootState } from "../../redux/store/Store";
-import { styles } from "../../utilities/cn";
-import Pos from "../Admin/Pos/Pos";
-import CreateFloor from "./CreateFloor";
-import DraggableTableCreate from "./DraggableTableCreate";
-import DraggableTableDetails from "./DraggableTableDetails";
-import DraggableTableEdit from "./DraggableTableEdit";
-import ModalRightToLeft from "./ModalRightToLeft";
 import {
   useFrappeCreateDoc,
   useFrappeDeleteDoc,
@@ -26,8 +8,30 @@ import {
   useFrappeGetDocList,
   useFrappeUpdateDoc,
 } from "frappe-react-sdk";
-import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
+import React, { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { BiSolidEdit } from "react-icons/bi";
+import { CgSpinner, CgUnavailable } from "react-icons/cg";
+import { FaRegCheckCircle } from "react-icons/fa";
+import { IoMdEye } from "react-icons/io";
+import { IoRestaurant } from "react-icons/io5";
+import { MdOutlineShoppingCartCheckout, MdTableBar } from "react-icons/md";
+import { RxCross2 } from "react-icons/rx";
+import { TbRotate2 } from "react-icons/tb"; // Rotate icon
+import { useDispatch, useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
+import Select from "../../components/form-elements/Select";
 import { useLoading } from "../../context/loadingContext";
+import { closeRightModal, openRightModal } from "../../redux/features/modal/foodsModal";
+import { RootState } from "../../redux/store/Store";
+import { RestaurantTable } from "../../types/ExcelRestaurantPos/RestaurantTable";
+import { styles } from "../../utilities/cn";
+import Pos from "../Admin/Pos/Pos";
+import CreateFloor from "./CreateFloor";
+import DraggableTableCreate from "./DraggableTableCreate";
+import DraggableTableDetails from "./DraggableTableDetails";
+import DraggableTableEdit from "./DraggableTableEdit";
+import ModalRightToLeft from "./ModalRightToLeft";
 
 // Interface for table shape
 export interface TableShape {
@@ -52,9 +56,10 @@ const DraggableTable: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedTable, setSelectedTable] = useState<RestaurantTable | null>(
-    null
+  const [selectedTable, setSelectedTable] = useState<RestaurantTable[] | []>(
+    []
   );
+
   const [newTableShape, setNewTableShape] = useState<
     "Rectangle" | "Circle" | "Road"
   >("Rectangle");
@@ -63,11 +68,13 @@ const DraggableTable: React.FC = () => {
   const { updateDoc } = useFrappeUpdateDoc<RestaurantTable>();
   const { deleteDoc } = useFrappeDeleteDoc();
   const [draggableTable, setDraggableTable] = useState<string | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null); // Order details for modal
-  const [showOrderModal, setShowOrderModal] = useState<boolean>(false); // Modal visibility
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showOrderModal, setShowOrderModal] = useState<boolean>(false);
+
+  // console.log("draggableTable", updatedData);
 
   const { startLoading, stopLoading } = useLoading();
-  const { data, error } = useFrappeGetDoc(
+  const { data } = useFrappeGetDoc(
     "Restaurant Settings",
     "Restaurant Settings",
     {
@@ -77,7 +84,7 @@ const DraggableTable: React.FC = () => {
   const company = data?.company;
   const { data: floors, mutate: mutateFloors } =
     useFrappeGetDocList("Restaurant Floor");
-  const { data: tablesFromERP, mutate: mutateTables } = useFrappeGetDocList(
+  const { data: tablesFromERP, mutate: mutateTables, isLoading: isLoadingTables} = useFrappeGetDocList(
     "Restaurant Table",
     {
       fields: ["*"],
@@ -92,13 +99,18 @@ const DraggableTable: React.FC = () => {
     await mutateFloors();
   });
 
-  // console.log("selectedFloor", selectedFloor);
-
   const updateTable = async () => {
     try {
+
+      const updatedTables = tableToUpdate.current
+        .map((table) => {
+          const existingTable = tables.find((t) => t.name === table.name);
+          return existingTable ? { ...existingTable } : null;
+        })
+        .filter((table) => table !== null);
+
       startLoading();
-      for (const table of tableToUpdate.current) {
-        console.log("table", table);
+      for (const table of updatedTables) {
         if (table?.name) {
           await updateDoc("Restaurant Table", table.name, table);
         }
@@ -116,13 +128,10 @@ const DraggableTable: React.FC = () => {
     ["*"]
   );
   const orders = result?.message;
-  console.log(orders);
 
   useEffect(() => {
-    console.log("selectedFloor in useEffect", selectedFloor);
     mutateTables();
     if (selectedFloor) {
-      console.log("selectedFloor in useEffect", selectedFloor);
       setNewTableData((prev) => ({
         ...prev,
         restaurant_floor: selectedFloor,
@@ -191,6 +200,21 @@ const DraggableTable: React.FC = () => {
     (state: RootState) => state.foodsModal.rightModalOpen
   );
 
+  const handleOpenRightModal = (table_id) => {
+    // Get the current URL
+    const currentUrl = new URL(window.location);
+  
+    // Set the query parameter
+    currentUrl.searchParams.set("table_id", table_id);
+  
+    // Push the updated URL to the browser history
+    window.history.pushState({}, "", currentUrl);
+  
+    // Open the modal
+    dispatch(openRightModal(true));
+  };
+  
+
   const initialNewTable: RestaurantTable = {
     id: new Date().toISOString(),
     table_no: "",
@@ -208,22 +232,12 @@ const DraggableTable: React.FC = () => {
   const [newTableData, setNewTableData] =
     useState<RestaurantTable>(initialNewTable);
 
-  // console.log({ tables });
-
   const headerRef = useRef<HTMLDivElement>(null); // Ref for the header
 
   // const bookedColor = "#880000";
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleRightSideModal = (id: string) => {
-    const params = new URLSearchParams(location.search);
-    // params.set("table", id);
-    navigate({
-      pathname: location.pathname,
-      search: params.toString(),
-    });
-  };
   const handleCloseModal = () => {
     const params = new URLSearchParams(location.search);
     params.delete("table");
@@ -234,15 +248,6 @@ const DraggableTable: React.FC = () => {
     dispatch(closeRightModal());
   };
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const response = await fetch("/data.json");
-  //     const data = await response.json();
-  //     setTables(data);
-  //   };
-  //   fetchData();
-  // }, []);
-
   useEffect(() => {
     localStorage.setItem("tables", JSON.stringify(tables));
   }, [tables]);
@@ -250,9 +255,7 @@ const DraggableTable: React.FC = () => {
   const openCreateTableModal = () => {
     if (!floors?.length) return toast.error("Please create a floor first.");
     // console.log("initialNewTable", initialNewTable);
-    console.log("selectedFloor", selectedFloor);
     setNewTableData((prev) => {
-      console.log("prev", prev);
       return {
         ...prev,
         restaurant_floor: selectedFloor,
@@ -264,10 +267,13 @@ const DraggableTable: React.FC = () => {
   const createTable = async () => {
     try {
       startLoading();
-      // console.log("newTableData in createTable", newTableData);
+      
+      if(!newTableData?.seat && newTableShape !== "Road"){
+        toast.error("Please fill in all the details before creating the table.");
+        return;
+      }
 
       if (
-        !newTableData?.seat ||
         !newTableData?.restaurant_floor ||
         !newTableData?.type
       ) {
@@ -279,8 +285,10 @@ const DraggableTable: React.FC = () => {
 
       const newTable = {
         ...newTableData,
+        type: newTableShape == "Road" ? "Road" : newTableData?.type,
         id: new Date().toISOString(),
       };
+      console.log("newTable", newTable);
 
       createDoc("Restaurant Table", newTable);
 
@@ -316,30 +324,27 @@ const DraggableTable: React.FC = () => {
         ...table,
       });
       setNewTableShape(table.type);
-      setSelectedTable(table);
+      setSelectedTable([table]);
       setIsEditModalOpen(true);
     }
   };
 
-  const saveEdit = () => {
-    if (selectedTable) {
-      setTables((prev) =>
-        prev.map((table) =>
-          table.idx === selectedTable.idx
-            ? {
-                ...table,
-                seat: newTableData?.seat || table.seat,
-                table_no: newTableData?.table_no || table.table_no,
-                bg_color: newTableData?.bg_color || table.bg_color,
-              }
-            : table
-        )
-      );
+  const saveEdit = async () => {
+    try {
+      startLoading();
+
+      if (newTableData?.name) {
+        await updateDoc("Restaurant Table", newTableData?.name, newTableData);
+      }
+
+      await mutateTables();
+      toast.success("Table updated successfully.");
       setIsEditModalOpen(false);
+      stopLoading();
+    } catch (error) {
+      console.log("error in updateTable", error);
     }
   };
-
-  console.log({ tables });
 
   const openFloorCreateModal = () => {
     setIsOpenFloorCreate(true);
@@ -407,17 +412,13 @@ const DraggableTable: React.FC = () => {
       tableToUpdate.current = tableToUpdate.current.map((table) =>
         table.name === name ? targetedTable : table
       );
-
-      // Update the table state after rotation ends
-      // const updatedTable = tables.find((table) => table.name === name);
-      // if (updatedTable) handleTableUpdate(updatedTable);
     };
 
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
     document.addEventListener("touchmove", onMouseMove);
     document.addEventListener("touchend", onMouseUp);
-  };
+  };  
 
   // Custom Resize Functionality
   const handleResize = (
@@ -426,15 +427,15 @@ const DraggableTable: React.FC = () => {
   ) => {
     e.preventDefault();
     e.stopPropagation();
-
+  
     const targetedTable = tables.find((table) => table.name === name);
     if (!targetedTable) return;
-
+  
     const initialLength = targetedTable.length;
     const initialBreadth = targetedTable.breadth;
     const initialClientX = "touches" in e ? e.touches[0].clientX : e.clientX;
     const initialClientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-
+  
     const onMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
       const clientX =
         "touches" in moveEvent
@@ -444,13 +445,29 @@ const DraggableTable: React.FC = () => {
         "touches" in moveEvent
           ? moveEvent.touches[0].clientY
           : moveEvent.clientY;
-
+  
       const newLength = Math.max(initialLength + clientX - initialClientX, 50);
       const newBreadth = Math.max(
         initialBreadth + clientY - initialClientY,
         50
       );
-
+  
+      // Update targetedTable dimensions directly
+      targetedTable.length =
+        targetedTable.type === "Circle" ? newLength : newLength;
+      targetedTable.breadth =
+        targetedTable.type === "Circle" ? newLength : newBreadth;
+  
+      // Ensure `tableToUpdate.current` is updated
+      if (!tableToUpdate.current.some((table) => table.name === name)) {
+        tableToUpdate.current.push(targetedTable);
+      } else {
+        tableToUpdate.current = tableToUpdate.current.map((table) =>
+          table.name === name ? targetedTable : table
+        );
+      }
+  
+      // Update the tables in state
       setTables((prev) =>
         prev.map((t) =>
           t.name === name
@@ -464,26 +481,23 @@ const DraggableTable: React.FC = () => {
         )
       );
     };
-
+  
     const onMouseUp = () => {
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
       document.removeEventListener("touchmove", onMouseMove);
       document.removeEventListener("touchend", onMouseUp);
-
-      // Add the table to the array to be updated if it is not already in the array then add the table to the state
+  
+      // Finalize updates to `tableToUpdate.current`
       if (!tableToUpdate.current.some((table) => table.name === name)) {
         tableToUpdate.current.push(targetedTable);
+      } else {
+        tableToUpdate.current = tableToUpdate.current.map((table) =>
+          table.name === name ? targetedTable : table
+        );
       }
-      // if the table is already in the array then update the table state
-      tableToUpdate.current = tableToUpdate.current.map((table) =>
-        table.name === name ? targetedTable : table
-      );
-      // Call handleTableUpdate with the updated table data after resizing ends
-      // const updatedTable = tables.find((table) => table.name === name);
-      // if (updatedTable) handleTableUpdate(updatedTable);
     };
-
+  
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
     document.addEventListener("touchmove", onMouseMove);
@@ -530,18 +544,13 @@ const DraggableTable: React.FC = () => {
       document.removeEventListener("touchmove", onMouseMove);
       document.removeEventListener("touchend", onMouseUp);
 
-      // Add the table to the array to be updated if it is not already in the array then add the table to the state
       if (!tableToUpdate.current.some((table) => table.name === name)) {
         tableToUpdate.current.push(targetedTable);
       }
-      // if the table is already in the array then update the table state
+      
       tableToUpdate.current = tableToUpdate.current.map((table) =>
         table.name === name ? targetedTable : table
       );
-
-      // Update the table state after dragging ends
-      // const updatedTable = tables.find((table) => table.name === name);
-      // if (updatedTable) handleTableUpdate(updatedTable);
     };
 
     document.addEventListener("mousemove", onMouseMove);
@@ -549,6 +558,7 @@ const DraggableTable: React.FC = () => {
     document.addEventListener("touchmove", onMouseMove);
     document.addEventListener("touchend", onMouseUp);
   };
+
   const handleDragStart = (name: string) => {
     setDraggableTable(name);
   };
@@ -566,25 +576,6 @@ const DraggableTable: React.FC = () => {
     }
   };
 
-  // Debounced function to update the table data in the backend after a delay
-  // const debouncedSaveData = useCallback(
-  //   debounce((data: RestaurantTable) => {
-  //     updateTable(data); // Call the API to update the data after debounce delay
-  //   }, 1000),
-  //   [updateTable]
-  // );
-
-  // const handleTableUpdate = (updatedTable: RestaurantTable) => {
-  //   setModifiedTable(updatedTable); // Update local state with the latest changes
-  //   debouncedSaveData(updatedTable); // Debounce API call to reduce frequency
-  // };
-
-  // useEffect(() => {
-  //   return () => {
-  //     // Cancel the debounced function on unmount to avoid memory leaks
-  //     debouncedSaveData.cancel();
-  //   };
-  // }, [debouncedSaveData]);
   useFrappeDocTypeEventListener("Table Order", () => {
     mutate();
   });
@@ -597,9 +588,9 @@ const DraggableTable: React.FC = () => {
       {/* Header with Ref */}
       <div
         ref={headerRef} // Set header ref
-        className="w-full flex justify-between pb-2 pt-2 px-2 sticky top-0 left-0 bg-gray-200 border-b border-gray-300 z-10 header"
+        className="w-full flex flex-col sm:flex-row justify-between gap-3 pb-2 pt-2 px-2 sticky top-0 left-0 bg-gray-200 border-b border-gray-300 z-10 header"
       >
-        <div>
+        <div className="space-y-2 sm:space-y-0">
           <button
             onClick={() => openFloorCreateModal()}
             className="mr-2 main_btn bg-blue-500 hover:bg-blue-600"
@@ -619,7 +610,7 @@ const DraggableTable: React.FC = () => {
         {floors?.length && (
           <div className="flex">
             <Select
-              className="w-32 text-xs md:text-base"
+              className="w-32 text-xs md:text-base py-2.5 sm:py-2"
               isHideSelect
               onChange={(e) => {
                 setSelectedFloor(e.target.value);
@@ -638,6 +629,12 @@ const DraggableTable: React.FC = () => {
         )}
       </div>
 
+      {isLoadingTables && <div className="absolute inset-0 flex justify-center items-center bg-white/30" style={{zIndex: 1000}}>
+        <div className="bg-[#E5E7EB] py-4 px-6 rounded-lg shadow-lgs flex items-center">
+        <CgSpinner size={32} className="animate-spin mr-3" /><h2 className="text-base">Loading...</h2>
+        </div>
+      </div>}
+
       <div className="w-full mt-8 absolute border-5">
         {tables?.map((table) => (
           <div
@@ -645,6 +642,8 @@ const DraggableTable: React.FC = () => {
             style={{
               width: table.type === "Circle" ? table.length : table.length,
               height: table.type === "Circle" ? table.length : table.breadth,
+              minHeight: table.type === "Road" ? "70px" : "130px",
+              minWidth: table.type === "Road" ? "150px" : "150px",
               left: `${table.position.x}px`,
               top: `${table.position.y}px`,
               borderRadius: table.type === "Circle" ? "50%" : "8px",
@@ -653,7 +652,12 @@ const DraggableTable: React.FC = () => {
                 draggableTable === table.name ? "green" : table.bg_color,
               transform: `rotate(${table.rotation || 0}deg)`,
             }}
-            className="absolute cursor-move group"
+            className={styles(
+              "absolute cursor-move group",
+              // {
+              //   "!bg-red-800": table?.isBooked,
+              // }
+            )}
             // onMouseDown={(e) => handleDrag(e, table?.name as string)}
             // onTouchStart={(e) => handleDrag(e, table?.name as string)}
             onMouseDown={(e) => {
@@ -666,34 +670,64 @@ const DraggableTable: React.FC = () => {
               handleDrag(e, table?.name as string);
             }}
             onTouchEnd={handleDragEnd}
-            onClick={() => table?.isBooked && handleTableClick(table?.name)}
+            // onClick={() => table?.isBooked && handleTableClick(table?.name)}
           >
-            <div className="relative h-full w-full justify-center items-center flex">
-              {table?.isBooked && (
-                <div className="absolute top-[-40px] left-0 w-full h-full flex justify-center items-center  text-white text-lg font-bold">
-                  Booked
+            <div className="relative h-full w-full justify-center items-center grid">
+              {table?.type === "Road" ?
+              <></>
+              :
+              <div className="text-white">
+                 <div className="flex justify-start flex items-center gap-1"> <IoRestaurant className="" /> {table?.name}</div>
+                <div className="flex justify-start flex items-center gap-1"> <MdTableBar className="" /> {table?.table_no}</div>
+                
+                <div className="flex justify-start mb-2">
+                  {table?.isBooked ? (
+                  <div className="w-full h-full flex justify-start items-center text-red-500 text-lg font-bold">
+                    <CgUnavailable className="text-xl me-1" /> Booked
+                  </div>
+                ):(
+                  <div className="w-full h-full flex justify-start items-center text-white text-lg font-bold">
+                    <FaRegCheckCircle className="text-base mr-1" /> Available
+                  </div>
+                )}
                 </div>
-              )}
-              {table?.seat && (
-                <div className="absolute space-x-2 group-hover:visible visible z-30">
-                  <button
-                    onClick={() => handleEdit(table?.name as string)}
-                    onTouchEnd={() => handleEdit(table?.name as string)}
-                    className="bg-blue-500 bg-opacity-40 text-white px-2 py-1 rounded"
-                  >
-                    <BiSolidEdit />
-                  </button>
-                  <button
-                    onClick={() => handleRightSideModal(table?.name as string)}
-                    onTouchEnd={() =>
-                      handleRightSideModal(table?.name as string)
-                    }
-                    className="bg-green-500 bg-opacity-40 text-white px-2 py-1 rounded"
-                  >
-                    <IoMdEye />
-                  </button>
+
+                <div className="flex justify-start">
+                  {table?.seat && (
+                  <div className="space-x-2 group-hover:visible visible z-30">
+                    <button
+                      onClick={() => handleEdit(table?.name as string)}
+                      onTouchEnd={() => handleEdit(table?.name as string)}
+                      className="bg-blue-500 bg-opacity-40 text-white px-2 py-1 rounded"
+                    >
+                      <BiSolidEdit />
+                    </button>
+                    <button
+                      onClick={() => table?.isBooked && handleTableClick(table?.name as string)}
+                      onTouchEnd={() => table?.isBooked && handleTableClick(table?.name as string)}
+                      // onClick={() => handleRightSideModal(table?.name as string)}
+                      // onTouchEnd={() =>
+                      //   handleRightSideModal(table?.name as string)
+                      // }
+                      className="bg-green-500 bg-opacity-40 text-white px-2 py-1 rounded"
+                    >
+                      <IoMdEye />
+                    </button>
+                    <button
+                      // onClick={() => table?.isBooked && handleTableClick(table?.name as string)}
+                      // onTouchEnd={() => table?.isBooked && handleTableClick(table?.name as string)}
+                      onClick={() => handleOpenRightModal(table?.name as string)}
+                      onTouchEnd={() =>
+                        handleOpenRightModal(table?.name as string)
+                      }
+                      className="bg-teal-500 bg-opacity-40 text-white px-2 py-1 rounded"
+                    >
+                      <MdOutlineShoppingCartCheckout />
+                    </button>
+                  </div>
+                )}
                 </div>
-              )}
+              </div>}
 
               {/* Start rectangle table  */}
               {table?.seat &&
@@ -826,9 +860,16 @@ const DraggableTable: React.FC = () => {
                 <RxCross2 />
               </button>
 
+              {/* Resize Handle */}
               <div
-                onMouseDown={(e) => handleResize(e, table?.name as string)}
-                onTouchStart={(e) => handleResize(e, table?.name as string)}
+                onMouseDown={(e) => {
+                  handleResize(e, table?.name as string)
+                  handleDragEnd()
+                }}
+                onTouchStart={(e) => {
+                  handleResize(e, table?.name as string)
+                  handleDragEnd()
+                }}
                 className={styles(
                   "absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize rounded-full invisible group-hover:visible",
                   {
@@ -866,6 +907,7 @@ const DraggableTable: React.FC = () => {
           setNewTableData={setNewTableData}
           setIsCreateModalOpen={setIsCreateModalOpen}
           createTable={createTable}
+          setNewTableShape={setNewTableShape}
         />
       )}
 
@@ -902,11 +944,11 @@ const DraggableTable: React.FC = () => {
       )}
       {/* Order Details Modal */}
       {showOrderModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow-2xl w-96 p-6 relative">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center px-3" style={{zIndex: 1000}}>
+          <div className="bg-white rounded-lg shadow-2xl w-96 md:w-[450px] p-6 relative max-h-[90vh] overflow-y-auto">
             {/* Close Button */}
             <button
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+              className="absolute top-6 right-4 text-gray-500 hover:text-gray-800"
               onClick={() => setShowOrderModal(false)}
             >
               <RxCross2 size={24} />
@@ -918,9 +960,9 @@ const DraggableTable: React.FC = () => {
             </h2>
 
             {/* Order Information */}
-            <div className="space-y-4">
+            <div className="space-y-4 text-sm md:text-base">
               <div className="flex justify-between">
-                <span className="font-semibold text-gray-600">Order ID:</span>
+                <span className="font-semibold text-gray-600">Order ID :</span>
                 <span className="text-gray-800">{selectedOrder?.name}</span>
               </div>
               {/* <div className="flex justify-between">
@@ -928,11 +970,11 @@ const DraggableTable: React.FC = () => {
           <span className="text-gray-800">{selectedOrder?.customer_name}</span>
         </div> */}
               <div className="flex justify-between">
-                <span className="font-semibold text-gray-600">Table:</span>
+                <span className="font-semibold text-gray-600">Table :</span>
                 <span className="text-gray-800">{selectedOrder?.table}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-semibold text-gray-600">Status:</span>
+                <span className="font-semibold text-gray-600">Status :</span>
                 <span
                   className={`text-sm font-semibold px-2 py-1 rounded ${
                     selectedOrder?.status === "Ready for Pickup"
@@ -945,9 +987,9 @@ const DraggableTable: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="font-semibold text-gray-600">
-                  Total Amount:
+                  Total Amount :
                 </span>
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-lg font-bold text-gray-800">
                   ৳{selectedOrder?.total_amount}
                 </span>
               </div>
@@ -956,7 +998,7 @@ const DraggableTable: React.FC = () => {
             {/* Item List */}
             <div className="mt-6">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                Items:
+                Items :
               </h3>
               <ul className="divide-y divide-gray-200">
                 {selectedOrder?.item_list?.map((item: any, index: number) => (
@@ -965,8 +1007,8 @@ const DraggableTable: React.FC = () => {
                     className="py-2 flex justify-between items-center"
                   >
                     <div>
-                      <p className="font-medium text-gray-800">{item?.item}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="font-medium text-gray-800 text-sm md:text-base">{item?.item}</p>
+                      <p className="text-sm md:text-base text-gray-600">
                         {item?.qty} x ৳{item?.rate}
                       </p>
                     </div>

@@ -3,7 +3,9 @@ import HighchartsReact from "highcharts-react-official";
 
 // chart option components
 const ChartOption = ({ chartData }: any) => {
-  console.log({ chartData });
+
+  const formattedChartData = chartData?.message;
+
   const customColors = [
     "#7B61FF", // Violet
     "#00C48C", // Green
@@ -37,7 +39,7 @@ const ChartOption = ({ chartData }: any) => {
 
     // chart x-axis
     xAxis: {
-      categories: ["Pizza", "Burger", "Sushi", "Pasta", "Salad"],
+      categories: formattedChartData?.map((item: any) => item?.item_name),
       crosshair: true,
       accessibility: {
         description: "Food Sales",
@@ -77,7 +79,7 @@ const ChartOption = ({ chartData }: any) => {
 
       // tooltip point format
       pointFormat:
-        '<span style="color:{point.color}">{point.name}</span><b>{point.y:.2f}%</b> of total<br/>',
+        '<span style="color:black">৳{point.name}</span><b>{point.y:.2f}</b><br/>',
     },
 
     // chart legend
@@ -105,7 +107,7 @@ const ChartOption = ({ chartData }: any) => {
           },
           // Explicitly type 'this' as Highcharts.Point
           formatter: function (this: Highcharts.Point): string {
-            return `${this.y}%`;
+            return `৳${this.y}`;
           },
         },
       },
@@ -115,13 +117,7 @@ const ChartOption = ({ chartData }: any) => {
     series: [
       {
         name: "Sales",
-        data: [
-          { y: 30.1, color: customColors[0] }, // Pizza
-          { y: 24.5, color: customColors[1] }, // Burger
-          { y: 15.7, color: customColors[2] }, // Sushi
-          { y: 20.3, color: customColors[3] }, // Pasta
-          { y: 9.4, color: customColors[4] }, // Salad
-        ], // Percentage of sales for the top 5 foods
+        data: formattedChartData?.map((item: any , index:number) => ({ y: item?.total_sales, color: customColors[index] })),
       },
     ],
   };

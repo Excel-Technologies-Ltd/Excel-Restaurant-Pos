@@ -8,4 +8,7 @@ export const URLDashboard = (): string => "/admin/dashboard";
 export const URLUsers = (): string => "/admin/users";
 export const URLTableManagement = (): string => "/admin/table";
 export const URLAdminPos = (): string => "/admin/pos";
+export const URLProduction = (): string => "/admin/production";
+export const URLStockTransfer = (): string => "/admin/stock-transfer";
 export const URLLogin = (): string => "/login";
+export const URLWastage = (): string => "/admin/wastage";
