@@ -48,7 +48,7 @@ jobs:
             },
             {
               "url": "https://gitlab.com/arcapps/excel_restaurant_pos.git",
-              "branch": "master"
+              "branch": "arc-pos"
             }
           ]'
 
