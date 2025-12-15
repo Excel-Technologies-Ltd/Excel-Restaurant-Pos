@@ -247,8 +247,8 @@ override_whitelisted_methods = {
 # Authentication and authorization
 # --------------------------------
 
-# auth_hooks = [
-# 	"excel_restaurant_pos.auth.validate"
-# ]
+auth_hooks = [
+	"excel_restaurant_pos.auth.validate"
+]
 
 website_route_rules = [{'from_route': '/restaurant/<path:app_path>', 'to_route': 'restaurant'},]
