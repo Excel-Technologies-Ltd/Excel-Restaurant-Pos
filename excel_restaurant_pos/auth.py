@@ -46,11 +46,16 @@ def validate():
 		if user_doc.enabled == 0:
 			raise frappe.AuthenticationError(_("User is disabled"))
 
-		# Set user in session - this is critical for Frappe to recognize the user
-		frappe.set_user(user)
-
-		# Set user_type in local for permission checks
+		# Set user directly in session without calling frappe.set_user()
+		# frappe.set_user() clears form_dict, which would remove query parameters
+		frappe.local.session.user = user
+		frappe.local.session.sid = user
 		frappe.local.user_type = user_doc.user_type
+
+		# Initialize user permissions
+		frappe.local.role_permissions = {}
+		frappe.local.new_doc_templates = {}
+		frappe.local.user_perms = None
 
 	except frappe.AuthenticationError:
 		# Re-raise authentication errors
