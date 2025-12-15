@@ -1,4 +1,4 @@
-name: Frappe Docker Build and Deploye Produciton HR
+name: Frappe Docker Build and Deploye Arc-POS
 
 on:
   workflow_dispatch:
