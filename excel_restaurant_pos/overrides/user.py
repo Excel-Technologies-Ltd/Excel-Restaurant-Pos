@@ -150,9 +150,21 @@ def verify_otp(verification_key, otp):
         user.insert()
 
         # Set default role from Portal Settings
-        default_role = frappe.get_single_value("Portal Settings", "default_role")
-        if default_role:
-            user.add_roles(default_role)
+        
+        user.add_roles('Customer')
+
+        # Check is customer exist or not, if not create a customer with the provided user information
+        if not frappe.db.exists("Customer", {"email_id": user.email}):
+            customer = frappe.get_doc({
+                "doctype": "Customer",
+                "customer_name": user.email,
+                "email_id": user.email,
+                "customer_type": "Individual",
+                "customer_group": frappe.db.get_value("Selling Settings", None, "default_customer_group") or "All Customer Groups",
+                "territory": frappe.db.get_value("Selling Settings", None, "default_territory") or "All Territories"
+            })
+            customer.flags.ignore_permissions = True
+            customer.insert()
 
         # Clear cache
         frappe.cache().delete_value(cache_key)
