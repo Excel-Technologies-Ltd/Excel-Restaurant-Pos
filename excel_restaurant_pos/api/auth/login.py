@@ -3,6 +3,7 @@ from frappe import _
 from frappe.utils.password import check_password
 from excel_restaurant_pos.utils.jwt_auth import generate_access_token, generate_refresh_token
 from excel_restaurant_pos.utils.error_handler import throw_error, ErrorCode, success_response
+from excel_restaurant_pos.shared.arcpos_settings.system_settings import default_system_settings
 
 
 @frappe.whitelist(allow_guest=True)
@@ -12,6 +13,7 @@ def login(user, pwd):
 	# Set user to Guest to avoid session resumption issues
 	frappe.set_user("Guest")
 
+	
 	# Validate user exists
 	if not frappe.db.exists("User", user):
 		# frappe.throw("User does not exist", frappe.exceptions.AuthenticationError)
@@ -44,10 +46,11 @@ def login(user, pwd):
 
 	# Get user roles
 	user_permissions = frappe.get_roles(user)
-
+	
+	
 	# Generate secure JWT tokens
-	access_token = generate_access_token(user, expires_in_hours=24)
-	refresh_token = generate_refresh_token(user, expires_in_days=30)
+	access_token = generate_access_token(user, expires_in_hours=int(default_system_settings().access_token_expiry or 1))
+	refresh_token = generate_refresh_token(user, expires_in_days=int(default_system_settings().refresh_token_expiry or 7))
 
 	# Clear session cookies to prevent session issues
 	frappe.local.cookie_manager.set_cookie("sid", "", expires="Thu, 01 Jan 1970 00:00:00 GMT")

@@ -4,6 +4,8 @@ from frappe.utils import get_url, random_string, now_datetime, cint, now
 from frappe.utils.data import sha256_hash
 from jinja2 import Template
 import json
+from excel_restaurant_pos.shared.arcpos_settings.system_settings import default_system_settings
+from excel_restaurant_pos.shared.email_templates.get_template import template_by_name
 
 @frappe.whitelist(allow_guest=True)
 def sign_up(email, full_name, password, redirect_to=None):
@@ -64,8 +66,8 @@ def send_otp_email(email, full_name, otp):
 
     # Try to get custom email template
     try:
-        template = frappe.get_doc("Email Template", "Verify Your Account")
-
+        template_name = default_system_settings().registration_template
+        template = template_by_name(template_name)
         # Render the template with OTP
         html_content = Template(template.response_html).render({
             "otp": otp,
@@ -78,7 +80,6 @@ def send_otp_email(email, full_name, otp):
         # Fallback to simple email if template doesn't exist
         html_content = f"""
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Email Verification</h2>
             <p>Hi {first_name},</p>
             <p>Your OTP for email verification is:</p>
             <div style="background: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
@@ -86,8 +87,7 @@ def send_otp_email(email, full_name, otp):
             </div>
             <p>This OTP will expire in 5 minutes.</p>
             <p>If you didn't request this, please ignore this email.</p>
-            <br>
-            <p>Best regards,<br>Your Team</p>
+            
         </div>
         """
         subject = _("Verify Your Email - OTP")
@@ -98,7 +98,8 @@ def send_otp_email(email, full_name, otp):
         message=html_content,
         header=[_("Email Verification"), "blue"],
         delayed=False,
-        retry=3
+        retry=3,
+        now=True
     )
 
 
@@ -150,8 +151,8 @@ def verify_otp(verification_key, otp):
         user.insert()
 
         # Set default role from Portal Settings
-        
-        user.add_roles('Customer')
+        role_name = frappe.db.get_single_value("ArcPOS System Settings", "user_default_role") or "Customer"
+        user.add_roles(role_name)
 
         # Check is customer exist or not, if not create a customer with the provided user information
         if not frappe.db.exists("Customer", {"email_id": user.email}):

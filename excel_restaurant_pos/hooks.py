@@ -45,6 +45,10 @@ fixtures = [
         ]
     ]}
 ]
+
+# Required Apps with version constraints
+required_apps = ["erpnext"]
+
 # include js, css files in header of desk.html
 # app_include_css = "/assets/excel_restaurant_pos/css/excel_restaurant_pos.css"
 # app_include_js = "/assets/excel_restaurant_pos/js/excel_restaurant_pos.js"
