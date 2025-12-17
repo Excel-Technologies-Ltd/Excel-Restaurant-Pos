@@ -104,6 +104,10 @@ def verify_token(token, token_type="access"):
         if is_token_blacklisted(token):
             frappe.throw(_("Token has been revoked"), frappe.AuthenticationError)
 
+        # Check if token was revoked (for single session enforcement)
+        if is_token_revoked(token):
+            frappe.throw(_("Token has been revoked due to new login"), frappe.AuthenticationError)
+
         payload = jwt.decode(token, get_jwt_secret(), algorithms=["HS256"])
 
         # Verify token type
@@ -235,4 +239,65 @@ def cleanup_expired_blacklist():
 
     except Exception as e:
         frappe.log_error(f"Failed to cleanup blacklist: {str(e)}", "Blacklist Cleanup Error")
+        return False
+
+
+def revoke_all_user_tokens(user):
+    """
+    Revoke all active JWT tokens for a user (for single session enforcement)
+    Uses Redis cache to store revocation timestamp
+
+    Args:
+        user: User email
+
+    Returns:
+        bool: True if successful
+    """
+    try:
+        # Store current timestamp as the revocation time
+        # All tokens issued before this time will be considered invalid
+        revocation_time = int(datetime.utcnow().timestamp())
+        cache_key = f"jwt_revoke_before:{user}"
+
+        # Store in cache with 30 days expiry (max refresh token lifetime)
+        frappe.cache().set_value(cache_key, revocation_time, expires_in_sec=30 * 24 * 60 * 60)
+
+        return True
+
+    except Exception as e:
+        frappe.log_error(f"Failed to revoke user tokens: {str(e)}", "Token Revocation Error")
+        return False
+
+
+def is_token_revoked(token):
+    """
+    Check if token was issued before user's revocation timestamp
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        bool: True if token is revoked
+    """
+    try:
+        # Decode token without verification to get user and issued time
+        payload = jwt.decode(token, get_jwt_secret(), algorithms=["HS256"], options={"verify_signature": False})
+        user = payload.get("user")
+        issued_at = payload.get("iat")
+
+        if not user or not issued_at:
+            return False
+
+        # Get user's revocation timestamp
+        cache_key = f"jwt_revoke_before:{user}"
+        revoke_before = frappe.cache().get_value(cache_key)
+
+        if not revoke_before:
+            return False
+
+        # Token is revoked if it was issued before the revocation time
+        return issued_at < revoke_before
+
+    except Exception as e:
+        frappe.log_error(f"Error checking token revocation: {str(e)}", "Token Revocation Check Error")
         return False

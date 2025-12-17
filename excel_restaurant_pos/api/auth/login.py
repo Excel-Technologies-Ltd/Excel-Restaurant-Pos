@@ -1,8 +1,9 @@
 import frappe
 from frappe import _
-from frappe.utils.password import check_password
+from frappe.utils import cint
 from frappe.twofactor import should_run_2fa, authenticate_for_2factor, confirm_otp_token, get_cached_user_pass
-from excel_restaurant_pos.utils.jwt_auth import generate_access_token, generate_refresh_token
+from frappe.sessions import clear_sessions
+from excel_restaurant_pos.utils.jwt_auth import generate_access_token, generate_refresh_token, revoke_all_user_tokens
 from excel_restaurant_pos.utils.error_handler import throw_error, ErrorCode, success_response
 from excel_restaurant_pos.shared.arcpos_settings.system_settings import default_system_settings
 
@@ -14,25 +15,20 @@ def login(user, pwd):
 	# Set user to Guest to avoid session resumption issues
 	frappe.set_user("Guest")
 
+	# Use Frappe's find_by_credentials method which respects System Settings
+	# This handles: allow_login_using_mobile_number, allow_login_using_user_name
+	from frappe.core.doctype.user.user import User
+	user_info = User.find_by_credentials(user, pwd, validate_password=True)
 
-	# Validate user exists
-	if not frappe.db.exists("User", user):
-		# frappe.throw("User does not exist", frappe.exceptions.AuthenticationError)
-		throw_error(
-			ErrorCode.INVALID_CREDENTIALS,
-			_("User does not exist"),
-			http_status_code=401
-		)
-
-	# Validate credentials
-	try:
-		check_password(user, pwd)
-	except frappe.exceptions.AuthenticationError:
+	if not user_info or not user_info.get("is_authenticated"):
 		throw_error(
 			ErrorCode.INVALID_CREDENTIALS,
 			_("Invalid username or password"),
 			http_status_code=401
 		)
+
+	# Get the actual user email
+	user = user_info.get("name")
 
 	# Get user document
 	user_doc = frappe.get_doc("User", user)
@@ -64,6 +60,15 @@ def login(user, pwd):
 				"email": user
 			}
 		)
+
+	# Check if only one session per user is allowed
+	# If enabled, revoke all existing JWT tokens and clear Frappe sessions
+	if cint(frappe.db.get_single_value("System Settings", "deny_multiple_sessions")):
+		# Revoke all existing JWT tokens for this user
+		revoke_all_user_tokens(user)
+
+		# Clear all existing Frappe sessions for this user
+		clear_sessions(user=user, force=True)
 
 	# Get user roles
 	user_permissions = frappe.get_roles(user)
@@ -168,6 +173,15 @@ def verify_2fa_and_login(otp, tmp_id):
 			_("User is disabled. Please contact your System Manager."),
 			http_status_code=403
 		)
+
+	# Check if only one session per user is allowed
+	# If enabled, revoke all existing JWT tokens and clear Frappe sessions
+	if cint(frappe.db.get_single_value("System Settings", "deny_multiple_sessions")):
+		# Revoke all existing JWT tokens for this user
+		revoke_all_user_tokens(user)
+
+		# Clear all existing Frappe sessions for this user
+		clear_sessions(user=user, force=True)
 
 	# Get user roles
 	user_permissions = frappe.get_roles(user)
