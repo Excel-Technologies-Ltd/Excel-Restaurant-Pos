@@ -103,8 +103,24 @@ def login(user, pwd):
 	return success_response(
 		message=_("Logged in successfully"),
 		data={
-			"full_name": user_doc.full_name,
-			"email": user,
+			"user": {
+				
+				"first_name": user_doc.first_name,
+				"last_name": user_doc.last_name,
+				"full_name": user_doc.full_name,
+				"email": user,
+				"gender": user_doc.gender,
+				"phone": user_doc.phone,
+				"birth_date": user_doc.birth_date,
+				"location": user_doc.location,
+				"interests": user_doc.interest,
+				"bio": user_doc.bio,
+				"language": user_doc.language,
+				"last_login": user_doc.last_login,
+				"user_image": user_doc.user_image,
+
+			},
+			
 			"access_token": access_token,
 			"refresh_token": refresh_token,
 			"token_type": "Bearer",
