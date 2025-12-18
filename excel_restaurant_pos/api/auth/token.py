@@ -4,12 +4,14 @@ from excel_restaurant_pos.utils.jwt_auth import (
     verify_token,
     generate_access_token,
     generate_refresh_token,
-    blacklist_token
+    remove_user_session,
+    revoke_specific_sessions
 )
 from excel_restaurant_pos.utils.error_handler import throw_error, ErrorCode, success_response
+import jwt
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def refresh(refresh_token):
     """
     Refresh access token using refresh token
@@ -79,7 +81,7 @@ def refresh(refresh_token):
         )
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def revoke(refresh_token, access_token=None):
     """
     Revoke refresh token and optionally access token (logout)
@@ -92,35 +94,45 @@ def revoke(refresh_token, access_token=None):
         dict: Success status
     """
     try:
-        # Verify and decode refresh token
-        payload = verify_token(refresh_token, token_type="refresh")
-        user = payload.get("user")
+        # Decode tokens without full verification to get user and iat
+        # This allows logout even with expired tokens
+        try:
+            refresh_payload = jwt.decode(refresh_token, options={"verify_signature": False})
+            user = refresh_payload.get("user")
+            refresh_iat = refresh_payload.get("iat")
+        except:
+            # If we can't even decode the token, still return success
+            return success_response(message=_("Logged out successfully"))
 
-        # Blacklist the refresh token
-        blacklist_token(refresh_token, user, token_type="refresh")
+        if not user:
+            return success_response(message=_("Logged out successfully"))
 
-        # If access token provided, blacklist it too
+        frappe.logger().info(f"Logout - Revoking tokens for user: {user}")
+
+        # Revoke the specific session from active sessions tracking
         if access_token:
             try:
-                blacklist_token(access_token, user, token_type="access")
+                access_payload = jwt.decode(access_token, options={"verify_signature": False})
+                access_iat = access_payload.get("iat")
+
+                if access_iat:
+                    # Remove from active sessions list
+                    remove_user_session(user, access_iat)
+
+                    # Add to revoked sessions list
+                    revoke_specific_sessions(user, [access_iat])
+
+                    frappe.logger().info(f"Logout - Revoked access token session: {access_iat}")
             except Exception as e:
-                # Log error but don't fail the logout
-                frappe.log_error(f"Failed to blacklist access token: {str(e)}", "Token Revoke Warning")
+                frappe.logger().warning(f"Failed to revoke access token session: {str(e)}")
 
         return success_response(
             message=_("Logged out successfully")
         )
 
-    except frappe.AuthenticationError:
-        # Even if token is invalid/expired, consider logout successful
-        # This handles cases where user is trying to logout with expired tokens
-        return success_response(
-            message=_("Logged out successfully")
-        )
     except Exception as e:
-        frappe.log_error(f"Token revocation failed: {str(e)}", "Token Revoke Error")
-        throw_error(
-            ErrorCode.OPERATION_FAILED,
-            _("Logout failed"),
-            http_status_code=500
+        frappe.logger().error(f"Token revocation error: {str(e)}")
+        # Still return success for logout - we don't want to prevent users from logging out
+        return success_response(
+            message=_("Logged out successfully")
         )

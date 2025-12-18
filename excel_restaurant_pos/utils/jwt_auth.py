@@ -81,8 +81,17 @@ def is_token_blacklisted(token):
     Returns:
         bool: True if token is blacklisted
     """
-    token_hash = get_token_hash(token)
-    return frappe.db.exists("Token Blacklist", {"token_hash": token_hash})
+    try:
+        # Check if Token Blacklist table exists in database
+        if not frappe.db.table_exists("Token Blacklist"):
+            return False
+
+        token_hash = get_token_hash(token)
+        return frappe.db.exists("Token Blacklist", {"token_hash": token_hash})
+    except Exception as e:
+        # If table doesn't exist or any other error, return False
+        frappe.logger().debug(f"Token blacklist check skipped: {str(e)}")
+        return False
 
 
 def verify_token(token, token_type="access"):
