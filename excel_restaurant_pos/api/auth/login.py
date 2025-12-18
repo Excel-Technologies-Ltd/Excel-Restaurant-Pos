@@ -3,7 +3,7 @@ from frappe import _
 from frappe.utils import cint
 from frappe.twofactor import should_run_2fa, authenticate_for_2factor, confirm_otp_token, get_cached_user_pass
 from frappe.sessions import clear_sessions
-from excel_restaurant_pos.utils.jwt_auth import generate_access_token, generate_refresh_token, revoke_all_user_tokens
+from excel_restaurant_pos.utils.jwt_auth import generate_access_token, generate_refresh_token, revoke_all_user_tokens, add_user_session
 from excel_restaurant_pos.utils.error_handler import throw_error, ErrorCode, success_response
 from excel_restaurant_pos.shared.arcpos_settings.system_settings import default_system_settings
 
@@ -61,22 +61,40 @@ def login(user, pwd):
 			}
 		)
 
-	# Check if only one session per user is allowed
-	# If enabled, revoke all existing JWT tokens and clear Frappe sessions
-	if cint(frappe.db.get_single_value("System Settings", "deny_multiple_sessions")):
-		# Revoke all existing JWT tokens for this user
-		revoke_all_user_tokens(user)
-
-		# Clear all existing Frappe sessions for this user
-		clear_sessions(user=user, force=True)
-
 	# Get user roles
 	user_permissions = frappe.get_roles(user)
-
 
 	# Generate secure JWT tokens
 	access_token = generate_access_token(user, expires_in_hours=int(default_system_settings().access_token_expiry or 1))
 	refresh_token = generate_refresh_token(user, expires_in_days=int(default_system_settings().refresh_token_expiry or 7))
+
+	# Check if System Settings has deny_multiple_sessions enabled
+	deny_multiple = cint(frappe.db.get_single_value("System Settings", "deny_multiple_sessions"))
+	frappe.logger().info(f"Login - deny_multiple_sessions setting: {deny_multiple}")
+
+	# If deny_multiple_sessions is enabled, enforce user's simultaneous_sessions limit
+	if deny_multiple:
+		# Get user's simultaneous sessions limit
+		simultaneous_sessions = int(user_doc.simultaneous_sessions or 0)
+		frappe.logger().info(f"Login - User {user} has simultaneous_sessions: {simultaneous_sessions}")
+
+		# If user has a session limit set (> 0), enforce it
+		if simultaneous_sessions > 0:
+			# Get token's issued-at timestamp
+			import jwt as jwt_lib
+			token_payload = jwt_lib.decode(access_token, options={"verify_signature": False})
+			token_iat = token_payload.get("iat")
+
+			frappe.logger().info(f"Login - Calling add_user_session for {user} with token_iat: {token_iat}, limit: {simultaneous_sessions}")
+
+			# Track session and automatically revoke oldest sessions if limit exceeded
+			revoked = add_user_session(user, token_iat, max_sessions=simultaneous_sessions)
+
+			if revoked:
+				frappe.logger().info(f"Revoked {len(revoked)} old session(s) for user {user} due to simultaneous session limit")
+
+		# Clear all existing Frappe sessions for this user
+		clear_sessions(user=user, force=True)
 
 	# Clear session cookies to prevent session issues
 	frappe.local.cookie_manager.set_cookie("sid", "", expires="Thu, 01 Jan 1970 00:00:00 GMT")
@@ -174,21 +192,40 @@ def verify_2fa_and_login(otp, tmp_id):
 			http_status_code=403
 		)
 
-	# Check if only one session per user is allowed
-	# If enabled, revoke all existing JWT tokens and clear Frappe sessions
-	if cint(frappe.db.get_single_value("System Settings", "deny_multiple_sessions")):
-		# Revoke all existing JWT tokens for this user
-		revoke_all_user_tokens(user)
-
-		# Clear all existing Frappe sessions for this user
-		clear_sessions(user=user, force=True)
-
 	# Get user roles
 	user_permissions = frappe.get_roles(user)
 
 	# Generate secure JWT tokens
 	access_token = generate_access_token(user, expires_in_hours=int(default_system_settings().access_token_expiry or 1))
 	refresh_token = generate_refresh_token(user, expires_in_days=int(default_system_settings().refresh_token_expiry or 7))
+
+	# Check if System Settings has deny_multiple_sessions enabled
+	deny_multiple = cint(frappe.db.get_single_value("System Settings", "deny_multiple_sessions"))
+	frappe.logger().info(f"Login - deny_multiple_sessions setting: {deny_multiple}")
+
+	# If deny_multiple_sessions is enabled, enforce user's simultaneous_sessions limit
+	if deny_multiple:
+		# Get user's simultaneous sessions limit
+		simultaneous_sessions = int(user_doc.simultaneous_sessions or 0)
+		frappe.logger().info(f"Login - User {user} has simultaneous_sessions: {simultaneous_sessions}")
+
+		# If user has a session limit set (> 0), enforce it
+		if simultaneous_sessions > 0:
+			# Get token's issued-at timestamp
+			import jwt as jwt_lib
+			token_payload = jwt_lib.decode(access_token, options={"verify_signature": False})
+			token_iat = token_payload.get("iat")
+
+			frappe.logger().info(f"Login - Calling add_user_session for {user} with token_iat: {token_iat}, limit: {simultaneous_sessions}")
+
+			# Track session and automatically revoke oldest sessions if limit exceeded
+			revoked = add_user_session(user, token_iat, max_sessions=simultaneous_sessions)
+
+			if revoked:
+				frappe.logger().info(f"Revoked {len(revoked)} old session(s) for user {user} due to simultaneous session limit")
+
+		# Clear all existing Frappe sessions for this user
+		clear_sessions(user=user, force=True)
 
 	# Clear session cookies to prevent session issues
 	frappe.local.cookie_manager.set_cookie("sid", "", expires="Thu, 01 Jan 1970 00:00:00 GMT")

@@ -108,6 +108,10 @@ def verify_token(token, token_type="access"):
         if is_token_revoked(token):
             frappe.throw(_("Token has been revoked due to new login"), frappe.AuthenticationError)
 
+        # Check if this specific session was revoked (for simultaneous sessions limit)
+        if is_session_revoked(token):
+            frappe.throw(_("Session has been revoked due to exceeding simultaneous session limit"), frappe.AuthenticationError)
+
         payload = jwt.decode(token, get_jwt_secret(), algorithms=["HS256"])
 
         # Verify token type
@@ -301,3 +305,147 @@ def is_token_revoked(token):
     except Exception as e:
         frappe.log_error(f"Error checking token revocation: {str(e)}", "Token Revocation Check Error")
         return False
+
+
+def get_active_sessions_key(user):
+    """Get Redis key for user's active sessions list"""
+    return f"jwt_active_sessions:{user}"
+
+
+def add_user_session(user, token_identifier, max_sessions=None):
+    """
+    Add a new session for the user and maintain session limit
+    Uses FIFO - if limit exceeded, oldest session is revoked
+
+    Args:
+        user: User email
+        token_identifier: Unique identifier for this token (iat timestamp)
+        max_sessions: Maximum number of simultaneous sessions (0 = unlimited)
+
+    Returns:
+        list: List of token identifiers that were revoked (if any)
+    """
+    try:
+        # Get user's simultaneous sessions limit from User doctype
+        if max_sessions is None:
+            max_sessions = int(frappe.db.get_value("User", user, "simultaneous_sessions") or 0)
+
+        frappe.logger().info(f"add_user_session called for user: {user}, max_sessions: {max_sessions}, token_iat: {token_identifier}")
+
+        cache_key = get_active_sessions_key(user)
+
+        # Get current active sessions (list of token identifiers)
+        active_sessions = frappe.cache().get_value(cache_key) or []
+
+        frappe.logger().info(f"Current active sessions for {user}: {len(active_sessions)} sessions - {active_sessions}")
+
+        # If max_sessions is 0, allow unlimited sessions (don't track)
+        if max_sessions == 0:
+            frappe.logger().info(f"User {user} has unlimited sessions (max_sessions=0), not tracking")
+            return []
+
+        revoked_sessions = []
+
+        # If we've reached the limit, remove oldest sessions
+        while len(active_sessions) >= max_sessions:
+            oldest = active_sessions.pop(0)  # Remove oldest (FIFO)
+            revoked_sessions.append(oldest)
+            frappe.logger().info(f"Revoking old session for {user}: {oldest}")
+
+        # Add new session
+        active_sessions.append(token_identifier)
+
+        # Store updated list
+        frappe.cache().set_value(cache_key, active_sessions, expires_in_sec=30 * 24 * 60 * 60)
+
+        frappe.logger().info(f"Updated active sessions for {user}: {len(active_sessions)} sessions - {active_sessions}")
+
+        # If we revoked any sessions, update the revocation timestamp for those specific tokens
+        if revoked_sessions:
+            revoke_specific_sessions(user, revoked_sessions)
+            frappe.logger().info(f"Revoked {len(revoked_sessions)} session(s) for {user}")
+
+        return revoked_sessions
+
+    except Exception as e:
+        frappe.log_error(f"Failed to add user session: {str(e)}", "Session Tracking Error")
+        import traceback
+        frappe.logger().error(f"Session tracking error: {traceback.format_exc()}")
+        return []
+
+
+def revoke_specific_sessions(user, token_identifiers):
+    """
+    Revoke specific sessions by their token identifiers
+
+    Args:
+        user: User email
+        token_identifiers: List of token identifiers (iat timestamps) to revoke
+    """
+    try:
+        if not token_identifiers:
+            return
+
+        # Store revoked session identifiers
+        revoked_key = f"jwt_revoked_sessions:{user}"
+        revoked_sessions = frappe.cache().get_value(revoked_key) or []
+
+        for token_id in token_identifiers:
+            if token_id not in revoked_sessions:
+                revoked_sessions.append(token_id)
+
+        # Store for 30 days
+        frappe.cache().set_value(revoked_key, revoked_sessions, expires_in_sec=30 * 24 * 60 * 60)
+
+    except Exception as e:
+        frappe.log_error(f"Failed to revoke specific sessions: {str(e)}", "Session Revocation Error")
+
+
+def is_session_revoked(token):
+    """
+    Check if a specific session (token) has been revoked
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        bool: True if session is revoked
+    """
+    try:
+        # Decode token to get user and token identifier
+        payload = jwt.decode(token, get_jwt_secret(), algorithms=["HS256"], options={"verify_signature": False})
+        user = payload.get("user")
+        issued_at = payload.get("iat")
+
+        if not user or not issued_at:
+            return False
+
+        # Check if this specific session is in the revoked list
+        revoked_key = f"jwt_revoked_sessions:{user}"
+        revoked_sessions = frappe.cache().get_value(revoked_key) or []
+
+        return issued_at in revoked_sessions
+
+    except Exception as e:
+        frappe.log_error(f"Error checking session revocation: {str(e)}", "Session Revocation Check Error")
+        return False
+
+
+def remove_user_session(user, token_identifier):
+    """
+    Remove a session from user's active sessions (e.g., on logout)
+
+    Args:
+        user: User email
+        token_identifier: Token identifier to remove (iat timestamp)
+    """
+    try:
+        cache_key = get_active_sessions_key(user)
+        active_sessions = frappe.cache().get_value(cache_key) or []
+
+        if token_identifier in active_sessions:
+            active_sessions.remove(token_identifier)
+            frappe.cache().set_value(cache_key, active_sessions, expires_in_sec=30 * 24 * 60 * 60)
+
+    except Exception as e:
+        frappe.log_error(f"Failed to remove user session: {str(e)}", "Session Removal Error")
