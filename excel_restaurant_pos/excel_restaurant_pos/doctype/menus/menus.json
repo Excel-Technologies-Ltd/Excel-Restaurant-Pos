@@ -12,6 +12,7 @@
   "image",
   "column_break_n5bwk",
   "enabled",
+  "start_date",
   "expires_on",
   "section_break_nkbcv",
   "menu_availability"
@@ -48,12 +49,17 @@
   {
    "fieldname": "expires_on",
    "fieldtype": "Date",
-   "label": "Expires On"
+   "label": "Expiry Date"
   },
   {
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "label": "Image"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
   }
  ],
  "image_field": "image",
@@ -61,7 +67,7 @@
  "links": [],
  "make_attachments_public": 1,
  "max_attachments": 2,
- "modified": "2025-12-20 11:40:16.977599",
+ "modified": "2025-12-20 18:26:25.305667",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Menus",
