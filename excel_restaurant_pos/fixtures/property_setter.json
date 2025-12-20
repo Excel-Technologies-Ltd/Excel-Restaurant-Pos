@@ -1921,22 +1921,6 @@
  },
  {
   "default_value": null,
-  "doc_type": "Territory",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocType",
-  "field_name": null,
-  "is_system_generated": 0,
-  "modified": "2025-12-20 10:25:28.289820",
-  "module": null,
-  "name": "Territory-main-field_order",
-  "property": "field_order",
-  "property_type": "Data",
-  "row_name": null,
-  "value": "[\"territory_name\", \"parent_territory\", \"is_group\", \"custom_close_outlet\", \"cb0\", \"territory_manager\", \"lft\", \"rgt\", \"old_parent\", null, \"custom_section_break_w3hp9\", \"custom_opening_time\", \"custom_column_break_6bfv5\", \"custom_closing_time\", \"target_details_section_break\", \"targets\"]"
- },
- {
-  "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
   "doctype": "Property Setter",
@@ -1966,5 +1950,21 @@
   "property_type": "Data",
   "row_name": null,
   "value": "[\"template\", \"custom_sales_invoice_no\", \"custom_order_no\", \"cb_00\", \"document_type\", \"custom_feedback_from\", \"document_name\", \"sb_00\", \"parameters\", \"custom_section_break_bbthh\", \"custom_attached_image\"]"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Territory",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocType",
+  "field_name": null,
+  "is_system_generated": 0,
+  "modified": "2025-12-20 11:20:16.169024",
+  "module": null,
+  "name": "Territory-main-field_order",
+  "property": "field_order",
+  "property_type": "Data",
+  "row_name": null,
+  "value": "[\"territory_name\", \"parent_territory\", \"is_group\", \"custom_close_outlet\", \"cb0\", \"territory_manager\", \"lft\", \"rgt\", \"old_parent\", \"custom_reopen_date\", \"custom_section_break_w3hp9\", \"custom_opening_time\", null, \"custom_column_break_6bfv5\", \"custom_closing_time\", null, null, null, null, \"target_details_section_break\", \"targets\"]"
  }
 ]
