@@ -1959,12 +1959,12 @@
   "doctype_or_field": "DocType",
   "field_name": null,
   "is_system_generated": 0,
-  "modified": "2025-12-20 11:20:16.169024",
+  "modified": "2025-12-20 15:30:07.078318",
   "module": null,
   "name": "Territory-main-field_order",
   "property": "field_order",
   "property_type": "Data",
   "row_name": null,
-  "value": "[\"territory_name\", \"parent_territory\", \"is_group\", \"custom_close_outlet\", \"cb0\", \"territory_manager\", \"lft\", \"rgt\", \"old_parent\", \"custom_reopen_date\", \"custom_section_break_w3hp9\", \"custom_opening_time\", null, \"custom_column_break_6bfv5\", \"custom_closing_time\", null, null, null, null, \"target_details_section_break\", \"targets\"]"
+  "value": "[\"territory_name\", \"parent_territory\", \"is_group\", \"custom_close_outlet\", \"cb0\", \"territory_manager\", \"lft\", \"rgt\", \"old_parent\", \"custom_reopen_date\", \"custom_section_break_w3hp9\", \"custom_opening_time\", \"custom_latitude\", \"custom_column_break_6bfv5\", \"custom_closing_time\", \"custom_longitude\", \"custom_section_break_354d7\", \"custom_outlet_address\", \"custom_outlet_location\", null, null, \"target_details_section_break\", \"targets\"]"
  }
 ]
