@@ -8,6 +8,8 @@ app_license = "MIT"
 # Includes in <head>
 # ------------------
 
+# fixtures = [ "Custom Field", "Property Setter", "Role" ]
+
 fixtures = [
     {"dt": "Role", "filters": [
         [
@@ -19,35 +21,12 @@ fixtures = [
             ]
         ]
     ]},
-    {"dt": "Custom Field", "filters": [
-        [
-            "name", "in", [
-                "Item-add_ons_item",
-                "Item-add_ons_item_list",
-                # "Item-frequently_bought_item_list",
-                # "Item-frequently_bought_items",
-                "Item Group-is_add_ons",
-                "Item Group-is_restaurant_pos",
-                "Item-default_variant",
-                "Item Group-column_break_qf15o",
-                "Item Group-column_break_uytx9",
-                "Item-custom_is_recipe"
-            ]
-        ]
-    ]},
-    {"dt": "Property Setter", "filters": [
-        [
-            "name", "in", [
-                "Item-main-quick_entry",
-                "Item Group-main-make_attachments_public",
-                "Item Group-image-hidden"
-            ]
-        ]
-    ]}
+    {"dt": "Custom Field" },
+    {"dt": "Property Setter" }
 ]
 
 # Required Apps with version constraints
-required_apps = ["erpnext"]
+# required_apps = ["erpnext"]
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/excel_restaurant_pos/css/excel_restaurant_pos.css"

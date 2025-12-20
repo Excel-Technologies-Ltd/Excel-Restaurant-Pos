@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:menu_name",
+ "creation": "2025-12-18 17:19:49.746939",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "menu_name",
+  "column_break_n5bwk",
+  "enabled",
+  "expires_on",
+  "section_break_nkbcv",
+  "menu_availability"
+ ],
+ "fields": [
+  {
+   "fieldname": "menu_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Menu Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "section_break_nkbcv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "menu_availability",
+   "fieldtype": "Table",
+   "label": "Menu Availability",
+   "options": "Menu Availability"
+  },
+  {
+   "fieldname": "column_break_n5bwk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "expires_on",
+   "fieldtype": "Date",
+   "label": "Expires On"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-12-20 10:15:11.511424",
+ "modified_by": "Administrator",
+ "module": "Excel Restaurant Pos",
+ "name": "Menus",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

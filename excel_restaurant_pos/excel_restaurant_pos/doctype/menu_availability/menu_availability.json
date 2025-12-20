@@ -1,0 +1,74 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-18 17:35:47.354215",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "outlet_name",
+  "days",
+  "time",
+  "to_time",
+  "publish_pos",
+  "publish_website"
+ ],
+ "fields": [
+  {
+   "fieldname": "outlet_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Outlet Name",
+   "options": "Territory",
+   "reqd": 1
+  },
+  {
+   "fieldname": "time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "From Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "days",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Days",
+   "options": "\nEveryday\nSunday\nMonday\nTuesday\nWednesday\nThursday\nFriday\nSaturday",
+   "reqd": 1
+  },
+  {
+   "fieldname": "to_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "To Time",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "publish_pos",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "POS?"
+  },
+  {
+   "default": "0",
+   "fieldname": "publish_website",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Website?"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-12-20 10:13:16.130873",
+ "modified_by": "Administrator",
+ "module": "Excel Restaurant Pos",
+ "name": "Menu Availability",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
