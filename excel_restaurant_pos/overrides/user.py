@@ -1,7 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import get_url, random_string, now_datetime, cint, now
-from frappe.utils.data import sha256_hash
+from frappe.utils import random_string, now
 from jinja2 import Template
 import json
 from excel_restaurant_pos.shared.arcpos_settings.system_settings import default_system_settings
