@@ -1,0 +1,138 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:POS-FB-{#####}",
+ "creation": "2025-12-21 10:34:41.357023",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_invoice_no",
+  "order_no",
+  "feedback_from",
+  "is_completed",
+  "column_break_piqys",
+  "feedback_by_member",
+  "member_name",
+  "feedback_by_guest",
+  "section_break_5iauv",
+  "item_wise_feedback",
+  "overall_feedback",
+  "section_break_3st1n",
+  "attached_image",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_invoice_no",
+   "fieldtype": "Link",
+   "label": "Sales Invoice No",
+   "options": "Sales Invoice"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "ArcPOS Feedback",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "sales_invoice_no.custom_pos_order_no",
+   "fieldname": "order_no",
+   "fieldtype": "Data",
+   "label": "Order No"
+  },
+  {
+   "fieldname": "feedback_from",
+   "fieldtype": "Data",
+   "label": "Feedback From"
+  },
+  {
+   "default": "No",
+   "fieldname": "is_completed",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is Completed?",
+   "options": "Yes\nNo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_piqys",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "sales_invoice_no.customer",
+   "fieldname": "feedback_by_member",
+   "fieldtype": "Data",
+   "label": "Feedback By (Member)"
+  },
+  {
+   "fetch_from": "sales_invoice_no.customer_name",
+   "fieldname": "member_name",
+   "fieldtype": "Data",
+   "label": "Member Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "sales_invoice_no.custom_customer_full_name",
+   "fieldname": "feedback_by_guest",
+   "fieldtype": "Data",
+   "label": "Feedback By (Guest)"
+  },
+  {
+   "fieldname": "section_break_5iauv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "item_wise_feedback",
+   "fieldtype": "Table",
+   "label": "Item wise Feedback",
+   "options": "Feedback Items"
+  },
+  {
+   "fieldname": "overall_feedback",
+   "fieldtype": "Long Text",
+   "label": "Overall Feedback"
+  },
+  {
+   "fieldname": "section_break_3st1n",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "attached_image",
+   "fieldtype": "Attach Image",
+   "label": "Attached Image"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-12-21 10:43:44.151085",
+ "modified_by": "Administrator",
+ "module": "Excel Restaurant Pos",
+ "name": "ArcPOS Feedback",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
