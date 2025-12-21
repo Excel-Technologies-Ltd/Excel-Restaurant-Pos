@@ -49,6 +49,10 @@ jobs:
             {
               "url": "https://github.com/Excel-Technologies-Ltd/excel_restaurant_pos.git",
               "branch": "arc-pos"
+            },
+            {
+              "url": "https://github.com/Excel-Technologies-Ltd/Excel-ERPNext.git",
+              "branch: "version-14"
             }
           ]'
 
