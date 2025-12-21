@@ -52,7 +52,7 @@ jobs:
             },
             {
               "url": "https://github.com/Excel-Technologies-Ltd/Excel-ERPNext.git",
-              "branch: "version-14"
+              "branch": "version-14"
             }
           ]'
 
