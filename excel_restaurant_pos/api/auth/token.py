@@ -11,7 +11,7 @@ from excel_restaurant_pos.utils.error_handler import throw_error, ErrorCode, suc
 import jwt
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def refresh(refresh_token):
     """
     Refresh access token using refresh token
