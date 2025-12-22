@@ -237,4 +237,4 @@ auth_hooks = [
 	"excel_restaurant_pos.auth.validate"
 ]
 
-website_route_rules = [{'from_route': '/restaurant/<path:app_path>', 'to_route': 'restaurant'},]
+website_route_rules = [{'from_route': '/frappe-types/<path:app_path>', 'to_route': 'frappe-types'}, {'from_route': '/restaurant/<path:app_path>', 'to_route': 'restaurant'},]
