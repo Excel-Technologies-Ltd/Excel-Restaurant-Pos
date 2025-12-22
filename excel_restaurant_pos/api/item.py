@@ -119,7 +119,7 @@ def get_item_details():
         "Item Price",
         filters={
             "item_code": ["in", addon_item_codes],
-            "price_list": "Standard Selling"
+            "price_list": "Add-on Price"
         },
         fields=["item_code", "price_list_rate"]
     )
