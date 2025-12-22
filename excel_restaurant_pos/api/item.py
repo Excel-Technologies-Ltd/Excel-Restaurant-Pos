@@ -45,6 +45,16 @@ def get_item_list():
     # get item list
     item_list = frappe.get_all("Item", **frappe.form_dict)
 
+    item_codes = [item.item_code for item in item_list]
+
+    # get item prices
+    prices = frappe.get_all("Item Price", filters={"item_code": ["in", item_codes], "price_list": "Standard Selling"}, fields=["item_code", "price_list_rate"])
+    price_map = {price.item_code: price.price_list_rate for price in prices}
+
+    # attach price to item list
+    for item in item_list:
+        item.price = price_map.get(item.item_code, 0)
+
     # return item list
     return item_list
 	
@@ -83,35 +93,52 @@ def get_item_details():
 
     # prepare addons items
     addons_items = item_details.get("custom_addons_items", [])
-    item_codes_price = [item.item_code for item in addons_items]
+    addon_item_codes = [item.item_code for item in addons_items]
+
+    regular_item_codes = [item.item_code for item in variants_items]
 
     
     for variant in variants_items:
-        item_codes_price.append(variant.item_code)
+        regular_item_codes.append(variant.item_code)
         variant.attributes = attributes_map.get(variant.item_code, [])
 
+    # add docs item code
+    regular_item_codes.append(item_code)
+
     # item prices
-    prices = frappe.get_all(
+    regular_prices = frappe.get_all(
         "Item Price",
         filters={
-            "item_code": ["in", item_codes_price],
+            "item_code": ["in", regular_item_codes],
             "price_list": "Standard Selling"
         },
         fields=["item_code", "price_list_rate"]
     )
 
-    price_map = {price.item_code: price.price_list_rate for price in prices}
+    addon_prices = frappe.get_all(
+        "Item Price",
+        filters={
+            "item_code": ["in", addon_item_codes],
+            "price_list": "Standard Selling"
+        },
+        fields=["item_code", "price_list_rate"]
+    )
+
+    addon_price_map = {price.item_code: price.price_list_rate for price in addon_prices}
+
+    regular_price_map = {price.item_code: price.price_list_rate for price in regular_prices}
 
     # attach price to variants and addons   
     for variant in variants_items:
-        variant.price = price_map.get(variant.item_code, 0)
+        variant.price = regular_price_map.get(variant.item_code, 0)
 
     # attach price to addons
     for addon in addons_items:
-        addon.price = price_map.get(addon.item_code, 0)
+        addon.price = addon_price_map.get(addon.item_code, 0)
 
     # attach variants and addons to item details
     item_details["variants_items"] = variants_items
+    item_details["price"] = regular_price_map.get(item_code, 0)
 
     return item_details
 
