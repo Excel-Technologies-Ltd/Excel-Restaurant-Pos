@@ -21,7 +21,8 @@ fixtures = [
                 "Restro Kitchen Staff",
                 "ArcPOS Manager",
                 "Bartender",
-                "Delivery Staff"
+                "Delivery Staff",
+                "ArcPOS Deny"
             ]
         ]
     ]},
