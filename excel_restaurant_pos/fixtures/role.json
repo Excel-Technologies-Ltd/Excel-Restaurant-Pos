@@ -50,5 +50,57 @@
   "restrict_to_domain": null,
   "role_name": "Restaurant Cashier",
   "two_factor_auth": 0
+ },
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": null,
+  "is_custom": 0,
+  "modified": "2025-12-23 10:51:59.014994",
+  "name": "Restro Kitchen Staff",
+  "restrict_to_domain": null,
+  "role_name": "Restro Kitchen Staff",
+  "two_factor_auth": 0
+ },
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": null,
+  "is_custom": 0,
+  "modified": "2025-12-23 10:52:16.484721",
+  "name": "ArcPOS Manager",
+  "restrict_to_domain": null,
+  "role_name": "ArcPOS Manager",
+  "two_factor_auth": 0
+ },
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": null,
+  "is_custom": 0,
+  "modified": "2025-12-23 10:52:28.198839",
+  "name": "Bartender",
+  "restrict_to_domain": null,
+  "role_name": "Bartender",
+  "two_factor_auth": 0
+ },
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": null,
+  "is_custom": 0,
+  "modified": "2025-12-23 10:52:54.979463",
+  "name": "Delivery Staff",
+  "restrict_to_domain": null,
+  "role_name": "Delivery Staff",
+  "two_factor_auth": 0
  }
 ]

@@ -20,7 +20,8 @@ fixtures = [
                 "Restaurant Cashier",
                 "Restro Kitchen Staff",
                 "ArcPOS Manager",
-                "Bartender"
+                "Bartender",
+                "Delivery Staff"
             ]
         ]
     ]},

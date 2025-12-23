@@ -9,7 +9,6 @@
  "engine": "InnoDB",
  "field_order": [
   "sales_invoice_no",
-  "order_no",
   "feedback_from",
   "is_completed",
   "column_break_piqys",
@@ -27,7 +26,7 @@
   {
    "fieldname": "sales_invoice_no",
    "fieldtype": "Link",
-   "label": "Sales Invoice No",
+   "label": "Order No",
    "options": "Sales Invoice"
   },
   {
@@ -39,12 +38,6 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
-  },
-  {
-   "fetch_from": "sales_invoice_no.custom_pos_order_no",
-   "fieldname": "order_no",
-   "fieldtype": "Data",
-   "label": "Order No"
   },
   {
    "fieldname": "feedback_from",
@@ -67,8 +60,9 @@
   {
    "fetch_from": "sales_invoice_no.customer",
    "fieldname": "feedback_by_member",
-   "fieldtype": "Data",
-   "label": "Feedback By (Member)"
+   "fieldtype": "Link",
+   "label": "Feedback By (Member)",
+   "options": "Customer"
   },
   {
    "fetch_from": "sales_invoice_no.customer_name",
@@ -111,7 +105,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-12-21 10:43:44.151085",
+ "modified": "2025-12-23 11:01:56.076163",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Feedback",
