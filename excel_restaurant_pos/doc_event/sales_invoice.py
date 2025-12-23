@@ -2,7 +2,22 @@ import frappe
 from frappe.utils import flt, cint, nowdate
 from excel_restaurant_pos.api.bom import run_bom_process
 
-@frappe.whitelist(allow_guest=True)
+def submit_sales_invoice(doc, method=None):
+    """
+    Submit Sales Invoice
+    """
+    # todo: need to generate doc for getting feedback
+    # todo: need to increase item sales count
+
+    frappe.msgprint(f"Submitting Sales Invoice: {doc.name}")
+
+    try:
+        pass
+        # create_sales_invoice(doc, method=None, create_payment=True)
+    except Exception as e:
+        frappe.log_error(f"Error: {str(e)}\n{frappe.get_traceback()}", "Sales Invoice Error")
+        frappe.throw(f"Failed to submit Sales Invoice: {str(e)}")
+
 def create_sales_invoice(doc, method=None, create_payment=True):
     """
     Create Sales Invoice with support for multiple payment methods
@@ -164,17 +179,6 @@ def create_payment_entry(invoice_doc, mode_of_payment, amount, company,reference
     """
     
     try:
-        # Get the receivable account for the customer
-        # frappe.msgprint(f"Customer: {invoice_doc.customer}")
-        # receivable_account = frappe.db.get_value("Customer", invoice_doc.customer, "default_receivable_account")
-        # if not receivable_account:
-        #     receivable_account = frappe.get_value("Company", company, "default_receivable_account")
-        #     frappe.msgprint(f"Receivable Account: {receivable_account}")
-        
-        # if not receivable_account:
-        #     frappe.throw(f"Receivable account not found for customer {invoice_doc.customer}")
-        # frappe.msgprint(f"Receivable Account: {receivable_account}")
-        # frappe.log_error(f"Receivable: {receivable_account}", "Payment Entry 1")
         
         receivable_account = get_receivable_account(invoice_doc.customer, company)
         if not receivable_account:
@@ -258,9 +262,8 @@ def get_mode_of_payment_account(mode_of_payment, company):
             {"account_type": "Cash", "company": company, "is_group": 0}, 
             "name")
         return cash_account
-    
-    
-    
+
+
 def get_receivable_account(customer, company):
     account = ""
     customer_doc = frappe.get_doc("Customer", customer)
