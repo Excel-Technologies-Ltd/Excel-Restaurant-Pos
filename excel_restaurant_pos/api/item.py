@@ -45,10 +45,19 @@ def get_item_list():
     # get item list
     item_list = frappe.get_all("Item", **frappe.form_dict)
 
+    item_codes = [item.item_code for item in item_list]
+
+    # get item prices
+    prices = frappe.get_all("Item Price", filters={"item_code": ["in", item_codes], "price_list": "Standard Selling"}, fields=["item_code", "price_list_rate"])
+    price_map = {price.item_code: price.price_list_rate for price in prices}
+
+    # attach price to item list
+    for item in item_list:
+        item.price = price_map.get(item.item_code, 0)
+
     # return item list
     return item_list
 	
-
 @frappe.whitelist(allow_guest=True)
 def get_item_details():
     """
@@ -83,35 +92,52 @@ def get_item_details():
 
     # prepare addons items
     addons_items = item_details.get("custom_addons_items", [])
-    item_codes_price = [item.item_code for item in addons_items]
+    addon_item_codes = [item.item_code for item in addons_items]
+
+    regular_item_codes = [item.item_code for item in variants_items]
 
     
     for variant in variants_items:
-        item_codes_price.append(variant.item_code)
+        regular_item_codes.append(variant.item_code)
         variant.attributes = attributes_map.get(variant.item_code, [])
 
+    # add docs item code
+    regular_item_codes.append(item_code)
+
     # item prices
-    prices = frappe.get_all(
+    regular_prices = frappe.get_all(
         "Item Price",
         filters={
-            "item_code": ["in", item_codes_price],
+            "item_code": ["in", regular_item_codes],
             "price_list": "Standard Selling"
         },
         fields=["item_code", "price_list_rate"]
     )
 
-    price_map = {price.item_code: price.price_list_rate for price in prices}
+    addon_prices = frappe.get_all(
+        "Item Price",
+        filters={
+            "item_code": ["in", addon_item_codes],
+            "price_list": "Add-on Price"
+        },
+        fields=["item_code", "price_list_rate"]
+    )
+
+    addon_price_map = {price.item_code: price.price_list_rate for price in addon_prices}
+
+    regular_price_map = {price.item_code: price.price_list_rate for price in regular_prices}
 
     # attach price to variants and addons   
     for variant in variants_items:
-        variant.price = price_map.get(variant.item_code, 0)
+        variant.price = regular_price_map.get(variant.item_code, 0)
 
     # attach price to addons
     for addon in addons_items:
-        addon.price = price_map.get(addon.item_code, 0)
+        addon.price = addon_price_map.get(addon.item_code, 0)
 
     # attach variants and addons to item details
     item_details["variants_items"] = variants_items
+    item_details["price"] = regular_price_map.get(item_code, 0)
 
     return item_details
 
@@ -123,48 +149,6 @@ def get_category_list():
         WHERE is_restaurant_pos = 1
     """
     return frappe.db.sql(query, as_dict=True)
-
-
-
-# @frappe.whitelist(allow_guest=True)
-# def get_food_item_list(category=None):
-#     # Set default category to "All" if not provided
-#     if not category:
-#         category = "All"
-    
-#     # Determine the categories to query
-#     if category == "All":
-#         category_list = get_category_list_with_array()  # Assuming this function returns a list of categories
-#     else:
-#         category_list = [category]
-    
-#     # Fetch items using the Frappe API
-#     item_list = frappe.get_all(
-#         'Item',
-#         filters={
-#             'item_group': ['in', category_list],  # Filter by category list
-#             'variant_of': ""  # Exclude variants
-#         },
-#         fields=['item_name', 'item_code', 'item_group', 'image',"has_variants"],
-#         order_by='creation',
-#         limit_page_length=100  # You can adjust this to limit the number of items fetched
-#     )
-    
-#     # Fetch price information for each item
-#     for item in item_list:
-#         if item['has_variants']:
-#             variant_item = frappe.db.get_value('Item', {'variant_of': item['item_code'],'default_variant':1},['item_code'])
-#             if not variant_item:
-#                 item['price'] = 0
-#             price=frappe.db.get_value('Item Price', {'item_code':variant_item,'price_list':'Standard Selling'},'price_list_rate')
-#             item['price'] = price if price else 0
-#         else:
-#             price = frappe.db.get_value('Item Price', 
-#                                     {'item_code': item['item_code'], 'price_list': 'Standard Selling'}, 
-#                                     'price_list_rate')
-#             item['price'] = price if price else 0
-    
-#     return item_list
 
 @frappe.whitelist(allow_guest=True)
 def get_food_item_list(category=None):
@@ -228,9 +212,6 @@ def get_food_item_list(category=None):
 
     return item_list
 
-
-
-
 @frappe.whitelist(allow_guest=True)
 def get_single_food_item_details(item_code):
     item_details = frappe.get_doc("Item", item_code)
@@ -260,21 +241,12 @@ def get_single_food_item_details(item_code):
     if has_variants:
         response["variant_item_list"] = variant_item_list
     return response
-    
-
 
 
 def get_category_list_with_array():
     category_list = get_category_list()
     return [category['name'] for category in category_list]
-# def get_add_ons_list(item_code):
-#     query = """
-#         SELECT category, icon
-#         FROM `tabFood Category`
-#         WHERE parenttype = 'Restaurant Settings' 
-#           AND parentfield = 'categories'
-#         ORDER BY creation
-#     """
+
     
 def get_add_ons_list(item_code):
     query = """
@@ -295,7 +267,6 @@ def get_variant_item_list(item_code):
     """
     return frappe.db.sql(query, (item_code,), as_dict=True)
 
-# your_app/your_app/api.py
 
 import frappe
 from frappe import _
@@ -525,19 +496,12 @@ def get_running_order_item_list(table_id):
         return order_list[0].item_list
     else:
         return []
+
 @frappe.whitelist(allow_guest=True)
 def get_tax_rate():
     settings = frappe.get_doc("Restaurant Settings")
     return int(settings.tax_rate)/100
 
-# def get_order_list(status=None):
-#     if status:
-#         order_list = frappe.get_all("Table Order",fields=["*"],filters=[["status","in",[status]]],order_by="creation desc")
-#     else:
-#         order_list = frappe.get_all("Table Order",fields=["*"],order_by="creation desc")
-#     for order in order_list:
-#         order["item_list"] = get_order_item_list(order.name)
-#     return order_list
 @frappe.whitelist()
 def get_order_list(status=None, page=1, page_size=10):
     try:
@@ -577,22 +541,7 @@ def get_order_list(status=None, page=1, page_size=10):
         frappe.log_error(frappe.get_traceback(), "get_order_list API Error")
         return {"error": str(e)}
 
-# @frappe.whitelist()
-# def get_chef_order_list():
-#     # Define the filters correctly using "or" condition
-#     filters = [
-#         ["status", "=", "Work in progress"],
-#         ["status", "=", "Ready to Serve"]
-#     ]
-    
-#     # Get the table orders using the OR condition with "|"
-#     order_list = frappe.get_all("Table Order", fields=["*"], or_filters= filters, order_by="creation desc")
-    
-#     # Add item list to each order
-#     for order in order_list:
-#         order["item_list"] = get_order_item_list(order.name)
-    
-#     return order_list
+
 @frappe.whitelist()
 def get_chef_order_list(page=1, page_size=10):
     try:
@@ -642,7 +591,6 @@ def get_chef_order_list(page=1, page_size=10):
         return {"error": str(e)}
 
 
-
 @frappe.whitelist()
 def get_order_item_list(order_id):
     return frappe.get_all("Table Order Item",filters={"parent":order_id},fields=['item','qty','amount','rate',"is_parcel","is_ready","name","parent","remarks","is_accepted","is_create_recipe","is_recipe_item"],order_by="creation desc")
@@ -688,11 +636,6 @@ def check_coupon_code(data):
         frappe.log_error(f"Error in check_coupon_code: {str(e)}")
         return "An error occurred while checking the coupon code."
     
-    
-
-
-
-
 
 @frappe.whitelist(allow_guest=True)
 def get_logo_and_title():
@@ -702,7 +645,8 @@ def get_logo_and_title():
         "logo": f"{settings.logo}",
         "title": settings.title
     }
-    
+
+
 @frappe.whitelist(allow_guest=True)
 def get_last_seven_days_sales():
     """
@@ -790,6 +734,7 @@ def get_top_items_by_sales_period(period="weekly", item_count=5):
         row["item_name"] = frappe.db.get_value("Item", row["item_code"], "item_name") or row["item_code"]
 
     return data
+
 @frappe.whitelist(allow_guest=True)
 def get_top_item_groups_by_sales_period(period="weekly", group_count=5):
     """
@@ -853,8 +798,7 @@ def get_start_date_for_period(period):
     else:
         # Default fallback if unknown period is passed
         return add_days(today, -7)
-    
-    
+     
     
 @frappe.whitelist(allow_guest=True)
 def dashboard_data():

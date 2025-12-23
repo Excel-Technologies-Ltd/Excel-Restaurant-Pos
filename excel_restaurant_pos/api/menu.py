@@ -17,9 +17,11 @@ def get_menu_list():
     day_name = datetime.now().strftime("%A")
     current_time = datetime.now().strftime("%H:%M:%S")
 
-    print(today_date)
-    print(day_name)
-    print(current_time)
+    item_filters = [["variant_of", "is", "not set"], ["disabled", "=", 0]]
+
+    # Get all item groups (may contain duplicates)
+    menu_list = frappe.get_all("Item", filters=item_filters, pluck="custom_menu")
+    menu_list = list(set(menu_list))
 
     # pop cmd
     if frappe.form_dict.get("cmd"):
@@ -27,8 +29,13 @@ def get_menu_list():
 
     # prepare filters
     filters = frappe.form_dict.get("filters")
+    default_filters = [["parent", "in", menu_list]] 
+
     if not filters:
-        filters = list()
+        filters = default_filters
+    else:
+        filters = frappe.parse_json(filters)
+        filters.extend(default_filters)
 
     filters.append(["days", "in",  [day_name,"Everyday"] ])
     filters.append(["time", "<=", current_time])
@@ -52,11 +59,16 @@ def get_menu_list():
 
 
     # prepare menu filters and fields
-    menu_filters = [["name", "in", items.keys()], ["enabled","=",1], ["start_date", "<=", today_date], ["expires_on", ">=", today_date]]
+    menu_filters = [
+        ["name", "in", items.keys()], 
+        ["enabled","=",1], 
+        ["start_date", "<=", today_date], 
+        ["expires_on", ">=", today_date]
+    ]
     menu_fields = ["name", "menu_name", "image", "start_date", "expires_on"]
     menus = frappe.get_all("Menus", filters=menu_filters, fields=menu_fields)
 
-    # prepare menus
+    # prepare menus with items
     for menu in menus:
         menu.items = items[menu.name]
     
