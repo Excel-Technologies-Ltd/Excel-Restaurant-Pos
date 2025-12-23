@@ -2,21 +2,38 @@ import frappe
 from frappe.utils import flt, cint, nowdate
 from excel_restaurant_pos.api.bom import run_bom_process
 
+
 def submit_sales_invoice(doc, method=None):
     """
     Submit Sales Invoice
+    tasks: 
+        Create arcpos feedback doc
+        Increase item sales count
     """
-    # todo: need to generate doc for getting feedback
-    # todo: need to increase item sales count
+    # need to generate doc for getting feedback
+    feedback_doc = frappe.new_doc("ArcPOS Feedback")
+    feedback_doc.sales_invoice_no = doc.name
+    feedback_doc.feedback_from = doc.custom_order_from
+    
+    # Append child table rows
+    for item in doc.items:
+        feedback_doc.append("item_wise_feedback", {
+            "item_name": item.item_code,
+            "rating": "",
+            "feedback": ""
+        })
+    
+    feedback_doc.insert(
+        ignore_permissions=True,
+        ignore_mandatory=True
+    )
 
-    frappe.msgprint(f"Submitting Sales Invoice: {doc.name}")
+    # need to increase item sales count
+    for item in doc.items:
+        item_doc = frappe.get_doc("Item", item.item_code)
+        item_doc.custom_total_sold_qty += 1
+        item_doc.save(ignore_permissions=True)
 
-    try:
-        pass
-        # create_sales_invoice(doc, method=None, create_payment=True)
-    except Exception as e:
-        frappe.log_error(f"Error: {str(e)}\n{frappe.get_traceback()}", "Sales Invoice Error")
-        frappe.throw(f"Failed to submit Sales Invoice: {str(e)}")
 
 def create_sales_invoice(doc, method=None, create_payment=True):
     """

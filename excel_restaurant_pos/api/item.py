@@ -1,17 +1,18 @@
-
-from frappe.utils import get_url,nowdate, add_days, get_first_day, get_year_start
+from frappe.utils import get_url, nowdate, add_days
 import datetime
 import frappe
+from frappe import _
+
 
 # test fun
 @frappe.whitelist(allow_guest=True)
 def test():
     return "test"
 
+
 # get item list
 @frappe.whitelist(allow_guest=True)
 def get_item_list():
-
     """
     Get item list
     filters:
@@ -29,8 +30,8 @@ def get_item_list():
     frappe.form_dict.setdefault("order_by", "creation")
 
     # update filters
-    filters = frappe.form_dict.get("filters")   
-    default_filters =[["variant_of", "is", "not set"],["disabled","=",0]]
+    filters = frappe.form_dict.get("filters")
+    default_filters = [["variant_of", "is", "not set"], ["disabled", "=", 0]]
 
     # Convert filters to list format if needed
     if not filters:
@@ -38,7 +39,7 @@ def get_item_list():
     else:
         filters = frappe.parse_json(filters)
         filters.extend(default_filters)
-    
+
     # Update form_dict with modified filters
     frappe.form_dict["filters"] = filters
 
@@ -48,7 +49,11 @@ def get_item_list():
     item_codes = [item.item_code for item in item_list]
 
     # get item prices
-    prices = frappe.get_all("Item Price", filters={"item_code": ["in", item_codes], "price_list": "Standard Selling"}, fields=["item_code", "price_list_rate"])
+    prices = frappe.get_all(
+        "Item Price",
+        filters={"item_code": ["in", item_codes], "price_list": "Standard Selling"},
+        fields=["item_code", "price_list_rate"],
+    )
     price_map = {price.item_code: price.price_list_rate for price in prices}
 
     # attach price to item list
@@ -57,7 +62,8 @@ def get_item_list():
 
     # return item list
     return item_list
-	
+
+
 @frappe.whitelist(allow_guest=True)
 def get_item_details():
     """
@@ -66,25 +72,34 @@ def get_item_details():
 
     item_code = frappe.form_dict.get("item_code")
     if not item_code:
-        frappe.throw("item_code is required")  
+        frappe.throw("item_code is required")
 
     # Get item document and convert to dict
     item_details = frappe.get_doc("Item", item_code).as_dict()
 
     # Get variant items
-    variant_fields = ["name", "item_name", "item_code", "item_group", "image", "description"]
-    variants_items = frappe.get_all("Item", filters={"variant_of": item_code}, fields=variant_fields)
-
-    # prepare attributes
-    attributes_fields = [ "attribute","attribute_value","parent", "variant_of"]
-    attributes = frappe.get_all(
-        "Item Variant Attribute", 
-        filters={"variant_of": item_code}, 
-        fields=attributes_fields,
-        order_by="creation"
+    variant_fields = [
+        "name",
+        "item_name",
+        "item_code",
+        "item_group",
+        "image",
+        "description",
+    ]
+    variants_items = frappe.get_all(
+        "Item", filters={"variant_of": item_code}, fields=variant_fields
     )
 
-    attributes_map:dict[str, list[dict]] = {}
+    # prepare attributes
+    attributes_fields = ["attribute", "attribute_value", "parent", "variant_of"]
+    attributes = frappe.get_all(
+        "Item Variant Attribute",
+        filters={"variant_of": item_code},
+        fields=attributes_fields,
+        order_by="creation",
+    )
+
+    attributes_map: dict[str, list[dict]] = {}
     for attribute in attributes:
         if attribute.parent not in attributes_map:
             attributes_map[attribute.parent] = []
@@ -96,7 +111,6 @@ def get_item_details():
 
     regular_item_codes = [item.item_code for item in variants_items]
 
-    
     for variant in variants_items:
         regular_item_codes.append(variant.item_code)
         variant.attributes = attributes_map.get(variant.item_code, [])
@@ -109,25 +123,24 @@ def get_item_details():
         "Item Price",
         filters={
             "item_code": ["in", regular_item_codes],
-            "price_list": "Standard Selling"
+            "price_list": "Standard Selling",
         },
-        fields=["item_code", "price_list_rate"]
+        fields=["item_code", "price_list_rate"],
     )
 
     addon_prices = frappe.get_all(
         "Item Price",
-        filters={
-            "item_code": ["in", addon_item_codes],
-            "price_list": "Add-on Price"
-        },
-        fields=["item_code", "price_list_rate"]
+        filters={"item_code": ["in", addon_item_codes], "price_list": "Add-on Price"},
+        fields=["item_code", "price_list_rate"],
     )
 
     addon_price_map = {price.item_code: price.price_list_rate for price in addon_prices}
 
-    regular_price_map = {price.item_code: price.price_list_rate for price in regular_prices}
+    regular_price_map = {
+        price.item_code: price.price_list_rate for price in regular_prices
+    }
 
-    # attach price to variants and addons   
+    # attach price to variants and addons
     for variant in variants_items:
         variant.price = regular_price_map.get(variant.item_code, 0)
 
@@ -141,6 +154,7 @@ def get_item_details():
 
     return item_details
 
+
 @frappe.whitelist(allow_guest=True)
 def get_category_list():
     query = """
@@ -150,67 +164,79 @@ def get_category_list():
     """
     return frappe.db.sql(query, as_dict=True)
 
+
 @frappe.whitelist(allow_guest=True)
 def get_food_item_list(category=None):
     # Set default category to "All" if not provided
     if not category:
         category = "All"
-    
+
     # Determine the categories to query
     if category == "All":
-        category_list = get_category_list_with_array()  # Assuming this function returns a list of categories
+        category_list = (
+            get_category_list_with_array()
+        )  # Assuming this function returns a list of categories
     else:
         category_list = [category]
-    
+
     # Fetch items using the Frappe API
     item_list = frappe.get_all(
-        'Item',
+        "Item",
         filters={
-            'item_group': ['in', category_list],  # Filter by category list
-            'variant_of': ""  # Exclude variants
+            "item_group": ["in", category_list],  # Filter by category list
+            "variant_of": "",  # Exclude variants
         },
-        fields=['item_name', 'item_code', 'item_group', 'image', 'has_variants','description'],
-        order_by='creation',
-        limit_page_length=100  # Adjust this to limit the number of items fetched
+        fields=[
+            "item_name",
+            "item_code",
+            "item_group",
+            "image",
+            "has_variants",
+            "description",
+        ],
+        order_by="creation",
+        limit_page_length=100,  # Adjust this to limit the number of items fetched
     )
 
     # Separate items with and without variants
-    variant_items = [item['item_code'] for item in item_list if item['has_variants']]
-    non_variant_items = [item['item_code'] for item in item_list if not item['has_variants']]
-    
+    variant_items = [item["item_code"] for item in item_list if item["has_variants"]]
+    non_variant_items = [
+        item["item_code"] for item in item_list if not item["has_variants"]
+    ]
+
     # Get default variant items in batch for items with variants
     default_variants = frappe.get_all(
-        'Item',
-        filters={'variant_of': ['in', variant_items], 'default_variant': 1},
-        fields=['variant_of', 'item_code']
+        "Item",
+        filters={"variant_of": ["in", variant_items], "default_variant": 1},
+        fields=["variant_of", "item_code"],
     )
     # Map each parent item to its default variant
-    default_variant_map = {variant['variant_of']: variant['item_code'] for variant in default_variants}
-    
+    default_variant_map = {
+        variant["variant_of"]: variant["item_code"] for variant in default_variants
+    }
+
     # Fetch prices in batch for all items (both default variants and non-variants)
     all_item_codes = non_variant_items + list(default_variant_map.values())
     prices = frappe.get_all(
-        'Item Price',
-        filters={
-            'item_code': ['in', all_item_codes],
-            'price_list': 'Standard Selling'
-        },
-        fields=['item_code', 'price_list_rate']
+        "Item Price",
+        filters={"item_code": ["in", all_item_codes], "price_list": "Standard Selling"},
+        fields=["item_code", "price_list_rate"],
     )
     # Create a dictionary of item prices for quick lookup
-    price_map = {price['item_code']: price['price_list_rate'] for price in prices}
+    price_map = {price["item_code"]: price["price_list_rate"] for price in prices}
 
     # Attach price to each item in the list
     for item in item_list:
-        if item['has_variants']:
+        if item["has_variants"]:
             # Use default variant price if available
-            variant_code = default_variant_map.get(item['item_code'])
-            item['price'] = price_map.get(variant_code, 0) if variant_code else 0
+            variant_code = default_variant_map.get(item["item_code"])
+            item["price"] = price_map.get(variant_code, 0) if variant_code else 0
         else:
             # Non-variant item price
-            item['price'] = price_map.get(item['item_code'], 0)
+            item["price"] = price_map.get(item["item_code"], 0)
 
     return item_list
+
 
 @frappe.whitelist(allow_guest=True)
 def get_single_food_item_details(item_code):
@@ -220,23 +246,34 @@ def get_single_food_item_details(item_code):
     has_variants = bool(item_details.has_variants)
     if has_variants:
         variant_item_list = get_variant_item_list(item_code)
-        default_variant = next((variant for variant in variant_item_list if variant.get('default_variant') == True), None)
+        default_variant = next(
+            (
+                variant
+                for variant in variant_item_list
+                if variant.get("default_variant") == True
+            ),
+            None,
+        )
         if default_variant:
-            price = default_variant['price']
+            price = default_variant["price"]
         else:
-            price = variant_item_list[0]['price']
+            price = variant_item_list[0]["price"]
     else:
         variant_item_list = []
-        price = frappe.db.get_value('Item Price', {'item_code': item_code, 'price_list': 'Standard Selling'}, 'price_list_rate')
+        price = frappe.db.get_value(
+            "Item Price",
+            {"item_code": item_code, "price_list": "Standard Selling"},
+            "price_list_rate",
+        )
     add_ons_item_list = get_add_ons_list(item_code)
-    response={
+    response = {
         "item_code": item_code,
-         "item_name": item_name,
+        "item_name": item_name,
         "image": image,
         "has_variants": has_variants,
         "price": price,
         "add_ons_item_list": add_ons_item_list,
-        "description":item_details.description
+        "description": item_details.description,
     }
     if has_variants:
         response["variant_item_list"] = variant_item_list
@@ -245,9 +282,9 @@ def get_single_food_item_details(item_code):
 
 def get_category_list_with_array():
     category_list = get_category_list()
-    return [category['name'] for category in category_list]
+    return [category["name"] for category in category_list]
 
-    
+
 def get_add_ons_list(item_code):
     query = """
         SELECT fi.item_id as item_code ,i.item_name as item_name,i.image as image,COALESCE(ip.price_list_rate, 0) as price
@@ -257,6 +294,7 @@ def get_add_ons_list(item_code):
         WHERE fi.parent = %s and fi.parentfield= "add_ons_item_list" and fi.parenttype= "Item"
     """
     return frappe.db.sql(query, (item_code,), as_dict=True)
+
 
 def get_variant_item_list(item_code):
     query = """
@@ -268,13 +306,10 @@ def get_variant_item_list(item_code):
     return frappe.db.sql(query, (item_code,), as_dict=True)
 
 
-import frappe
-from frappe import _
-
 @frappe.whitelist(allow_guest=True)
 def make_as_ready_item(body):
     try:
-        data=frappe.parse_json(body)
+        data = frappe.parse_json(body)
         # Fetch the order document using the order_id
         order_doc = frappe.get_doc("Table Order", data["order_id"])
 
@@ -282,7 +317,7 @@ def make_as_ready_item(body):
         for item in order_doc.item_list:
             # Check if the item matches the name
             if item.name.lower() == data["item_name"].lower():  # Case-insensitive match
-                item.is_ready = 1  
+                item.is_ready = 1
                 item.order_ready_time = frappe.utils.now_datetime()
                 order_doc.save(ignore_permissions=True)  # Save the order document
                 frappe.db.commit()  # Commit the transaction
@@ -297,15 +332,13 @@ def make_as_ready_item(body):
 
     except Exception as e:
         # Log error and return failure message
-        return {
-            "status": "failure",
-            "message": e
-        }
-        
+        return {"status": "failure", "message": e}
+
+
 @frappe.whitelist(allow_guest=True)
 def make_as_accepted_item(body):
     try:
-        data=frappe.parse_json(body)
+        data = frappe.parse_json(body)
         # Fetch the order document using the order_id
         order_doc = frappe.get_doc("Table Order", data["order_id"])
 
@@ -313,7 +346,7 @@ def make_as_accepted_item(body):
         for item in order_doc.item_list:
             # Check if the item matches the name
             if item.name.lower() == data["item_name"].lower():  # Case-insensitive match
-                item.is_accepted = 1  
+                item.is_accepted = 1
                 item.order_accepted_time = frappe.utils.now_datetime()
                 order_doc.save(ignore_permissions=True)  # Save the order document
                 frappe.db.commit()  # Commit the transaction
@@ -330,11 +363,12 @@ def make_as_accepted_item(body):
         # Log error and return failure message
         return {
             "status": "failure",
-            "message": "An error occurred while processing your request."
+            "message": "An error occurred while processing your request.",
         }
 
+
 @frappe.whitelist(allow_guest=True)
-def make_as_create_recipe_item(order_id=None,item_name=None):
+def make_as_create_recipe_item(order_id=None, item_name=None):
     if not order_id or not item_name:
         return False
     try:
@@ -352,7 +386,9 @@ def make_as_create_recipe_item(order_id=None,item_name=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def make_as_unready_recipe_item(order_id="Order-11-051",item_name="Beef Burger",remarks="Insufficient ingredients"):
+def make_as_unready_recipe_item(
+    order_id="Order-11-051", item_name="Beef Burger", remarks="Insufficient ingredients"
+):
     try:
         order_doc = frappe.get_doc("Table Order", order_id)
         for item in order_doc.item_list:
@@ -367,12 +403,12 @@ def make_as_unready_recipe_item(order_id="Order-11-051",item_name="Beef Burger",
         print(e)
         return False
 
+
 @frappe.whitelist(allow_guest=True)  # Makes the endpoint publicly accessible
 def create_order(data):
-    user = frappe.session.user
     """
     Public API endpoint to create or update a 'Table Order' in ERPNext.
-    
+
     :param data: JSON dictionary with required fields to create the order.
     :return: JSON response with success status or error message.
     """
@@ -380,116 +416,144 @@ def create_order(data):
         # Parse incoming data
         order_data = frappe.parse_json(data)
         settings = frappe.get_doc("Restaurant Settings")
-        
-        existing_order_name=''
+
+        existing_order_name = ""
         # Check for existing order
         if order_data["table"]:
             existing_order_name = frappe.db.exists(
                 "Table Order",
                 {
                     "table": order_data["table"],
-                    "status": ["not in", ["Completed", "Canceled"]]
-                }
+                    "status": ["not in", ["Completed", "Canceled"]],
+                },
             )
         print(existing_order_name)
 
         if existing_order_name:
-            print('working')
+            print("working")
             # Fetch the existing order using the name returned by frappe.db.exists()
             order_doc = frappe.get_doc("Table Order", existing_order_name)
-            print(order_doc)
-            # Corrected here
-            existing_items = order_doc.item_list
             new_items = order_data.get("item_list", [])
-            
+
             # Add new items to the existing order
             for item in new_items:
                 order_doc.append("item_list", item)
 
-            
             # Update amounts
-            order_doc.amount =  float (order_doc.amount )+float(order_data.get("amount", 0))  # Safely cast to float
-            order_doc.total_amount = float( order_doc.total_amount) + float(order_data.get("total_amount", 0))  # Safely cast to float
-            order_doc.discount = float(order_doc.discount) + float(order_data.get("discount", 0))  # Safely cast to float
-            order_doc.status = "Work in progress" if order_doc.status != 'Order Placed' else "Order Placed" # Update order status to work in progress
+            order_doc.amount = float(order_doc.amount) + float(
+                order_data.get("amount", 0)
+            )  # Safely cast to float
+            order_doc.total_amount = float(order_doc.total_amount) + float(
+                order_data.get("total_amount", 0)
+            )  # Safely cast to float
+            order_doc.discount = float(order_doc.discount) + float(
+                order_data.get("discount", 0)
+            )  # Safely cast to float
+            order_doc.status = (
+                "Work in progress"
+                if order_doc.status != "Order Placed"
+                else "Order Placed"
+            )  # Update order status to work in progress
             order_doc.remarks = order_data.get("remarks")
 
             # Save and commit the changes to the existing order
             order_doc.save(ignore_permissions=True)
             frappe.db.commit()
-            
+
             return {
                 "status": "success",
                 "message": "Order updated successfully",
-                "order_name": order_doc.name
+                "order_name": order_doc.name,
             }
 
         # Mandatory fields check
         required_fields = ["amount", "item_list"]
         for field in required_fields:
             if not order_data.get(field):
-                return {"status": "error", "message": _("Field '{0}' is required.").format(field)}
+                return {
+                    "status": "error",
+                    "message": _("Field '{0}' is required.").format(field),
+                }
 
         # Create a new 'Table Order' document if no existing order
-        order_doc = frappe.get_doc({
-            "doctype": "Table Order",
-            "customer": order_data.get("customer") or settings.customer,
-            "credit_sales":order_data.get("credit_sales") or 0,
-            "table": order_data["table"],
-            "amount": float(order_data["amount"]),
-            "total_amount": float(order_data["total_amount"]) or 0,
-            "item_list": order_data["item_list"],
-            "floor": order_data.get("floor"),
-            "address": order_data.get("address") or "Test Address",  # Corrected typo from "adresss"
-            "tax": order_data.get("tax") or 0,
-            "discount": order_data.get("discount") or 0,
-            "discount_type": order_data.get("discount_type") ,
-            "company": order_data.get("company"),
-            "customer_name": order_data.get("customer_name") or "Test User",
-            "remarks": order_data.get("remarks"),
-            "status": order_data.get("status", "Order Placed"),
-            "docstatus":1 if order_data.get("status")== 'Completed' else 0,
-            'is_paid': 1 if order_data.get("is_paid") else 0
-            # Default to "Order Placed"
-        })
+        order_doc = frappe.get_doc(
+            {
+                "doctype": "Table Order",
+                "customer": order_data.get("customer") or settings.customer,
+                "credit_sales": order_data.get("credit_sales") or 0,
+                "table": order_data["table"],
+                "amount": float(order_data["amount"]),
+                "total_amount": float(order_data["total_amount"]) or 0,
+                "item_list": order_data["item_list"],
+                "floor": order_data.get("floor"),
+                "address": order_data.get("address")
+                or "Test Address",  # Corrected typo from "adresss"
+                "tax": order_data.get("tax") or 0,
+                "discount": order_data.get("discount") or 0,
+                "discount_type": order_data.get("discount_type"),
+                "company": order_data.get("company"),
+                "customer_name": order_data.get("customer_name") or "Test User",
+                "remarks": order_data.get("remarks"),
+                "status": order_data.get("status", "Order Placed"),
+                "docstatus": 1 if order_data.get("status") == "Completed" else 0,
+                "is_paid": 1 if order_data.get("is_paid") else 0,
+                # Default to "Order Placed"
+            }
+        )
 
         # Insert the document into the database
         order_doc.insert(ignore_permissions=True)
-        
+
         # Commit the transaction
         frappe.db.commit()
-        
+
         return {
             "status": "success",
             "message": "Order created successfully",
-            "order_name": order_doc.name
+            "order_name": order_doc.name,
         }
-    
+
     except frappe.ValidationError as e:
         print("validation error")
         print(e)
         frappe.log_error(frappe.get_traceback(), _("Order Creation Error"))
         return {"status": "error", "message": str(e)}
-    
+
     except Exception as e:
         print("exce")
         print(e)
         frappe.log_error(frappe.get_traceback(), _("Unknown Error in Order Creation"))
         return {"status": "error", "message": str(e)}
 
+
 @frappe.whitelist()
 def get_running_order_list():
-    order_list = frappe.get_all("Table Order",fields=["*"],filters=[["status","!=","Completed"],["status","!=","Canceled"]],order_by="creation desc")
+    order_list = frappe.get_all(
+        "Table Order",
+        fields=["*"],
+        filters=[["status", "!=", "Completed"], ["status", "!=", "Canceled"]],
+        order_by="creation desc",
+    )
     for order in order_list:
         order["item_list"] = get_order_item_list(order.name)
     return order_list
 
+
 @frappe.whitelist(allow_guest=True)
 def get_running_order_item_list(table_id):
-    print("table_id",table_id)
+    print("table_id", table_id)
     if not table_id:
         return []
-    order_list = frappe.get_all("Table Order",fields=["*"],filters=[["status","!=","Completed"],["status","!=","Canceled"],["table", "=", table_id]],order_by="creation desc")
+    order_list = frappe.get_all(
+        "Table Order",
+        fields=["*"],
+        filters=[
+            ["status", "!=", "Completed"],
+            ["status", "!=", "Canceled"],
+            ["table", "=", table_id],
+        ],
+        order_by="creation desc",
+    )
     for order in order_list:
         order["item_list"] = get_order_item_list(order.name)
     if len(order_list) > 0:
@@ -497,10 +561,12 @@ def get_running_order_item_list(table_id):
     else:
         return []
 
+
 @frappe.whitelist(allow_guest=True)
 def get_tax_rate():
     settings = frappe.get_doc("Restaurant Settings")
-    return int(settings.tax_rate)/100
+    return int(settings.tax_rate) / 100
+
 
 @frappe.whitelist()
 def get_order_list(status=None, page=1, page_size=10):
@@ -532,7 +598,8 @@ def get_order_list(status=None, page=1, page_size=10):
         response = {
             "data": order_list,
             "currentPage": page,
-            "totalPages": (total_count + page_size - 1) // page_size,  # Ceiling division
+            "totalPages": (total_count + page_size - 1)
+            // page_size,  # Ceiling division
             "totalDataCount": total_count,
             "itemsPerPage": page_size,
         }
@@ -554,7 +621,7 @@ def get_chef_order_list(page=1, page_size=10):
         or_filters = [
             ["status", "=", "Work in progress"],
             ["status", "=", "Preparing"],
-            ["status", "=", "Ready to Serve"]
+            ["status", "=", "Ready to Serve"],
         ]
 
         # Fetch the orders with pagination
@@ -568,11 +635,14 @@ def get_chef_order_list(page=1, page_size=10):
         )
 
         # Get total count for pagination
-        total_count = frappe.db.sql("""
+        total_count = frappe.db.sql(
+            """
             SELECT COUNT(*)
             FROM `tabTable Order`
             WHERE status IN (%s, %s)
-        """, ("Work in progress", "Ready to Serve"))[0][0]
+        """,
+            ("Work in progress", "Ready to Serve"),
+        )[0][0]
         # Add item list to each order
         for order in order_list:
             order["item_list"] = get_order_item_list(order.name)
@@ -581,7 +651,8 @@ def get_chef_order_list(page=1, page_size=10):
         response = {
             "data": order_list,
             "currentPage": page,
-            "totalPages": (total_count + page_size - 1) // page_size,  # Ceiling division
+            "totalPages": (total_count + page_size - 1)
+            // page_size,  # Ceiling division
             "totalDataCount": total_count,
             "itemsPerPage": page_size,
         }
@@ -593,58 +664,93 @@ def get_chef_order_list(page=1, page_size=10):
 
 @frappe.whitelist()
 def get_order_item_list(order_id):
-    return frappe.get_all("Table Order Item",filters={"parent":order_id},fields=['item','qty','amount','rate',"is_parcel","is_ready","name","parent","remarks","is_accepted","is_create_recipe","is_recipe_item"],order_by="creation desc")
+    return frappe.get_all(
+        "Table Order Item",
+        filters={"parent": order_id},
+        fields=[
+            "item",
+            "qty",
+            "amount",
+            "rate",
+            "is_parcel",
+            "is_ready",
+            "name",
+            "parent",
+            "remarks",
+            "is_accepted",
+            "is_create_recipe",
+            "is_recipe_item",
+        ],
+        order_by="creation desc",
+    )
+
 
 @frappe.whitelist(allow_guest=True)
 def get_roles(user):
-    roles = frappe.db.sql("""
+    roles = frappe.db.sql(
+        """
         SELECT `tabHas Role`.`role` AS `Role`
         FROM `tabHas Role`
         JOIN `tabUser` ON `tabUser`.`name` = `tabHas Role`.`parent`
         WHERE `tabUser`.`name` = %(user)s
-    """, {"user": user}, as_dict=True)
-    
+    """,
+        {"user": user},
+        as_dict=True,
+    )
+
     return roles
+
 
 @frappe.whitelist(allow_guest=True)
 def check_coupon_code(data):
     coupon_code = frappe.parse_json(data).get("coupon_code")
     if not coupon_code:
-        return {'status':'error',"message":"Invalid"}
+        return {"status": "error", "message": "Invalid"}
     try:
         if frappe.session.user == "Guest":
             result = frappe.db.get_value(
-                "Restaurant Coupon", {'is_active': 1, 'is_public': 1, "coupon_code": coupon_code}, ['discount_type', 'amount']
+                "Restaurant Coupon",
+                {"is_active": 1, "is_public": 1, "coupon_code": coupon_code},
+                ["discount_type", "amount"],
             )
-            if result and len(result) == 2:  # Ensure result is a tuple with two elements
+            if (
+                result and len(result) == 2
+            ):  # Ensure result is a tuple with two elements
                 discount_type, amount = result
-                return {'status':'success',"discount_type": discount_type, "amount": amount}
+                return {
+                    "status": "success",
+                    "discount_type": discount_type,
+                    "amount": amount,
+                }
             else:
-                return {'status':'error',"message":"Invalid"}
-        
+                return {"status": "error", "message": "Invalid"}
+
         # Check for logged-in user
         result = frappe.db.get_value(
-            "Restaurant Coupon", {'is_active': 1, "coupon_code": coupon_code}, ['discount_type', 'amount']
+            "Restaurant Coupon",
+            {"is_active": 1, "coupon_code": coupon_code},
+            ["discount_type", "amount"],
         )
         if result and len(result) == 2:  # Ensure result is a tuple with two elements
             discount_type, amount = result
-            return {'status':'success',"discount_type": discount_type, "amount": amount}
+            return {
+                "status": "success",
+                "discount_type": discount_type,
+                "amount": amount,
+            }
         else:
-            return {'status':'error',"message":"Invalid"}
+            return {"status": "error", "message": "Invalid"}
 
     except Exception as e:
         frappe.log_error(f"Error in check_coupon_code: {str(e)}")
         return "An error occurred while checking the coupon code."
-    
+
 
 @frappe.whitelist(allow_guest=True)
 def get_logo_and_title():
-    hostname= get_url()
+    hostname = get_url()
     settings = frappe.get_doc("Restaurant Settings")
-    return {
-        "logo": f"{settings.logo}",
-        "title": settings.title
-    }
+    return {"logo": f"{settings.logo}", "title": settings.title}
 
 
 @frappe.whitelist(allow_guest=True)
@@ -656,18 +762,19 @@ def get_last_seven_days_sales():
         - total_sales (grand_total sum for that day, or 0 if no sales)
     """
     today = datetime.date.today()
-    
+
     # Create a map for each of the last 7 days, defaulting to 0 sales
     daily_sales_map = {}
     for i in range(7):
         day = today - datetime.timedelta(days=i)
         daily_sales_map[day] = 0.0
-    
+
     # We'll query from 6 days ago up to today (total 7 days, including the present)
     start_date = today - datetime.timedelta(days=6)
-    
+
     # Fetch actual sales from the database
-    query_results = frappe.db.sql("""
+    query_results = frappe.db.sql(
+        """
         SELECT 
             DATE(posting_date) AS posting_date,
             SUM(grand_total) AS total_sales
@@ -677,31 +784,36 @@ def get_last_seven_days_sales():
             AND posting_date BETWEEN %s AND %s
         GROUP BY DATE(posting_date)
         ORDER BY posting_date
-    """, (start_date, today), as_dict=True)
-    
+    """,
+        (start_date, today),
+        as_dict=True,
+    )
+
     # Update our map with actual totals
     for row in query_results:
         if row.posting_date in daily_sales_map:
             daily_sales_map[row.posting_date] = row.total_sales or 0.0
-    
+
     # Convert map to a sorted list of dicts
     output = []
     for day in sorted(daily_sales_map.keys()):
-        output.append({
-            "posting_date": str(day),
-            "day_name": day.strftime("%A"),  # E.g. "Saturday", "Sunday", etc.
-            "total_sales": daily_sales_map[day]
-        })
-    
+        output.append(
+            {
+                "posting_date": str(day),
+                "day_name": day.strftime("%A"),  # E.g. "Saturday", "Sunday", etc.
+                "total_sales": daily_sales_map[day],
+            }
+        )
+
     return output
 
 
 @frappe.whitelist(allow_guest=True)
 def get_top_items_by_sales_period(period="weekly", item_count=5):
     """
-    Fetch the Top N Items (default 5) by total sales amount 
+    Fetch the Top N Items (default 5) by total sales amount
     from POS Invoices for a given period ("weekly", "monthly", "yearly", etc.).
-    
+
     Returns a list of dicts with:
         - item_code
         - total_sales
@@ -709,7 +821,7 @@ def get_top_items_by_sales_period(period="weekly", item_count=5):
     """
     # Ensure item_count is an integer
     item_count = int(item_count) if item_count else 5
-    
+
     start_date = get_start_date_for_period(period)
 
     # Use f-string for dynamic LIMIT
@@ -726,27 +838,31 @@ def get_top_items_by_sales_period(period="weekly", item_count=5):
         ORDER BY total_sales DESC
         LIMIT {item_count}
     """
-    
+
     data = frappe.db.sql(query, (start_date,), as_dict=True)
 
     # Fetch item_name for readability
     for row in data:
-        row["item_name"] = frappe.db.get_value("Item", row["item_code"], "item_name") or row["item_code"]
+        row["item_name"] = (
+            frappe.db.get_value("Item", row["item_code"], "item_name")
+            or row["item_code"]
+        )
 
     return data
+
 
 @frappe.whitelist(allow_guest=True)
 def get_top_item_groups_by_sales_period(period="weekly", group_count=5):
     """
-    Fetch the Top N Item Groups (default 5) by total sales amount 
+    Fetch the Top N Item Groups (default 5) by total sales amount
     from POS Invoices for a given period ("weekly", "monthly", "yearly", etc.).
-    
+
     Returns a list of dicts with:
         - item_group
         - total_sales
     """
     group_count = int(group_count) if group_count else 5
-    
+
     start_date = get_start_date_for_period(period)
 
     # Build a query grouped by item_group
@@ -770,13 +886,14 @@ def get_top_item_groups_by_sales_period(period="weekly", group_count=5):
     data = frappe.db.sql(query, (start_date,), as_dict=True)
     return data
 
+
 def get_start_date_for_period(period):
     """
     Utility function to calculate start_date based on the 'period' parameter.
     Adjust as needed (e.g., to use start of current month/year instead of X days ago).
     """
     today = nowdate()
-    
+
     if period == "weekly":
         # Last 7 days
         return add_days(today, -7)
@@ -784,43 +901,57 @@ def get_start_date_for_period(period):
     elif period == "monthly":
         # Option A: Last 30 days
         return add_days(today, -30)
-        
+
         # Option B (alternate): From start of current month
         # return get_first_day(today)
 
     elif period == "yearly":
         # Option A: Last 365 days
         return add_days(today, -365)
-        
+
         # Option B (alternate): From start of current year
         # return get_year_start(today)
 
     else:
         # Default fallback if unknown period is passed
         return add_days(today, -7)
-     
-    
+
+
 @frappe.whitelist(allow_guest=True)
 def dashboard_data():
-    chef_orders_count = frappe.db.sql("""
+    chef_orders_count = frappe.db.sql(
+        """
             SELECT COUNT(*)
             FROM `tabTable Order`
             WHERE status IN (%s, %s)
-        """, ("Work in progress", "Ready to Serve"))[0][0]
-    paid_orders_count = frappe.db.count("Table Order",filters={"status":"Completed"})
-    canceled_orders_count = frappe.db.count("Table Order",filters={"status":"Canceled"})
-    unpaid_orders_count = frappe.db.sql("""
+        """,
+        ("Work in progress", "Ready to Serve"),
+    )[0][0]
+    paid_orders_count = frappe.db.count("Table Order", filters={"status": "Completed"})
+    canceled_orders_count = frappe.db.count(
+        "Table Order", filters={"status": "Canceled"}
+    )
+    unpaid_orders_count = frappe.db.sql(
+        """
             SELECT COUNT(*)
             FROM `tabTable Order`
             WHERE status IN (%s, %s, %s)
-        """, ("Work in progress", "Ready to Serve", "Order Placed"))[0][0]
+        """,
+        ("Work in progress", "Ready to Serve", "Order Placed"),
+    )[0][0]
     top_monthly_items = get_top_items_by_sales_period(period="monthly", item_count=1)[0]
     top_weekly_items = get_top_items_by_sales_period(period="weekly", item_count=1)[0]
     top_yearly_items = get_top_items_by_sales_period(period="yearly", item_count=1)[0]
-    top_monthly_item_groups = get_top_item_groups_by_sales_period(period="monthly", group_count=1)[0]
-    top_weekly_item_groups = get_top_item_groups_by_sales_period(period="weekly", group_count=1)[0]
+    top_monthly_item_groups = get_top_item_groups_by_sales_period(
+        period="monthly", group_count=1
+    )[0]
+    top_weekly_item_groups = get_top_item_groups_by_sales_period(
+        period="weekly", group_count=1
+    )[0]
 
-    top_yearly_item_groups = get_top_item_groups_by_sales_period(period="yearly", group_count=1)[0]
+    top_yearly_item_groups = get_top_item_groups_by_sales_period(
+        period="yearly", group_count=1
+    )[0]
 
     return {
         "chef_orders_count": chef_orders_count,
@@ -834,6 +965,3 @@ def dashboard_data():
         "top_weekly_category": top_weekly_item_groups.get("item_group"),
         "top_yearly_category": top_yearly_item_groups.get("item_group"),
     }
-    
-
-
