@@ -21,12 +21,16 @@
   "column_break_j2kfz",
   "company",
   "print_format_for_order",
+  "variants_view",
   "discount_permission_section",
   "discount_allocation",
   "coupon_code_list_tab",
   "code_list",
   "website_tab",
   "website_logo",
+  "column_break_sihii",
+  "variants_view_website",
+  "section_break_qrwmt",
   "banner_image_list"
  ],
  "fields": [
@@ -140,13 +144,33 @@
    "fieldtype": "Table",
    "label": "Banner Image List",
    "options": "Attachment"
+  },
+  {
+   "fieldname": "variants_view",
+   "fieldtype": "Select",
+   "label": "Variants View",
+   "options": "In Modal\nIndividual Item"
+  },
+  {
+   "fieldname": "column_break_sihii",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "variants_view_website",
+   "fieldtype": "Select",
+   "label": "Variants View",
+   "options": "In Modal\nIndividual Item"
+  },
+  {
+   "fieldname": "section_break_qrwmt",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2025-12-20 12:40:00.954556",
+ "modified": "2025-12-22 14:28:33.733859",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",
