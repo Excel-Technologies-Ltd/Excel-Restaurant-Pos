@@ -51,14 +51,12 @@
   {
    "fieldname": "position",
    "fieldtype": "JSON",
-   "label": "Position",
-   "reqd": 1
+   "label": "Position"
   },
   {
    "fieldname": "breadth",
    "fieldtype": "Data",
-   "label": "Breadth",
-   "reqd": 1
+   "label": "Breadth"
   },
   {
    "fieldname": "restaurant_floor",
@@ -91,12 +89,13 @@
   {
    "fieldname": "table_no",
    "fieldtype": "Int",
-   "label": "Table No"
+   "label": "Table No",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-21 13:45:20.358495",
+ "modified": "2025-12-24 12:29:54.732877",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",
