@@ -1,3 +1,14 @@
+from excel_restaurant_pos.routes import (
+    territory_api_routes,
+    address_api_routes,
+    feedback_api_routes,
+    settings_api_routes,
+    item_group_api_routes,
+    menu_api_routes,
+    item_api_routes,
+)
+
+# app information
 app_name = "excel_restaurant_pos"
 app_title = "Excel Restaurant Pos"
 app_publisher = "Sohanur Rahman"
@@ -5,28 +16,34 @@ app_description = "Restaurant Order and Billing Management System"
 app_email = "sohan.dev@excelbd.com"
 app_license = "MIT"
 
+
 # Includes in <head>
 # ------------------
 
 # fixtures = [ "Custom Field", "Property Setter", "Role" ]
 
 fixtures = [
-    {"dt": "Role", "filters": [
-        [
-            "name", "in", [
-                "Restaurant Waiter",
-                "Restaurant Manager",
-                "Restaurant Chef",
-                "Restaurant Cashier",
-                "Restro Kitchen Staff",
-                "ArcPOS Manager",
-                "Bartender",
-                "Delivery Staff"
+    {
+        "dt": "Role",
+        "filters": [
+            [
+                "name",
+                "in",
+                [
+                    "Restaurant Waiter",
+                    "Restaurant Manager",
+                    "Restaurant Chef",
+                    "Restaurant Cashier",
+                    "Restro Kitchen Staff",
+                    "ArcPOS Manager",
+                    "Bartender",
+                    "Delivery Staff",
+                ],
             ]
-        ]
-    ]},
-    {"dt": "Custom Field" },
-    {"dt": "Property Setter" }
+        ],
+    },
+    {"dt": "Custom Field"},
+    {"dt": "Property Setter"},
 ]
 
 # Required Apps with version constraints
@@ -133,40 +150,35 @@ fixtures = [
 # Override standard doctype classes
 
 
-override_doctype_class = {
-"ToDo": "excel_restaurant_pos.overrides.todo.ToDo"
-}
+override_doctype_class = {"ToDo": "excel_restaurant_pos.overrides.todo.ToDo"}
 
 # Document Events
 # ---------------
 # Hook on document methods and events
 
 doc_events = {
-	"Item": {
-		# "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-		"on_update": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-	},
+    "Item": {
+        # "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
+        "on_update": "excel_restaurant_pos.doc_event.item.create_add_on_item",
+    },
     "Sales Taxes and Charges Template": {
-		# "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-		"on_update": "excel_restaurant_pos.doc_event.tax_and_charges.on_doctype_update",
-	},
+        # "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
+        "on_update": "excel_restaurant_pos.doc_event.tax_and_charges.on_doctype_update",
+    },
     "Table Order": {
         # "on_update": "excel_restaurant_pos.doc_event.pos_invoice.create_pos_invoice",
         "on_update": "excel_restaurant_pos.doc_event.sales_invoice.create_sales_invoice"
     },
     "Sales Invoice": {
         "on_submit": "excel_restaurant_pos.doc_event.sales_invoice.submit_sales_invoice"
-    }
-
+    },
 }
 
 # Scheduled Tasks
 # ---------------
 
 scheduler_events = {
-	"daily": [
-		"excel_restaurant_pos.utils.jwt_auth.cleanup_expired_blacklist"
-	]
+    "daily": ["excel_restaurant_pos.utils.jwt_auth.cleanup_expired_blacklist"]
 }
 
 # Testing
@@ -181,8 +193,24 @@ scheduler_events = {
 # 	"frappe.desk.doctype.event.event.get_events": "excel_restaurant_pos.event.get_events"
 # }
 
+
 override_whitelisted_methods = {
-    "frappe.core.doctype.user.user.sign_up": "excel_restaurant_pos.overrides.user.sign_up"
+    # territory api routes
+    **territory_api_routes,
+    # address api routes
+    **address_api_routes,
+    # feedback api routes
+    **feedback_api_routes,
+    # settings api routes
+    **settings_api_routes,
+    # item group api routes
+    **item_group_api_routes,
+    # menu api routes
+    **menu_api_routes,
+    # item api routes
+    **item_api_routes,
+    # core method override
+    "frappe.core.doctype.user.user.sign_up": "excel_restaurant_pos.overrides.user.sign_up",
 }
 #
 # each overriding function accepts a `data` argument;
@@ -238,8 +266,8 @@ override_whitelisted_methods = {
 # Authentication and authorization
 # --------------------------------
 
-auth_hooks = [
-	"excel_restaurant_pos.auth.validate"
-]
+auth_hooks = ["excel_restaurant_pos.auth.validate"]
 
-website_route_rules = [{'from_route': '/restaurant/<path:app_path>', 'to_route': 'restaurant'},]
+website_route_rules = [
+    {"from_route": "/restaurant/<path:app_path>", "to_route": "restaurant"},
+]

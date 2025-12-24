@@ -1,8 +1,5 @@
 import frappe
 
-@frappe.whitelist(allow_guest=True)
-def test():
-    return "From Item Group API"
 
 @frappe.whitelist(allow_guest=True)
 def get_item_group_list():
@@ -13,14 +10,14 @@ def get_item_group_list():
 
     # Get all item groups (may contain duplicates)
     item_groups = frappe.get_all("Item", filters=item_filters, pluck="item_group")
-    
+
     # item groups
     if frappe.form_dict.get("cmd"):
         frappe.form_dict.pop("cmd")
 
     # update filters
-    filters = frappe.form_dict.get("filters")   
-    default_filters =[["name", "in", item_groups]]
+    filters = frappe.form_dict.get("filters")
+    default_filters = [["name", "in", item_groups]]
 
     # Convert filters to list format if needed
     if not filters:
@@ -28,7 +25,7 @@ def get_item_group_list():
     else:
         filters = frappe.parse_json(filters)
         filters.extend(default_filters)
-    
+
     # Update form_dict with modified filters
     frappe.form_dict["filters"] = filters
 

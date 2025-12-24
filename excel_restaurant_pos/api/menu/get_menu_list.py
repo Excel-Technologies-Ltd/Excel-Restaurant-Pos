@@ -1,6 +1,6 @@
 import frappe
-from frappe.utils import today
 from datetime import datetime
+
 
 @frappe.whitelist(allow_guest=True)
 def get_menu_list():
@@ -29,7 +29,7 @@ def get_menu_list():
 
     # prepare filters
     filters = frappe.form_dict.get("filters")
-    default_filters = [["parent", "in", menu_list]] 
+    default_filters = [["parent", "in", menu_list]]
 
     if not filters:
         filters = default_filters
@@ -37,13 +37,25 @@ def get_menu_list():
         filters = frappe.parse_json(filters)
         filters.extend(default_filters)
 
-    filters.append(["days", "in",  [day_name,"Everyday"] ])
+    filters.append(["days", "in", [day_name, "Everyday"]])
     filters.append(["time", "<=", current_time])
     filters.append(["to_time", ">=", current_time])
     frappe.form_dict["filters"] = filters
 
     # prepare fields
-    frappe.form_dict.setdefault("fields", ["name","outlet_name", "parent", "days", "time", "to_time","publish_pos","publish_website"])
+    frappe.form_dict.setdefault(
+        "fields",
+        [
+            "name",
+            "outlet_name",
+            "parent",
+            "days",
+            "time",
+            "to_time",
+            "publish_pos",
+            "publish_website",
+        ],
+    )
 
     # prepare items
     items: dict[str, list[dict]] = {}
@@ -57,13 +69,12 @@ def get_menu_list():
             items[item.parent] = []
         items[item.parent].append(item)
 
-
     # prepare menu filters and fields
     menu_filters = [
-        ["name", "in", items.keys()], 
-        ["enabled","=",1], 
-        ["start_date", "<=", today_date], 
-        ["expires_on", ">=", today_date]
+        ["name", "in", items.keys()],
+        ["enabled", "=", 1],
+        ["start_date", "<=", today_date],
+        ["expires_on", ">=", today_date],
     ]
     menu_fields = ["name", "menu_name", "image", "start_date", "expires_on"]
     menus = frappe.get_all("Menus", filters=menu_filters, fields=menu_fields)
@@ -71,5 +82,5 @@ def get_menu_list():
     # prepare menus with items
     for menu in menus:
         menu.items = items[menu.name]
-    
+
     return menus
