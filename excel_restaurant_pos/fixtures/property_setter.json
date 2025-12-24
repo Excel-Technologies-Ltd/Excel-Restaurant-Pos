@@ -2030,5 +2030,53 @@
   "property_type": "Text",
   "row_name": null,
   "value": "Individual"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Sales Invoice",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "apply_discount_on",
+  "is_system_generated": 0,
+  "modified": "2025-12-24 11:52:46.417051",
+  "module": null,
+  "name": "Sales Invoice-apply_discount_on-default",
+  "property": "default",
+  "property_type": "Text",
+  "row_name": null,
+  "value": "Net Total"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Sales Invoice",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "update_stock",
+  "is_system_generated": 0,
+  "modified": "2025-12-24 12:23:19.997597",
+  "module": null,
+  "name": "Sales Invoice-update_stock-default",
+  "property": "default",
+  "property_type": "Text",
+  "row_name": null,
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Restaurant Table",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "table_no",
+  "is_system_generated": 0,
+  "modified": "2025-12-24 12:29:25.848319",
+  "module": null,
+  "name": "Restaurant Table-table_no-reqd",
+  "property": "reqd",
+  "property_type": "Check",
+  "row_name": null,
+  "value": "1"
  }
 ]

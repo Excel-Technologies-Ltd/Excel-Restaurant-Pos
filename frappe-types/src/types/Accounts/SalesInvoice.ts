@@ -1,5 +1,4 @@
 import { SalesInvoiceItem } from './SalesInvoiceItem'
-import { bundleitemprint } from '../ExcelERPNext/bundleitemprint'
 import { SalesTaxesandCharges } from './SalesTaxesandCharges'
 import { PricingRuleDetail } from './PricingRuleDetail'
 import { PackedItem } from '../Stock/PackedItem'
@@ -55,13 +54,13 @@ export interface SalesInvoice{
 	/**	Remaining Credit : Float	*/
 	remaining_credit?: number
 	/**	Order Type : Select	*/
-	custom_order_type?: "" | "Pay later" | "Pay first"
+	custom_order_type?: "" | "Pay later" | "Pay first" | "Cash on Delivery"
 	/**	Order From : Data	*/
 	custom_order_from?: string
 	/**	Order Status : Select	*/
 	custom_order_status?: "Open" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Ready to serve" | "Served" | "Delivered" | "Closed"
 	/**	Service Type : Select	*/
-	custom_service_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup"
+	custom_service_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup" | "Partial"
 	/**	Include Payment (POS) : Check	*/
 	is_pos?: 0 | 1
 	/**	POS Profile : Link - POS Profile	*/
@@ -144,8 +143,6 @@ export interface SalesInvoice{
 	set_target_warehouse?: string
 	/**	Items : Table - Sales Invoice Item	*/
 	items: SalesInvoiceItem[]
-	/**	Bundle Items : Table - bundle item print	*/
-	bundle_items?: bundleitemprint[]
 	/**	Total Quantity : Float	*/
 	total_qty?: number
 	/**	Total Net Weight : Float	*/

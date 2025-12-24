@@ -30,6 +30,14 @@ export interface SalesInvoiceItem{
 	image?: string
 	/**	Image View : Image	*/
 	image_view?: string
+	/**	Parent Item : Link - Item	*/
+	custom_parent_item?: string
+	/**	Serve Type : Select	*/
+	custom_serve_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup"
+	/**	Order Item Status : Select	*/
+	custom_order_item_status?: "" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Ready to Serve" | "Served" | "Delivered"
+	/**	Special Note : Small Text	*/
+	custom_special_note?: string
 	/**	Quantity : Float	*/
 	qty?: number
 	/**	Stock UOM : Link - UOM	*/
@@ -148,10 +156,34 @@ export interface SalesInvoiceItem{
 	purchase_order?: string
 	/**	Purchase Order Item : Data	*/
 	purchase_order_item?: string
+	/**	Excel Product Team : Link - Excel Product Team	*/
+	excel_product_team?: string
+	/**	Excel Short Term Loan : Link - Excel Short Term Loan	*/
+	excel_short_term_loan?: string
+	/**	Excel Short Term Investments : Link - Excel Short Term Investments	*/
+	excel_short_term_investments?: string
+	/**	Excel Other Loans and Advances : Link - Excel Other Loans and Advances	*/
+	excel_other_loans_and_advances?: string
 	/**	Cost Center : Link - Cost Center	*/
 	cost_center: string
+	/**	Excel LC No : Link - Excel LC No	*/
+	excel_lc_no?: string
+	/**	Excel Dream Project : Link - Excel Dream Project	*/
+	excel_dream_project?: string
+	/**	Excel Long Term Loans : Link - Excel Long Term Loans	*/
+	excel_long_term_loans?: string
+	/**	Excel Office Locations : Link - Excel Office Locations	*/
+	excel_office_locations?: string
+	/**	Excel Securities Deposits and Prepayment : Link - Excel Securities Deposits and Prepayment	*/
+	excel_securities_deposits_and_prepayment?: string
 	/**	Project : Link - Project	*/
 	project?: string
 	/**	Page Break : Check	*/
 	page_break?: 0 | 1
+	/**	MRP Sales Rate : Data	*/
+	mrp_sales_rate?: string
+	/**	MRP Sales Amount : Data	*/
+	mrp_sales_amount?: string
+	/**	Excel Serials : Long Text	*/
+	excel_serials?: string
 }
