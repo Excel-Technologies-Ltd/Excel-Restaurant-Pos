@@ -151,20 +151,42 @@ def verify_otp(verification_key, otp):
 
         # Set default role from Portal Settings
         role_name = frappe.db.get_single_value("ArcPOS System Settings", "user_default_role") or "Customer"
-        user.add_roles(role_name)
+        user.add_roles(role_name, 'Sales User')
+        
+
+        selling_settings = frappe.get_single("Selling Settings")
+
 
         # Check is customer exist or not, if not create a customer with the provided user information
         if not frappe.db.exists("Customer", {"email_id": user.email}):
             customer = frappe.get_doc({
                 "doctype": "Customer",
-                "customer_name": user.email,
+                "customer_name": user.full_name,
                 "email_id": user.email,
                 "customer_type": "Individual",
-                "customer_group": frappe.db.get_value("Selling Settings", None, "default_customer_group") or "All Customer Groups",
-                "territory": frappe.db.get_value("Selling Settings", None, "default_territory") or "All Territories"
+                "customer_group": selling_settings.customer_group or "All Customer Groups",
+                "territory": selling_settings.territory or "All Territories"
             })
             customer.flags.ignore_permissions = True
-            customer.insert()
+            details = customer.insert()
+            # set User Permission to restrict user to only see their own customer record
+            frappe.get_doc({
+                "doctype": "User Permission",
+                "user": user.name,
+                "allow": "Customer",
+                "for_value": details.name,
+                "is_default": 1,
+                "apply_to_all_doctypes": 1
+            }).insert(ignore_permissions=True)
+
+            frappe.get_doc({
+                "doctype": "User Permission",
+                "user": user.name,
+                "allow": "User",
+                "for_value": user.email,
+                "is_default": 1,
+                "apply_to_all_doctypes": 1
+            }).insert(ignore_permissions=True)
 
         # Clear cache
         frappe.cache().delete_value(cache_key)
@@ -182,6 +204,7 @@ def verify_otp(verification_key, otp):
     except Exception as e:
         frappe.log_error(f"User creation failed: {str(e)}", "OTP Verification Error")
         print(e)
+        print("Error creating user", str(e))
         return {
             "success": False,
             "message": _("Failed to create account. Please try again or contact support.")

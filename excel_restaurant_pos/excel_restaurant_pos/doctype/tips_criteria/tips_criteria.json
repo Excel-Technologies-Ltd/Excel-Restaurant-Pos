@@ -8,9 +8,13 @@
  "engine": "InnoDB",
  "field_order": [
   "in_",
+  "column_break_tj3jj",
+  "in_amount",
   "column_break_rrni7",
   "disabled",
   "section_break_ljiud",
+  "charge_type",
+  "column_break_vlrvm",
   "account_head"
  ],
  "fields": [
@@ -18,8 +22,7 @@
    "fieldname": "in_",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "In %",
-   "reqd": 1
+   "label": "In %"
   },
   {
    "fieldname": "column_break_rrni7",
@@ -42,11 +45,31 @@
    "label": "Account Head",
    "options": "Account",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_tj3jj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "in_amount",
+   "fieldtype": "Currency",
+   "label": "In Amount"
+  },
+  {
+   "fieldname": "charge_type",
+   "fieldtype": "Select",
+   "label": "Charge Type",
+   "options": "\nActual\nOn Net Total\nOn Previous Row Amount\nOn Previous Row Total\nOn Item Quantity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_vlrvm",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-18 19:19:04.805976",
+ "modified": "2025-12-24 11:40:45.225412",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "TIPS Criteria",
