@@ -21,7 +21,8 @@ fixtures = [
                 "Restro Kitchen Staff",
                 "ArcPOS Manager",
                 "Bartender",
-                "Delivery Staff"
+                "Delivery Staff",
+                "ArcPOS Deny"
             ]
         ]
     ]},
@@ -153,7 +154,11 @@ doc_events = {
     "Table Order": {
         # "on_update": "excel_restaurant_pos.doc_event.pos_invoice.create_pos_invoice",
         "on_update": "excel_restaurant_pos.doc_event.sales_invoice.create_sales_invoice"
+    },
+    "Sales Invoice": {
+        "on_submit": "excel_restaurant_pos.doc_event.sales_invoice.submit_sales_invoice"
     }
+
 }
 
 # Scheduled Tasks

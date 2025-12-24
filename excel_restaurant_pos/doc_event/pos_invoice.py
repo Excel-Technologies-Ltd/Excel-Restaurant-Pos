@@ -1,6 +1,8 @@
 import frappe
 from frappe.utils import flt
 from excel_restaurant_pos.api.bom import run_bom_process
+
+
 @frappe.whitelist(allow_guest=True)
 def create_pos_invoice(data, method=None):
     frappe.msgprint('create_pos_invoice')
