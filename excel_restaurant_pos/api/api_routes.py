@@ -7,6 +7,7 @@ territory_api_routes = {
 address_api_routes = {
     "api.addresses.test": "excel_restaurant_pos.api.address.test",
     "api.addresses.customer": "excel_restaurant_pos.api.address.get_customer_address",
+    "api.addresses.add": "excel_restaurant_pos.api.address.add_customer_address",
 }
 
 feedback_api_routes = {
@@ -35,4 +36,14 @@ item_api_routes = {
     "api.items.test": "excel_restaurant_pos.api.item.test",
     "api.items.list": "excel_restaurant_pos.api.item.get_item_list",
     "api.items.details": "excel_restaurant_pos.api.item.get_item_details",
+}
+
+api_routes = {
+    **territory_api_routes,
+    **address_api_routes,
+    **feedback_api_routes,
+    **settings_api_routes,
+    **item_group_api_routes,
+    **menu_api_routes,
+    **item_api_routes,
 }

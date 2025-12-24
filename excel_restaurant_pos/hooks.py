@@ -1,12 +1,4 @@
-from excel_restaurant_pos.routes import (
-    territory_api_routes,
-    address_api_routes,
-    feedback_api_routes,
-    settings_api_routes,
-    item_group_api_routes,
-    menu_api_routes,
-    item_api_routes,
-)
+from excel_restaurant_pos.api import api_routes
 
 # app information
 app_name = "excel_restaurant_pos"
@@ -196,19 +188,7 @@ scheduler_events = {
 
 override_whitelisted_methods = {
     # territory api routes
-    **territory_api_routes,
-    # address api routes
-    **address_api_routes,
-    # feedback api routes
-    **feedback_api_routes,
-    # settings api routes
-    **settings_api_routes,
-    # item group api routes
-    **item_group_api_routes,
-    # menu api routes
-    **menu_api_routes,
-    # item api routes
-    **item_api_routes,
+    **api_routes,
     # core method override
     "frappe.core.doctype.user.user.sign_up": "excel_restaurant_pos.overrides.user.sign_up",
 }
