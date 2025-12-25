@@ -7,18 +7,22 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "id",
   "company",
   "restaurant_floor",
+  "table_no",
   "seat",
+  "column_break_ad20c",
+  "is_temporary",
+  "status",
+  "section_break_p6yeo",
   "type",
   "bg_color",
   "position",
   "length",
   "breadth",
   "file_path",
-  "id",
-  "rotation",
-  "table_no"
+  "rotation"
  ],
  "fields": [
   {
@@ -33,15 +37,13 @@
    "fieldname": "seat",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Seat",
-   "mandatory_depends_on": "eval:doc.type !='Road'"
+   "label": "Seat"
   },
   {
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "\nRectangle\nCircle\nRoad",
-   "reqd": 1
+   "options": "\nRectangle\nCircle\nRoad"
   },
   {
    "fieldname": "bg_color",
@@ -68,12 +70,13 @@
   {
    "fieldname": "file_path",
    "fieldtype": "Data",
-   "label": "File Path"
+   "label": "File Path",
+   "read_only": 1
   },
   {
    "fieldname": "id",
    "fieldtype": "Data",
-   "label": "Id",
+   "label": "Display Name",
    "reqd": 1
   },
   {
@@ -91,11 +94,32 @@
    "fieldtype": "Int",
    "label": "Table No",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ad20c",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_temporary",
+   "fieldtype": "Check",
+   "label": "Is Temporary?"
+  },
+  {
+   "default": "Available",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Available\nOccupied\nUnavailable"
+  },
+  {
+   "fieldname": "section_break_p6yeo",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-24 12:29:54.732877",
+ "modified": "2025-12-25 12:19:50.314427",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",
