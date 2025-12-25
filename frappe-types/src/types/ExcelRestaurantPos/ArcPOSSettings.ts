@@ -13,8 +13,10 @@ export interface ArcPOSSettings{
 	parentfield?: string
 	parenttype?: string
 	idx?: number
-	/**	Title : Data	*/
+	/**	Title (Line 1) : Data	*/
 	title?: string
+	/**	Title (Line 2) : Data	*/
+	title_line_2?: string
 	/**	Short Description : Small Text	*/
 	short_description?: string
 	/**	Logo : Attach Image	*/
@@ -29,6 +31,8 @@ export interface ArcPOSSettings{
 	tax_rate?: string
 	/**	Charge Type : Data	*/
 	charge_type?: string
+	/**	Heading Title : Data	*/
+	heading_title?: string
 	/**	Default Company : Link - Company	*/
 	company?: string
 	/**	Default Print Format : Link - Print Format	*/
@@ -41,8 +45,16 @@ export interface ArcPOSSettings{
 	code_list?: RestaurantCoupon[]
 	/**	Website Logo : Attach Image	*/
 	website_logo?: string
+	/**	Allow Delivery Charge : Check	*/
+	allow_delivery_charge?: 0 | 1
+	/**	DCA : Currency	*/
+	dca?: number
 	/**	Variants View : Select	*/
 	variants_view_website?: "In Modal" | "Individual Item"
+	/**	Allow Service Charge : Check	*/
+	allow_service_charge?: 0 | 1
+	/**	SFA : Currency	*/
+	sfa?: number
 	/**	Banner Image List : Table - Attachment	*/
 	banner_image_list?: Attachment[]
 }
