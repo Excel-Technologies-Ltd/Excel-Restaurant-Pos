@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:Table-{restaurant_floor}-{###}",
+ "autoname": "field:id",
  "creation": "2024-11-06 01:07:50.381416",
  "default_view": "List",
  "doctype": "DocType",
@@ -15,6 +15,7 @@
   "column_break_ad20c",
   "is_temporary",
   "status",
+  "website_url",
   "section_break_p6yeo",
   "type",
   "bg_color",
@@ -77,7 +78,8 @@
    "fieldname": "id",
    "fieldtype": "Data",
    "label": "Display Name",
-   "reqd": 1
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "length",
@@ -115,15 +117,20 @@
   {
    "fieldname": "section_break_p6yeo",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "website_url",
+   "fieldtype": "Data",
+   "label": "Website URL"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-25 12:19:50.314427",
+ "modified": "2025-12-25 15:03:15.697561",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",
- "naming_rule": "Expression",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
