@@ -12,6 +12,7 @@
   "in_amount",
   "column_break_rrni7",
   "disabled",
+  "for_website",
   "section_break_ljiud",
   "charge_type",
   "column_break_vlrvm",
@@ -22,7 +23,7 @@
    "fieldname": "in_",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "In %"
+   "label": "In Percentage"
   },
   {
    "fieldname": "column_break_rrni7",
@@ -65,11 +66,17 @@
   {
    "fieldname": "column_break_vlrvm",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "for_website",
+   "fieldtype": "Check",
+   "label": "For Website?"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-24 11:40:45.225412",
+ "modified": "2025-12-25 15:57:05.603375",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "TIPS Criteria",

@@ -26,8 +26,8 @@ def get_settings():
         "image": customer.image,
     }
 
+    settings_dic = settings.as_dict()
+    settings_dic["customer"] = customer_info
+
     # return result
-    return {
-        "settings": settings.as_dict(),
-        "customer": customer_info,
-    }
+    return settings_dic

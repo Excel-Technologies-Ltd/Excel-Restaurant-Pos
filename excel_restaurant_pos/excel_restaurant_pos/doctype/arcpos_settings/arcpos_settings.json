@@ -37,6 +37,7 @@
   "variants_view_website",
   "allow_service_charge",
   "sfa",
+  "comments",
   "section_break_qrwmt",
   "banner_image_list"
  ],
@@ -83,7 +84,7 @@
   {
    "fieldname": "taxes_and_charges_template",
    "fieldtype": "Link",
-   "label": "Taxes and Charges Template",
+   "label": "Default Taxes and Charges Template",
    "options": "Sales Taxes and Charges Template"
   },
   {
@@ -173,10 +174,11 @@
    "fieldtype": "Section Break"
   },
   {
+   "default": "Both",
    "fieldname": "default_order_type",
    "fieldtype": "Select",
    "label": "Default Order Type",
-   "options": "Pay later\nPay first\nBoth"
+   "options": "Pay Later\nPay First\nBoth"
   },
   {
    "default": "0",
@@ -213,13 +215,19 @@
    "fieldname": "heading_title",
    "fieldtype": "Data",
    "label": "Heading Title"
+  },
+  {
+   "depends_on": "eval:doc.allow_service_charge",
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Policy (If Any)"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2025-12-23 17:23:46.979814",
+ "modified": "2025-12-25 15:57:45.613982",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",
