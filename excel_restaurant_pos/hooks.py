@@ -1,4 +1,4 @@
-from excel_restaurant_pos.api import api_routes
+from .api import api_routes
 
 # app information
 app_name = "excel_restaurant_pos"
