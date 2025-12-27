@@ -185,6 +185,8 @@ scheduler_events = {
 # 	"frappe.desk.doctype.event.event.get_events": "excel_restaurant_pos.event.get_events"
 # }
 
+override_doctype_class = {"Item": "excel_restaurant_pos.overrides.item.OverrideItem"}
+
 
 override_whitelisted_methods = {
     # territory api routes
