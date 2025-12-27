@@ -8,14 +8,15 @@
  "engine": "InnoDB",
  "field_order": [
   "id",
-  "company",
+  "criteria",
   "restaurant_floor",
   "table_no",
   "seat",
   "column_break_ad20c",
-  "is_temporary",
+  "company",
   "status",
   "website_url",
+  "is_temporary",
   "section_break_p6yeo",
   "type",
   "bg_color",
@@ -92,10 +93,11 @@
    "label": "Rotation"
   },
   {
+   "depends_on": "eval:doc.criteria=='Table'",
    "fieldname": "table_no",
    "fieldtype": "Int",
    "label": "Table No",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.criteria=='Table'"
   },
   {
    "fieldname": "column_break_ad20c",
@@ -122,11 +124,18 @@
    "fieldname": "website_url",
    "fieldtype": "Data",
    "label": "Website URL"
+  },
+  {
+   "fieldname": "criteria",
+   "fieldtype": "Select",
+   "label": "Criteria",
+   "options": "\nTable\nDelivery\nPickup",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-25 15:03:15.697561",
+ "modified": "2025-12-25 18:55:34.215116",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",

@@ -7,24 +7,19 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "in_",
-  "column_break_tj3jj",
-  "in_amount",
-  "column_break_rrni7",
-  "disabled",
+  "for_pos",
   "for_website",
+  "disabled",
+  "column_break_tj3jj",
+  "in_percentage",
+  "column_break_rrni7",
+  "in_amount",
   "section_break_ljiud",
   "charge_type",
   "column_break_vlrvm",
   "account_head"
  ],
  "fields": [
-  {
-   "fieldname": "in_",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "In Percentage"
-  },
   {
    "fieldname": "column_break_rrni7",
    "fieldtype": "Column Break"
@@ -52,6 +47,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.for_website==1",
    "fieldname": "in_amount",
    "fieldtype": "Currency",
    "label": "In Amount"
@@ -69,14 +65,28 @@
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.for_pos==0",
    "fieldname": "for_website",
    "fieldtype": "Check",
    "label": "For Website?"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.for_website==0",
+   "fieldname": "for_pos",
+   "fieldtype": "Check",
+   "label": "For POS?"
+  },
+  {
+   "fieldname": "in_percentage",
+   "fieldtype": "Float",
+   "label": "In Percentage",
+   "mandatory_depends_on": "eval:doc.for_pos==1"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-25 15:57:05.603375",
+ "modified": "2025-12-27 10:19:14.583605",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "TIPS Criteria",
@@ -95,7 +105,6 @@
    "write": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
