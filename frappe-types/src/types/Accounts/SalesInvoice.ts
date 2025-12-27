@@ -58,7 +58,7 @@ export interface SalesInvoice{
 	/**	Order From : Data	*/
 	custom_order_from?: string
 	/**	Order Status : Select	*/
-	custom_order_status?: "Open" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Ready to serve" | "Served" | "Delivered" | "Closed"
+	custom_order_status?: "Open" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Handover to Delivery" | "On the Way" | "Ready to serve" | "Served" | "Delivered" | "Picked Up" | "Closed"
 	/**	Service Type : Select	*/
 	custom_service_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup" | "Partial"
 	/**	Include Payment (POS) : Check	*/
