@@ -50,11 +50,24 @@ def get_settings():
 
     # get default currency info
     if default_currency:
-        currency = frappe.get_doc("Currency", default_currency)
+        currency = frappe.get_doc("Currency", default_currency).as_dict()
+        note_variants = currency.get("custom_notes_variants", [])
+
+        note_variants_list = []
+        for note_variant in note_variants:
+            note_variant_dict = {
+                "value": note_variant.get("value", ""),
+                "type": note_variant.get("type", ""),
+                "symbol": note_variant.get("symbol", ""),
+                "enabled": note_variant.get("enabled", 0),
+            }
+            note_variants_list.append(note_variant_dict)
         settings["currency"] = {
-            "name": currency.name,
-            "symbol": currency.symbol,
-            "fraction_units": currency.fraction_units,
+            "currency_name": currency.get("currency_name", ""),
+            "fraction": currency.get("fraction", ""),
+            "fraction_units": currency.get("fraction_units", 0),
+            "symbol": currency.get("symbol", ""),
+            "note_variants": note_variants_list,
         }
 
     # return result
