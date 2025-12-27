@@ -151,18 +151,18 @@ override_doctype_class = {"ToDo": "excel_restaurant_pos.overrides.todo.ToDo"}
 doc_events = {
     "Item": {
         # "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-        "on_update": "excel_restaurant_pos.doc_event.item.create_add_on_item",
+        "on_update": "excel_restaurant_pos.doc_event.create_add_on_item",
     },
     "Sales Taxes and Charges Template": {
         # "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-        "on_update": "excel_restaurant_pos.doc_event.tax_and_charges.on_doctype_update",
+        "on_update": "excel_restaurant_pos.doc_event.on_doctype_update",
     },
     "Table Order": {
         # "on_update": "excel_restaurant_pos.doc_event.pos_invoice.create_pos_invoice",
-        "on_update": "excel_restaurant_pos.doc_event.sales_invoice.create_sales_invoice"
+        "on_update": "excel_restaurant_pos.doc_event.create_sales_invoice"
     },
     "Sales Invoice": {
-        "on_submit": "excel_restaurant_pos.doc_event.sales_invoice.submit_sales_invoice"
+        "on_submit": "excel_restaurant_pos.doc_event.submit_sales_invoice"
     },
 }
 
