@@ -1,7 +1,12 @@
 from erpnext.stock.doctype.item.item import Item
-import frappe
 
 
 class OverrideItem(Item):
     def validate(self):
-        frappe.msgprint("Hello")
+
+        print(self.get("available_menus", []))
+
+        combined = ""
+        for item in self.get("available_menus", []):
+            combined += item.item_menus + ", "
+        self.combined_menus = combined
