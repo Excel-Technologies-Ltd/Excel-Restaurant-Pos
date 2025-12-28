@@ -6,4 +6,4 @@ from frappe.model.document import Document
 
 
 class ItemMenus(Document):
-	pass
+    pass
