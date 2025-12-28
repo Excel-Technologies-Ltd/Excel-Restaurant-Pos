@@ -1,33 +1,5 @@
 import frappe
-from frappe.utils import flt, nowdate
-
-
-def submit_sales_invoice(doc, method=None):
-    """
-    Submit Sales Invoice
-    tasks:
-        Create arcpos feedback doc
-        Increase item sales count
-    """
-    # need to generate doc for getting feedback
-    feedback_doc = frappe.new_doc("ArcPOS Feedback")
-    feedback_doc.sales_invoice_no = doc.name
-    feedback_doc.feedback_from = doc.custom_order_from
-
-    # Append child table rows
-    for item in doc.items:
-        feedback_doc.append(
-            "item_wise_feedback",
-            {"item_name": item.item_code, "rating": "", "feedback": ""},
-        )
-
-    feedback_doc.insert(ignore_permissions=True, ignore_mandatory=True)
-
-    # need to increase item sales count
-    for item in doc.items:
-        item_doc = frappe.get_doc("Item", item.item_code)
-        item_doc.custom_total_sold_qty += 1
-        item_doc.save(ignore_permissions=True)
+from frappe.utils import flt
 
 
 def create_sales_invoice(doc, method=None, create_payment=True):
@@ -170,27 +142,29 @@ def create_sales_invoice(doc, method=None, create_payment=True):
 
                 # Create payment entry if amount is valid
                 if payment_amount > 0:
-                    try:
-                        frappe.log_error(
-                            f"Creating: {mode_of_payment} = {payment_amount}",
-                            "Payment Debug 5",
-                        )
-                        payment_entry = create_payment_entry(
-                            invoice_doc=invoice_doc,
-                            mode_of_payment=mode_of_payment,
-                            amount=payment_amount,
-                            company=doc.company,
-                            reference_no=reference_no,
-                        )
-                        payment_entries.append(payment_entry.name)
-                        frappe.log_error(
-                            f"Created: {payment_entry.name}", "Payment Debug 6"
-                        )
-                    except Exception as pe_error:
-                        frappe.log_error(
-                            f"Failed {mode_of_payment}: {str(pe_error)}\n{frappe.get_traceback()}",
-                            "Payment Entry Error",
-                        )
+                    pass
+                    # try:
+                    #     frappe.log_error(
+                    #         f"Creating: {mode_of_payment} = {payment_amount}",
+                    #         "Payment Debug 5",
+                    #     )
+                    #     payment_entry = create_payment_entry(
+                    #         invoice_doc=invoice_doc,
+                    #         mode_of_payment=mode_of_payment,
+                    #         amount=payment_amount,
+                    #         company=doc.company,
+                    #         reference_no=reference_no,
+                    #     )
+                    #     payment_entries.append(payment_entry.name)
+                    #     frappe.log_error(
+                    #         f"Created: {payment_entry.name}", "Payment Debug 6"
+                    #     )
+                    # except Exception as pe_error:
+                    #     frappe.log_error(
+                    #         f"Failed {mode_of_payment}: {str(pe_error)}\n{frappe.get_traceback()}",
+                    #         "Payment Entry Error",
+                    #     )
+
                 else:
                     frappe.log_error(f"Skip {idx+1}: zero amount", "Payment Debug 7")
 
@@ -217,124 +191,3 @@ def create_sales_invoice(doc, method=None, create_payment=True):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Sales Invoice Error")
         frappe.throw(f"Failed to create Sales Invoice: {str(e)}")
-
-
-def create_payment_entry(invoice_doc, mode_of_payment, amount, company, reference_no):
-    """
-    Create a Payment Entry against Sales Invoice
-    """
-
-    try:
-
-        receivable_account = get_receivable_account(invoice_doc.customer, company)
-        if not receivable_account:
-            frappe.throw(
-                f"Receivable account not found for customer {invoice_doc.customer}"
-            )
-
-        payment_account = get_mode_of_payment_account(mode_of_payment, company)
-        if not payment_account:
-            frappe.throw(f"Payment account not found for {mode_of_payment}")
-
-        # Create Payment Entry
-        payment_entry = frappe.get_doc(
-            {
-                "doctype": "Payment Entry",
-                "payment_type": "Receive",
-                "posting_date": nowdate(),
-                "mode_of_payment": mode_of_payment,
-                "party_type": "Customer",
-                "party": invoice_doc.customer,
-                "company": company,
-                "target_exchange_rate": 1,
-                "paid_from": receivable_account,
-                "paid_to": payment_account,
-                "paid_amount": amount,
-                "received_amount": amount,
-                "reference_no": reference_no if reference_no else "",
-                "reference_date": nowdate(),
-                "references": [],
-            }
-        )
-        # Add reference to the Sales Invoice
-        payment_entry.append(
-            "references",
-            {
-                "reference_doctype": "Sales Invoice",
-                "reference_name": invoice_doc.name,
-                "allocated_amount": amount,
-            },
-        )
-
-        # Insert and submit the payment entry
-        payment_entry.insert(ignore_permissions=True)
-        payment_entry.submit()
-        frappe.db.commit()
-
-        return payment_entry
-
-    except Exception as e:
-        frappe.log_error(
-            f"Error: {str(e)}\n{frappe.get_traceback()}", "Payment Entry Error"
-        )
-        raise
-
-
-def get_mode_of_payment_account(mode_of_payment, company):
-    """
-    Get the default account for a mode of payment
-    """
-    try:
-        frappe.log_error(f"Mode: {mode_of_payment}, Co: {company}", "MOP Account 1")
-
-        mode_of_payment_doc = frappe.get_doc("Mode of Payment", mode_of_payment)
-        print(f"Mode of Payment Doc: {mode_of_payment_doc}")
-
-        # First try to find company-specific account
-        for account in mode_of_payment_doc.accounts:
-            if account.company == company:
-                print(f"Found: {account.default_account}")
-                return account.default_account
-
-        # If no company-specific account found, return the first one
-        if mode_of_payment_doc.accounts:
-            frappe.log_error(
-                f"First: {mode_of_payment_doc.accounts[0].default_account}",
-                "MOP Account 3",
-            )
-            return mode_of_payment_doc.accounts[0].default_account
-
-        # Fallback to a default cash account if no account is configured
-        frappe.log_error(f"Looking for default cash", "MOP Account 4")
-        cash_account = frappe.db.get_value(
-            "Account",
-            {"account_type": "Cash", "company": company, "is_group": 0},
-            "name",
-        )
-
-        frappe.log_error(f"Cash: {cash_account}", "MOP Account 5")
-        return cash_account
-
-    except Exception as e:
-        frappe.log_error(
-            f"Error: {str(e)}\n{frappe.get_traceback()}", "MOP Account Error"
-        )
-        # Return a default cash account as fallback
-        cash_account = frappe.db.get_value(
-            "Account",
-            {"account_type": "Cash", "company": company, "is_group": 0},
-            "name",
-        )
-        return cash_account
-
-
-def get_receivable_account(customer, company):
-    account = ""
-    customer_doc = frappe.get_doc("Customer", customer)
-    accounts = customer_doc.accounts
-    for account in accounts:
-        if account.company == company:
-            account = account.account
-    if not account:
-        account = frappe.get_value("Company", company, "default_receivable_account")
-    return account

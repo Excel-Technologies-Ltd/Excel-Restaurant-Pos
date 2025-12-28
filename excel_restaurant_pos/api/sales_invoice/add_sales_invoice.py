@@ -111,6 +111,19 @@ def add_sales_invoice():
                 },
             )
 
+    # Add payments to child table (for tracking/display only)
+    # Note: This doesn't create Payment Entry documents automatically
+    if data.get("payments"):
+        for payment in data.get("payments", []):
+            sales_invoice.append(
+                "payments",
+                {
+                    "mode_of_payment": payment.get("mode_of_payment"),
+                    "amount": flt(payment.get("amount", 0)),
+                },
+            )
+    sales_invoice.is_pos = 1
+
     # save the sales invoice
     sales_invoice.save(ignore_permissions=True)
 

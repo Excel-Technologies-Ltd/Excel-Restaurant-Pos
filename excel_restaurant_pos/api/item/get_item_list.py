@@ -18,7 +18,10 @@ def get_item_list():
     # set default value
     frappe.form_dict.setdefault("limit", 10)
     frappe.form_dict.setdefault("limit_page_length", 10)
-    frappe.form_dict.setdefault("order_by", "creation")
+
+    # Use creation desc with item_code as secondary sort for consistent ordering
+    if not frappe.form_dict.get("order_by"):
+        frappe.form_dict["order_by"] = "creation desc, item_code asc"
 
     # update filters
     filters = frappe.form_dict.get("filters")
