@@ -248,10 +248,4 @@ override_whitelisted_methods = {
 
 auth_hooks = ["excel_restaurant_pos.auth.validate"]
 
-<<<<<<< HEAD
 website_route_rules = [{'from_route': '/frappe-types/<path:app_path>', 'to_route': 'frappe-types'}, {'from_route': '/restaurant/<path:app_path>', 'to_route': 'restaurant'},]
-=======
-website_route_rules = [
-    {"from_route": "/restaurant/<path:app_path>", "to_route": "restaurant"},
-]
->>>>>>> 3ff0dc46c00d22c273d2e09cc2d69a1d17de47a8

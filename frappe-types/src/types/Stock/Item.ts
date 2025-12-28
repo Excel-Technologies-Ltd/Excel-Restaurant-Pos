@@ -2,6 +2,7 @@ import { DietaryTable } from '../ExcelRestaurantPos/DietaryTable'
 import { Nutritions } from '../ExcelRestaurantPos/Nutritions'
 import { AllergensTable } from '../ExcelRestaurantPos/AllergensTable'
 import { FoodItemList } from '../ExcelRestaurantPos/FoodItemList'
+import { AddonsItems } from '../ExcelRestaurantPos/Add-onsItems'
 import { ItemBarcode } from './ItemBarcode'
 import { ItemReorder } from './ItemReorder'
 import { UOMConversionDetail } from './UOMConversionDetail'
@@ -38,6 +39,12 @@ export interface Item{
 	stock_uom: string
 	/**	Has Excel Serials : Select - <b>If product is serialized, make sure to make it serialized on Portal.</b>	*/
 	has_excel_serials: "" | "Yes" | "No"
+	/**	Valuation Rate : Currency	*/
+	valuation_rate?: number
+	/**	Over Delivery/Receipt Allowance (%) : Float	*/
+	over_delivery_receipt_allowance?: number
+	/**	Over Billing Allowance (%) : Float	*/
+	over_billing_allowance?: number
 	/**	Disabled : Check	*/
 	disabled?: 0 | 1
 	/**	Allow Alternative Item : Check	*/
@@ -52,12 +59,12 @@ export interface Item{
 	custom_is_recipe?: 0 | 1
 	/**	Publish to Website : Check	*/
 	custom_is_website_item?: 0 | 1
+	/**	Is Featured Item? : Check	*/
+	custom_is_featured_item?: 0 | 1
 	/**	Include Item In Manufacturing : Check	*/
 	include_item_in_manufacturing?: 0 | 1
 	/**	Opening Stock : Float	*/
 	opening_stock?: number
-	/**	Valuation Rate : Currency	*/
-	valuation_rate?: number
 	/**	Standard Selling Rate : Currency	*/
 	standard_rate?: number
 	/**	Is Fixed Asset : Check	*/
@@ -70,10 +77,6 @@ export interface Item{
 	asset_category?: string
 	/**	Asset Naming Series : Select	*/
 	asset_naming_series?: string
-	/**	Over Delivery/Receipt Allowance (%) : Float	*/
-	over_delivery_receipt_allowance?: number
-	/**	Over Billing Allowance (%) : Float	*/
-	over_billing_allowance?: number
 	/**	Image : Attach Image	*/
 	image?: string
 	/**	Description : Text Editor	*/
@@ -90,6 +93,10 @@ export interface Item{
 	custom_food_allergens?: AllergensTable[]
 	/**	Add Ons Item List : Table - Food Item List	*/
 	add_ons_item_list?: FoodItemList[]
+	/**	Add Ons Items : Table - Add-ons Items	*/
+	custom_add_ons_items?: AddonsItems[]
+	/**	Add-ons Items : Table - Add-ons Items	*/
+	custom_addons_items?: AddonsItems[]
 	/**	Shelf Life In Days : Int	*/
 	shelf_life_in_days?: number
 	/**	End of Life : Date	*/
@@ -177,6 +184,8 @@ If series is set and Serial No is not mentioned in transactions, then automatic 
 	is_sales_item?: 0 | 1
 	/**	Max Discount (%) : Float	*/
 	max_discount?: number
+	/**	Total Sold Qty : Float	*/
+	custom_total_sold_qty?: number
 	/**	Customer Items : Table - Item Customer Detail	*/
 	customer_items?: ItemCustomerDetail[]
 	/**	Taxes : Table - Item Tax - Will also apply for variants	*/
