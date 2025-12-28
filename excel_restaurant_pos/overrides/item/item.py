@@ -3,10 +3,6 @@ from erpnext.stock.doctype.item.item import Item
 
 class OverrideItem(Item):
     def validate(self):
-
-        print(self.get("available_menus", []))
-
-        combined = ""
-        for item in self.get("available_menus", []):
-            combined += item.item_menus + ", "
-        self.combined_menus = combined
+        item_menus = self.get("custom_available_in_menus", [])
+        combined: list[str] = [item.menu for item in item_menus]
+        self.custom_combined_menus = ", ".join(combined)
