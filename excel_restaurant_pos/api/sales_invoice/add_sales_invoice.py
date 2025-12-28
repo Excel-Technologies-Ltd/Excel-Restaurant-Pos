@@ -1,6 +1,6 @@
 import frappe
 import json
-from frappe.utils import flt
+from frappe.utils import flt, now_datetime, get_time
 
 
 @frappe.whitelist(allow_guest=True)
@@ -46,10 +46,12 @@ def add_sales_invoice():
     sales_invoice = frappe.new_doc("Sales Invoice")
 
     # Set main fields
+
     sales_invoice.customer = data.get("customer")
     sales_invoice.company = data.get("company")
+    sales_invoice.naming_series = data.get("naming_series") or "WEB-.YY.-.#####"
     sales_invoice.posting_date = data.get("posting_date") or frappe.utils.today()
-    sales_invoice.posting_time = data.get("posting_time") or frappe.utils.now_time()
+    sales_invoice.posting_time = data.get("posting_time") or get_time(now_datetime())
     sales_invoice.due_date = data.get("due_date") or sales_invoice.posting_date
 
     # Optional fields
