@@ -15,13 +15,16 @@
   "short_description",
   "section_break_cvn3d",
   "logo",
+  "print_format_logo",
   "default_order_type",
   "customer",
   "taxes_and_charges_template",
   "tax_rate",
   "charge_type",
   "pos_tips",
+  "default_delivery_pf",
   "column_break_j2kfz",
+  "print_format_qr",
   "heading_title",
   "company",
   "print_format_for_order",
@@ -275,13 +278,29 @@
   {
    "fieldname": "section_break_ekz8j",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "print_format_logo",
+   "fieldtype": "Attach Image",
+   "label": "Print Format Logo"
+  },
+  {
+   "fieldname": "print_format_qr",
+   "fieldtype": "Attach Image",
+   "label": "Print Format QR"
+  },
+  {
+   "fieldname": "default_delivery_pf",
+   "fieldtype": "Link",
+   "label": "Default Delivery Print Format",
+   "options": "Print Format"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2025-12-29 10:23:58.924109",
+ "modified": "2025-12-29 18:04:53.398000",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",
