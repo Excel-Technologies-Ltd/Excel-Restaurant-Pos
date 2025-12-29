@@ -22,15 +22,17 @@ export interface ArcPOSSettings{
 	/**	Logo : Attach Image	*/
 	logo?: string
 	/**	Default Order Type : Select	*/
-	default_order_type?: "Pay later" | "Pay first" | "Both"
+	default_order_type?: "Pay Later" | "Pay First" | "Both"
 	/**	Default Customer : Link - Customer	*/
 	customer?: string
-	/**	Taxes and Charges Template : Link - Sales Taxes and Charges Template	*/
+	/**	Default Taxes and Charges Template : Link - Sales Taxes and Charges Template	*/
 	taxes_and_charges_template?: string
 	/**	Tax Rate : Data	*/
 	tax_rate?: string
 	/**	Charge Type : Data	*/
 	charge_type?: string
+	/**	Tips : Select	*/
+	pos_tips?: "Not Allowed" | "Required" | "Optional"
 	/**	Heading Title : Data	*/
 	heading_title?: string
 	/**	Default Company : Link - Company	*/
@@ -39,6 +41,10 @@ export interface ArcPOSSettings{
 	print_format_for_order?: string
 	/**	Variants View : Select	*/
 	variants_view?: "In Modal" | "Individual Item"
+	/**	Allowed Kitchen Order Print? : Select	*/
+	allowed_kop?: "Yes" | "No"
+	/**	Default KOP Format : Link - Print Format	*/
+	default_kop_format?: string
 	/**	Discount Allocation : Table - Discount Allocation	*/
 	discount_allocation?: DiscountAllocation[]
 	/**	Code List : Table - Restaurant Coupon	*/
@@ -49,12 +55,16 @@ export interface ArcPOSSettings{
 	allow_delivery_charge?: 0 | 1
 	/**	DCA : Currency	*/
 	dca?: number
+	/**	Tips : Select	*/
+	website_tips?: "Not Allowed" | "Required" | "Optional"
 	/**	Variants View : Select	*/
 	variants_view_website?: "In Modal" | "Individual Item"
 	/**	Allow Service Charge : Check	*/
 	allow_service_charge?: 0 | 1
 	/**	SFA : Currency	*/
 	sfa?: number
+	/**	Policy (If Any) : Small Text	*/
+	comments?: string
 	/**	Banner Image List : Table - Attachment	*/
 	banner_image_list?: Attachment[]
 }

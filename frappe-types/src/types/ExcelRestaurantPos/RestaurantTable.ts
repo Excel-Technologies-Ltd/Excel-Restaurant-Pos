@@ -10,28 +10,36 @@ export interface RestaurantTable{
 	parentfield?: string
 	parenttype?: string
 	idx?: number
-	/**	Company : Link - Company	*/
-	company: string
+	/**	Display Name : Data	*/
+	id: string
+	/**	Criteria : Select	*/
+	criteria: "" | "Table" | "Delivery" | "Pickup"
 	/**	Floor : Link - Restaurant Floor	*/
 	restaurant_floor: string
+	/**	Table No : Int	*/
+	table_no: number
 	/**	Seat : Int	*/
 	seat?: number
+	/**	Company : Link - Company	*/
+	company: string
+	/**	Status : Select	*/
+	status?: "Available" | "Occupied" | "Unavailable"
+	/**	Website URL : Data	*/
+	website_url?: string
+	/**	Is Temporary? : Check	*/
+	is_temporary?: 0 | 1
 	/**	Type : Select	*/
-	type: "" | "Rectangle" | "Circle" | "Road"
+	type?: "" | "Rectangle" | "Circle" | "Road"
 	/**	Bg Color : Data	*/
 	bg_color?: string
 	/**	Position : JSON	*/
-	position: any
+	position?: any
 	/**	Length : Data	*/
 	length?: string
 	/**	Breadth : Data	*/
-	breadth: string
+	breadth?: string
 	/**	File Path : Data	*/
 	file_path?: string
-	/**	Id : Data	*/
-	id: string
 	/**	Rotation : Data	*/
 	rotation?: string
-	/**	Table No : Int	*/
-	table_no?: number
 }

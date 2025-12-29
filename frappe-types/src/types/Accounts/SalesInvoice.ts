@@ -53,12 +53,18 @@ export interface SalesInvoice{
 	credit_limit?: number
 	/**	Remaining Credit : Float	*/
 	remaining_credit?: number
+	/**	With ArcPOS Payment : Check	*/
+	custom_with_arcpos_payment?: 0 | 1
 	/**	Order Type : Select	*/
-	custom_order_type?: "" | "Pay later" | "Pay first" | "Cash on Delivery"
+	custom_order_type?: "" | "Pay Later" | "Pay First" | "Cash on Delivery"
 	/**	Order From : Data	*/
 	custom_order_from?: string
+	/**	Linked Table : Link - Restaurant Table	*/
+	custom_linked_table?: string
+	/**	Party Size : Float	*/
+	custom_party_size?: number
 	/**	Order Status : Select	*/
-	custom_order_status?: "Open" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Handover to Delivery" | "On the Way" | "Ready to serve" | "Served" | "Delivered" | "Picked Up" | "Closed"
+	custom_order_status?: "Open" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Preparing" | "Ready to Deliver" | "Ready to Pickup" | "Handover to Delivery" | "On the Way" | "Ready to Serve" | "Served" | "Delivered to Customer" | "Delivered" | "Picked Up" | "Closed"
 	/**	Service Type : Select	*/
 	custom_service_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup" | "Partial"
 	/**	Include Payment (POS) : Check	*/
@@ -95,8 +101,12 @@ export interface SalesInvoice{
 	remarks?: string
 	/**	Delivery Date : Date	*/
 	custom_delivery_date?: string
+	/**	Delivery Time : Time	*/
+	custom_delivery_time?: string
 	/**	Delivered With : Data	*/
 	custom_delivered_with?: string
+	/**	Delivered By : Data	*/
+	custom_delivered_by?: string
 	/**	Delivery Location : Small Text	*/
 	custom_delivery_location?: string
 	/**	Excel Short Term Loan : Link - Excel Short Term Loan	*/
