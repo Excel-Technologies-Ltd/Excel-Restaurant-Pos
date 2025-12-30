@@ -100,6 +100,8 @@ def login(user, pwd):
 	frappe.local.cookie_manager.set_cookie("sid", "", expires="Thu, 01 Jan 1970 00:00:00 GMT")
 	frappe.local.cookie_manager.set_cookie("system_user", "", expires="Thu, 01 Jan 1970 00:00:00 GMT")
 
+	customer_id = frappe.db.get_value("Customer", {"email_id": user}, "name")
+
 	return success_response(
 		message=_("Logged in successfully"),
 		data={
@@ -118,6 +120,7 @@ def login(user, pwd):
 				"language": user_doc.language,
 				"last_login": user_doc.last_login,
 				"user_image": user_doc.user_image,
+				"customer_id": customer_id
 
 			},
 			

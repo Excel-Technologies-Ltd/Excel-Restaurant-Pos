@@ -71,6 +71,9 @@ def add_sales_invoice():
         "custom_delivery_date",
         "custom_delivery_time",
         "custom_delivery_location",
+        "custom_linked_table",
+        "custom_party_size",
+        "disable_rounded_total",
     ]
 
     for field in optional_fields:
@@ -110,6 +113,7 @@ def add_sales_invoice():
                 "custom_order_item_status": item_data.get("custom_order_item_status"),
                 "custom_if_not_available": item_data.get("custom_if_not_available"),
                 "custom_special_note": item_data.get("custom_special_note"),
+                "custom_is_print": item_data.get("custom_is_print"),
             },
         )
 
@@ -137,6 +141,7 @@ def add_sales_invoice():
                     "amount": flt(payment.get("amount", 0)),
                 },
             )
+    # include pos invoice
     sales_invoice.is_pos = 1
 
     # save the sales invoice
