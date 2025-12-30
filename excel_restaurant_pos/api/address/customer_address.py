@@ -50,8 +50,7 @@ def get_customer_address() -> dict:
     else:
         addresses_doclist = []
 
-    # Get phones and emails from contacts (or addresses if they're stored there)
-    # Try contacts first (standard Frappe way)
+    # get the phones and emails from the contacts
     if contact_names:
         phone_list = frappe.get_all(
             "Contact Phone",
