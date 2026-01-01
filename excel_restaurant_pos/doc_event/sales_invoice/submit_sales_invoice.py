@@ -27,9 +27,9 @@ def submit_sales_invoice(doc, method=None):
     )
 
     # Enqueue item sales count update in short queue (bulk update)
-    item_codes = [item.item_code for item in doc.items]
+    item_codes_and_qty = [(item.item_code, item.qty) for item in doc.items]
     frappe.enqueue(
         update_item_sales_count,
         queue="short",
-        item_codes=item_codes,
+        item_codes_and_qty=item_codes_and_qty,
     )

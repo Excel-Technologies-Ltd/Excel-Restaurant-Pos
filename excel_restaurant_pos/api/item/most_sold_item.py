@@ -2,20 +2,52 @@ import frappe
 from frappe.utils import add_months, today
 
 
-# get most sold item
 @frappe.whitelist(allow_guest=True)
 def get_most_sold_item():
     """
-    Get most sold item
+    Get most sold items from the last 2 months, ordered by custom_total_sold_qty (descending)
+    Returns complete Item documents with all fields
     """
-
-    # date befor 60 days
+    # Date from 2 months ago
     date_before_60_days = add_months(today(), -2)
 
-    # get sales invoice item
-    sales_invoice_item = frappe.get_all(
-        "Item",
-        filters={"creation": ["<=", date_before_60_days]},
-        fields=["item_code", "qty"],
-    )
-    return sales_invoice_item
+    # pop cmd
+    if frappe.form_dict.get("cmd"):
+        frappe.form_dict.pop("cmd")
+
+    # set default value
+    frappe.form_dict.setdefault("limit", 20)
+    frappe.form_dict.setdefault("limit_page_length", 20)
+
+    # Use creation desc with item_code as secondary sort for consistent ordering
+    order_by = frappe.form_dict.get("order_by")
+    default_order_by = "custom_total_sold_qty desc"
+    if not order_by:
+        order_by = default_order_by
+    else:
+        order_by = frappe.parse_json(order_by)
+        order_by.append(default_order_by)
+
+    # update filters
+    filters = frappe.form_dict.get("filters")
+    default_filters = [
+        ["variant_of", "is", "not set"],
+        ["disabled", "=", 0],
+        ["creation", ">=", date_before_60_days],
+    ]
+
+    # Convert filters to list format if needed
+    if not filters:
+        filters = default_filters
+    else:
+        filters = frappe.parse_json(filters)
+        filters.extend(default_filters)
+
+    # Update form_dict with modified filters
+    frappe.form_dict["filters"] = filters
+    frappe.form_dict["order_by"] = order_by
+
+    # get items
+    items = frappe.get_all("Item", **frappe.form_dict)
+
+    return items
