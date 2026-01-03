@@ -35,9 +35,13 @@ export interface SalesInvoiceItem{
 	/**	Serve Type : Select	*/
 	custom_serve_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup"
 	/**	Order Item Status : Select	*/
-	custom_order_item_status?: "" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Ready to Serve" | "Served" | "Delivered"
+	custom_order_item_status?: "" | "Open" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Preparing" | "Ready to Deliver" | "Ready to Pickup" | "Handover to Delivery" | "On the Way" | "Ready to Serve" | "Served" | "Delivered to Customer" | "Delivered" | "Picked Up"
+	/**	If not Available (Online Order) : Select	*/
+	custom_if_not_available?: "" | "Remove it from my order" | "Contact me" | "Substitute with similar item"
 	/**	Special Note : Small Text	*/
 	custom_special_note?: string
+	/**	Is Print? : Check	*/
+	custom_is_print?: 0 | 1
 	/**	Quantity : Float	*/
 	qty?: number
 	/**	Stock UOM : Link - UOM	*/
