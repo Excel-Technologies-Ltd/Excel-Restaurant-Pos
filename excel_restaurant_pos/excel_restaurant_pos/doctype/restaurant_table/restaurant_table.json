@@ -39,7 +39,8 @@
    "fieldname": "seat",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Seat"
+   "label": "Seat",
+   "reqd": 1
   },
   {
    "fieldname": "type",
@@ -126,16 +127,17 @@
    "label": "Website URL"
   },
   {
+   "default": "Table",
    "fieldname": "criteria",
    "fieldtype": "Select",
    "label": "Criteria",
-   "options": "\nTable\nDelivery\nPickup",
+   "options": "Table\nDelivery\nPickup",
    "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-25 18:55:34.215116",
+ "modified": "2026-01-03 14:14:19.173871",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",

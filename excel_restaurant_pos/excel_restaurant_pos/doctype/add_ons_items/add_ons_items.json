@@ -8,7 +8,11 @@
  "field_order": [
   "item_code",
   "item_name",
-  "item_group"
+  "item_group",
+  "description",
+  "image",
+  "image_view",
+  "guest_choice"
  ],
  "fields": [
   {
@@ -34,12 +38,38 @@
    "in_list_view": 1,
    "label": "Item Group",
    "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.description",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.image",
+   "fieldname": "image",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "Image"
+  },
+  {
+   "fieldname": "image_view",
+   "fieldtype": "Image",
+   "label": "Image View",
+   "options": "image",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "guest_choice",
+   "fieldtype": "Small Text",
+   "label": "Guest Choice"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-12-23 12:06:07.765266",
+ "modified": "2026-01-03 14:41:31.221760",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Add-ons Items",
