@@ -19,7 +19,7 @@
   "item_wise_feedback",
   "overall_feedback",
   "section_break_3st1n",
-  "attached_image",
+  "social_review",
   "amended_from"
  ],
  "fields": [
@@ -97,15 +97,17 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "attached_image",
-   "fieldtype": "Attach Image",
-   "label": "Attached Image"
+   "allow_on_submit": 1,
+   "fieldname": "social_review",
+   "fieldtype": "Table",
+   "label": "Social Review",
+   "options": "Social Review Feedback"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-12-23 11:01:56.076163",
+ "modified": "2026-01-03 14:22:04.864018",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Feedback",
