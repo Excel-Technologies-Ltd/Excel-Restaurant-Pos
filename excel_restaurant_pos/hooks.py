@@ -1,4 +1,5 @@
 from .api import api_routes
+from .overrides import override_item_doctype
 
 # app information
 app_name = "excel_restaurant_pos"
@@ -184,6 +185,9 @@ scheduler_events = {
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "excel_restaurant_pos.event.get_events"
 # }
+
+# override doctype class
+override_doctype_class = {**override_item_doctype}
 
 
 override_whitelisted_methods = {

@@ -1,47 +1,73 @@
 import frappe
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def get_customer_address() -> dict:
     """
-    Get customer address
+    Get customer address - Optimized version with fewer DB calls
     """
-
     # validate customer code
     customer_code = frappe.form_dict.pop("customer_code", None)
     if not customer_code:
         frappe.throw("Customer code is required")
 
+    # get the customer details
+    customer_dict = frappe.get_doc("Customer", customer_code).as_dict()
+    if not customer_dict:
+        frappe.throw(
+            f"Customer {customer_code} does not exist", frappe.DoesNotExistError
+        )
+
     # get the dynamic link
-    dynamic_links = frappe.get_all(
+    all_links = frappe.get_all(
         "Dynamic Link",
-        fields=["parent", "link_doctype", "link_name"],
-        filters=[
-            ["link_doctype", "=", "Customer"],
-            ["link_name", "=", customer_code],
-        ],
+        filters={
+            "link_doctype": "Customer",
+            "link_name": customer_code,
+        },
+        fields=["parent", "parenttype"],
     )
 
-    # get the addresses
-    link_names = [dynamic_link.parent for dynamic_link in dynamic_links]
+    # Separate addresses and contacts
+    address_names = [link.parent for link in all_links if link.parenttype == "Address"]
+    contact_names = [link.parent for link in all_links if link.parenttype == "Contact"]
 
-    # manipulate default form dictionary
-    if frappe.form_dict.get("cmd"):
-        frappe.form_dict.pop("cmd")
-    # get the filters
-    filters = frappe.form_dict.get("filters")
-    # if filters are provided, extend them with the link names
-    if filters:
-        filters = frappe.parse_json(filters)
-        filters.extend([["name", "in", link_names]])
+    # remove cmd from filter
+    frappe.form_dict.pop("cmd", None)
+
+    # Get addresses if they exist
+    if address_names:
+        # Prepare filters for addresses
+        filters = frappe.form_dict.get("filters")
+        if filters:
+            filters = frappe.parse_json(filters)
+            filters.append(["name", "in", address_names])
+        else:
+            filters = [["name", "in", address_names]]
+
+        frappe.form_dict["filters"] = filters
+        addresses_doclist = frappe.get_all("Address", **frappe.form_dict)
     else:
-        filters = [["name", "in", link_names]]
+        addresses_doclist = []
 
-    # set the filters
-    frappe.form_dict["filters"] = filters
+    # get the phones and emails from the contacts
+    if contact_names:
+        phone_list = frappe.get_all(
+            "Contact Phone",
+            filters=[["parent", "in", contact_names]],
+            fields=["phone", "is_primary_phone", "is_primary_mobile_no"],
+        )
+        email_list = frappe.get_all(
+            "Contact Email",
+            filters=[["parent", "in", contact_names]],
+            fields=["email_id", "is_primary"],
+        )
+    else:
+        phone_list = []
+        email_list = []
 
-    # get the addresses
-    addresses_doclist = frappe.get_all("Address", **frappe.form_dict)
-
-    # return the addresses
-    return addresses_doclist
+    # Return the result
+    customer_dict["addresses"] = addresses_doclist
+    customer_dict["phones"] = phone_list
+    customer_dict["emails"] = email_list
+    return customer_dict

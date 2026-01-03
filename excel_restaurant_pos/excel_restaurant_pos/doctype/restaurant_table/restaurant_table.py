@@ -9,10 +9,14 @@ class RestaurantTable(Document):
     def before_save(self):
         # Generate the base URL and construct the specific URL with the table_id parameter
         # check this frm is new
+        
         if not self.is_new():
             return
         host = get_url()
-        url = f"{host}/restaurant/items?table_id={self.name}"
+        url = f"{host}?table_id={self.name}"
+        base_url = frappe.db.get_single_value("ArcPOS Settings", "portal_base_url")
+        if base_url:
+            url = f"{base_url}?table_id={self.name}"
         frappe.msgprint(url)
         
         # Generate the QR code with the URL data

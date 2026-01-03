@@ -1,6 +1,6 @@
 import frappe
 import json
-from frappe.utils import flt
+from frappe.utils import flt, now_datetime, get_time
 
 
 @frappe.whitelist(allow_guest=True)
@@ -46,9 +46,12 @@ def add_sales_invoice():
     sales_invoice = frappe.new_doc("Sales Invoice")
 
     # Set main fields
+
     sales_invoice.customer = data.get("customer")
     sales_invoice.company = data.get("company")
+    sales_invoice.naming_series = data.get("naming_series") or "WEB-.YY.-.#####"
     sales_invoice.posting_date = data.get("posting_date") or frappe.utils.today()
+    sales_invoice.posting_time = data.get("posting_time") or get_time(now_datetime())
     sales_invoice.due_date = data.get("due_date") or sales_invoice.posting_date
 
     # Optional fields
@@ -61,6 +64,16 @@ def add_sales_invoice():
         "custom_order_from",
         "custom_order_status",
         "custom_service_type",
+        "custom_customer_full_name",
+        "custom_mobile_no",
+        "custom_email_address",
+        "remarks",
+        "custom_delivery_date",
+        "custom_delivery_time",
+        "custom_delivery_location",
+        "custom_linked_table",
+        "custom_party_size",
+        "disable_rounded_total",
     ]
 
     for field in optional_fields:
@@ -95,6 +108,12 @@ def add_sales_invoice():
                 "rate": flt(item_data.get("rate", 0)),
                 "warehouse": item_data.get("warehouse"),
                 "description": item_data.get("description"),
+                "custom_parent_item": item_data.get("custom_parent_item"),
+                "custom_serve_type": item_data.get("custom_serve_type"),
+                "custom_order_item_status": item_data.get("custom_order_item_status"),
+                "custom_if_not_available": item_data.get("custom_if_not_available"),
+                "custom_special_note": item_data.get("custom_special_note"),
+                "custom_is_print": item_data.get("custom_is_print"),
             },
         )
 
@@ -122,6 +141,7 @@ def add_sales_invoice():
                     "amount": flt(payment.get("amount", 0)),
                 },
             )
+    # include pos invoice
     sales_invoice.is_pos = 1
 
     # save the sales invoice
