@@ -18,6 +18,7 @@ def change_sales_invoice(doc, method=None):
         if table_name and order_from == "table":
             frappe.enqueue(handle_table_release, queue="short", **args)
 
-    if doc.custom_order_status == "Closed":
+    release_status = ["Closed", "Rejected"]
+    if doc.custom_order_status in release_status:
         if table_name and order_from == "table":
             frappe.enqueue(handle_table_release, queue="short", **args)

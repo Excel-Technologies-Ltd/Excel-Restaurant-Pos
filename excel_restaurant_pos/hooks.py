@@ -154,14 +154,6 @@ override_doctype_class = {"ToDo": "excel_restaurant_pos.overrides.todo.ToDo"}
 
 doc_events = {
     **custom_doc_events,
-    "Item": {
-        # "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-        "on_update": "excel_restaurant_pos.doc_event.create_add_on_item",
-    },
-    "Sales Taxes and Charges Template": {
-        # "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-        "on_update": "excel_restaurant_pos.doc_event.on_doctype_update",
-    },
 }
 
 # Scheduled Tasks
