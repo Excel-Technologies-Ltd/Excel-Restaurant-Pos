@@ -1,6 +1,9 @@
 import frappe
 from frappe.utils import nowdate
-from .utils import get_receivable_account, get_mode_of_payment_account
+from excel_restaurant_pos.shared.sales_invoice import (
+    get_receivable_account,
+    get_mode_of_payment_account,
+)
 
 
 def create_payment_entry(sales_invoice):
