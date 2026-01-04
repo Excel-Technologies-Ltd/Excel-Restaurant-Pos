@@ -1,6 +1,7 @@
-from .table import handle_table_availability
+from .table import handle_table_occupy, handle_table_release
 
 
 __all__ = [
-    "handle_table_availability",
+    "handle_table_occupy",
+    "handle_table_release",
 ]
