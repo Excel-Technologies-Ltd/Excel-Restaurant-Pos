@@ -18,7 +18,7 @@ def handle_table_occupy(**kwargs):
     # update the table status and website url
     table = frappe.get_doc("Restaurant Table", table_name)
     table.status = "Occupied"
-    table.website_url = sales_invoice
+    table.running_order = sales_invoice
     table.save(ignore_permissions=True)
 
     print(f"Table {table_name} status updated to Occupied")
@@ -40,7 +40,7 @@ def handle_table_release(**kwargs):
     # get the table document
     table = frappe.get_doc("Restaurant Table", table_name)
     table.status = "Available"
-    table.website_url = None
+    table.running_order = None
     table.save(ignore_permissions=True)
 
     print(f"Table {table_name} status updated to Available")

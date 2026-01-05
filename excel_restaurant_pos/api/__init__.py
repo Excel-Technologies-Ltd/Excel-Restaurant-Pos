@@ -7,6 +7,7 @@ from .menu import menu_api_routes
 from .sales_invoice import sales_invoice_api_routes
 from .settings import settings_api_routes
 from .territory import territory_api_routes
+from .file import file_api_routes
 
 
 api_routes = {
@@ -19,4 +20,5 @@ api_routes = {
     **sales_invoice_api_routes,
     **settings_api_routes,
     **territory_api_routes,
+    **file_api_routes,
 }

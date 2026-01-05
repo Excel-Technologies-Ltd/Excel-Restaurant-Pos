@@ -74,6 +74,8 @@ def add_sales_invoice():
         "custom_linked_table",
         "custom_party_size",
         "disable_rounded_total",
+        "custom_new_ordered_item",
+        "custom_cutlery",
     ]
 
     for field in optional_fields:
