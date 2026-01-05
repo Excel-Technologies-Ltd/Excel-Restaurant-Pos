@@ -10,11 +10,13 @@
   "id",
   "criteria",
   "restaurant_floor",
+  "section",
   "table_no",
   "seat",
   "column_break_ad20c",
   "company",
   "status",
+  "running_order",
   "website_url",
   "is_temporary",
   "section_break_p6yeo",
@@ -133,11 +135,23 @@
    "label": "Criteria",
    "options": "Table\nDelivery\nPickup",
    "reqd": 1
+  },
+  {
+   "fieldname": "section",
+   "fieldtype": "Link",
+   "label": "Section",
+   "options": "Restaurant Section"
+  },
+  {
+   "fieldname": "running_order",
+   "fieldtype": "Link",
+   "label": "Running Order",
+   "options": "Sales Invoice"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-03 14:14:19.173871",
+ "modified": "2026-01-05 10:24:18.160879",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",

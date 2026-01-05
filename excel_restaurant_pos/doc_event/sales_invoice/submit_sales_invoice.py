@@ -1,7 +1,7 @@
 import frappe
-from .create_feedback import create_feedback
-from .create_payment_entry import create_payment_entry
-from .update_item_sales_count import update_item_sales_count
+from .handlers.create_feedback import create_feedback
+from .handlers.create_payment_entry import create_payment_entry
+from .handlers.update_item_sales_count import update_item_sales_count
 
 
 def submit_sales_invoice(doc, method=None):

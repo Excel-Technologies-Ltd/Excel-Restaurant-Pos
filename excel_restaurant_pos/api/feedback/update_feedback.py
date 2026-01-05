@@ -48,6 +48,22 @@ def update_feedback():
                     },
                 )
 
+    # update social feedback
+    social_reviews = frappe.form_dict.get("social_review")
+    if isinstance(social_reviews, str):
+        social_reviews = json.loads(social_reviews)
+
+    for s_review in social_reviews:
+        feedback_doc.append(
+            "social_review",
+            {
+                "from": s_review.get("from"),
+                "screenshot": s_review.get("screenshot"),
+            },
+        )
+
+    # update social feedback
     feedback_doc.save(ignore_permissions=True)
     feedback_doc.submit()
+
     return "Feedback submitted successfully"
