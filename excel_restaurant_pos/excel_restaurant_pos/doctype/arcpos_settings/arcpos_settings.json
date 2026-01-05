@@ -25,6 +25,7 @@
   "default_delivery_pf",
   "column_break_j2kfz",
   "print_format_qr",
+  "favicon",
   "heading_title",
   "company",
   "print_format_for_order",
@@ -44,7 +45,10 @@
   "allow_delivery_charge",
   "dca",
   "website_tips",
+  "branding_text",
+  "branding_url",
   "column_break_sihii",
+  "website_fabicon",
   "variants_view_website",
   "allow_service_charge",
   "sfa",
@@ -264,7 +268,7 @@
   {
    "fieldname": "portal_base_url",
    "fieldtype": "Data",
-   "label": "Portal Base URL"
+   "label": "Web Order Portal URL"
   },
   {
    "fieldname": "column_break_0h1pm",
@@ -294,13 +298,36 @@
    "fieldtype": "Link",
    "label": "Default Delivery Print Format",
    "options": "Print Format"
+  },
+  {
+   "description": "An icon file with dimension 16 x 16 px.",
+   "fieldname": "favicon",
+   "fieldtype": "Attach Image",
+   "label": "FavIcon"
+  },
+  {
+   "fieldname": "branding_text",
+   "fieldtype": "Data",
+   "label": "Branding Text"
+  },
+  {
+   "depends_on": "eval:doc.branding_text",
+   "fieldname": "branding_url",
+   "fieldtype": "Data",
+   "label": "Branding URL"
+  },
+  {
+   "description": "An icon file with dimension 16 x 16 px.",
+   "fieldname": "website_fabicon",
+   "fieldtype": "Attach Image",
+   "label": "FavIcon"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2025-12-29 18:04:53.398000",
+ "modified": "2026-01-05 15:22:46.592125",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",
