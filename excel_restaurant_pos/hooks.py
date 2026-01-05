@@ -1,5 +1,8 @@
 from .api import api_routes
 from .overrides import override_item_doctype
+from .doc_event import custom_doc_events
+
+# from .doc_event.sales_invoice import sales_invoice_doc_events
 
 # app information
 app_name = "excel_restaurant_pos"
@@ -150,21 +153,7 @@ override_doctype_class = {"ToDo": "excel_restaurant_pos.overrides.todo.ToDo"}
 # Hook on document methods and events
 
 doc_events = {
-    "Item": {
-        # "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-        "on_update": "excel_restaurant_pos.doc_event.create_add_on_item",
-    },
-    "Sales Taxes and Charges Template": {
-        # "on_create": "excel_restaurant_pos.doc_event.item.create_add_on_item",
-        "on_update": "excel_restaurant_pos.doc_event.on_doctype_update",
-    },
-    "Table Order": {
-        # "on_update": "excel_restaurant_pos.doc_event.pos_invoice.create_pos_invoice",
-        "on_update": "excel_restaurant_pos.doc_event.create_sales_invoice"
-    },
-    "Sales Invoice": {
-        "on_submit": "excel_restaurant_pos.doc_event.submit_sales_invoice"
-    },
+    **custom_doc_events,
 }
 
 # Scheduled Tasks

@@ -1,15 +1,12 @@
 import frappe
-from frappe.utils import add_months, today
 
 
 @frappe.whitelist(allow_guest=True)
 def get_most_sold_item():
     """
-    Get most sold items from the last 2 months, ordered by custom_total_sold_qty (descending)
+    Get most sold items
     Returns complete Item documents with all fields
     """
-    # Date from 2 months ago
-    date_before_60_days = add_months(today(), -2)
 
     # pop cmd
     if frappe.form_dict.get("cmd"):
@@ -30,11 +27,7 @@ def get_most_sold_item():
 
     # update filters
     filters = frappe.form_dict.get("filters")
-    default_filters = [
-        ["variant_of", "is", "not set"],
-        ["disabled", "=", 0],
-        ["creation", ">=", date_before_60_days],
-    ]
+    default_filters = [["variant_of", "is", "not set"], ["disabled", "=", 0]]
 
     # Convert filters to list format if needed
     if not filters:
