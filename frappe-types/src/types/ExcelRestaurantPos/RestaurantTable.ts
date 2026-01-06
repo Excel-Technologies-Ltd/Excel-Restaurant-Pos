@@ -13,17 +13,21 @@ export interface RestaurantTable{
 	/**	Display Name : Data	*/
 	id: string
 	/**	Criteria : Select	*/
-	criteria: "" | "Table" | "Delivery" | "Pickup"
+	criteria: "Table" | "Delivery" | "Pickup"
 	/**	Floor : Link - Restaurant Floor	*/
 	restaurant_floor: string
+	/**	Section : Link - Restaurant Section	*/
+	section?: string
 	/**	Table No : Int	*/
 	table_no: number
 	/**	Seat : Int	*/
-	seat?: number
+	seat: number
 	/**	Company : Link - Company	*/
 	company: string
 	/**	Status : Select	*/
 	status?: "Available" | "Occupied" | "Unavailable"
+	/**	Running Order : Link - Sales Invoice	*/
+	running_order?: string
 	/**	Website URL : Data	*/
 	website_url?: string
 	/**	Is Temporary? : Check	*/

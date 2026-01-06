@@ -55,6 +55,8 @@ export interface SalesInvoice{
 	remaining_credit?: number
 	/**	With ArcPOS Payment : Check	*/
 	custom_with_arcpos_payment?: 0 | 1
+	/**	Cutlery : Check	*/
+	custom_cutlery?: 0 | 1
 	/**	Order Type : Select	*/
 	custom_order_type?: "" | "Pay Later" | "Pay First" | "Cash on Delivery"
 	/**	Order From : Data	*/
@@ -66,7 +68,7 @@ export interface SalesInvoice{
 	/**	Order Status : Select	*/
 	custom_order_status?: "Open" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Preparing" | "Ready to Deliver" | "Ready to Pickup" | "Handover to Delivery" | "On the Way" | "Ready to Serve" | "Served" | "Delivered to Customer" | "Delivered" | "Picked Up" | "Closed"
 	/**	Service Type : Select	*/
-	custom_service_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup" | "Partial"
+	custom_service_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup" | "Walk-in"
 	/**	Include Payment (POS) : Check	*/
 	is_pos?: 0 | 1
 	/**	POS Profile : Link - POS Profile	*/

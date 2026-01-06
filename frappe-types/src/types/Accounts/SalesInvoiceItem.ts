@@ -33,13 +33,17 @@ export interface SalesInvoiceItem{
 	/**	Parent Item : Link - Item	*/
 	custom_parent_item?: string
 	/**	Serve Type : Select	*/
-	custom_serve_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup"
+	custom_serve_type?: "" | "Dine-in" | "Takeout" | "Delivery" | "Pickup" | "Walk-in"
 	/**	Order Item Status : Select	*/
 	custom_order_item_status?: "" | "Open" | "Accepted" | "Rejected" | "Waiting" | "In kitchen" | "Preparing" | "Ready to Deliver" | "Ready to Pickup" | "Handover to Delivery" | "On the Way" | "Ready to Serve" | "Served" | "Delivered to Customer" | "Delivered" | "Picked Up"
 	/**	If not Available (Online Order) : Select	*/
 	custom_if_not_available?: "" | "Remove it from my order" | "Contact me" | "Substitute with similar item"
+	/**	Guest Choice : Small Text	*/
+	custom_guest_choice?: string
 	/**	Special Note : Small Text	*/
 	custom_special_note?: string
+	/**	Kitchen Note : Small Text	*/
+	custom_kitchen_note?: string
 	/**	Is Print? : Check	*/
 	custom_is_print?: 0 | 1
 	/**	Quantity : Float	*/

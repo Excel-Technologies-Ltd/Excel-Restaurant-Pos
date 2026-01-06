@@ -1,3 +1,5 @@
+import { ItemMenus } from '../ExcelRestaurantPos/ItemMenus'
+import { GuestChoice } from '../ExcelRestaurantPos/GuestChoice'
 import { DietaryTable } from '../ExcelRestaurantPos/DietaryTable'
 import { Nutritions } from '../ExcelRestaurantPos/Nutritions'
 import { AllergensTable } from '../ExcelRestaurantPos/AllergensTable'
@@ -35,6 +37,10 @@ export interface Item{
 	item_group: string
 	/**	Menu : Link - Menus	*/
 	custom_menu?: string
+	/**	Available in Menus : Table MultiSelect - Item Menus	*/
+	custom_available_in_menus?: ItemMenus[]
+	/**	Combined Menus : Long Text	*/
+	custom_combined_menus?: string
 	/**	Default Unit of Measure : Link - UOM	*/
 	stock_uom: string
 	/**	Has Excel Serials : Select - <b>If product is serialized, make sure to make it serialized on Portal.</b>	*/
@@ -85,6 +91,8 @@ export interface Item{
 	brand: string
 	/**	Approx. Prep Time : Duration	*/
 	custom_approx_prep_time?: string
+	/**	Guest Choice : Table - Guest Choice	*/
+	custom_guest_choice?: GuestChoice[]
 	/**	Dietary Information : Table - Dietary Table	*/
 	custom_dietary_information?: DietaryTable[]
 	/**	Nutritional Information : Table - Nutritions	*/
