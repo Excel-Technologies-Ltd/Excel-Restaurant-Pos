@@ -1,10 +1,11 @@
 import frappe
 import json
 from frappe.utils import flt, now_datetime, get_time
+from .handlers.update_sales_invoice import update_sales_invoice
 
 
 @frappe.whitelist(allow_guest=True)
-def add_sales_invoice():
+def add_or_update_invoice():
     """
     Create a new Sales Invoice from user-provided data
     Uses default Frappe creation method with validation
@@ -20,11 +21,16 @@ def add_sales_invoice():
     if isinstance(data.get("taxes"), str):
         data["taxes"] = json.loads(data.get("taxes", "[]"))
 
+    # get invoice name
+    invoice_name = data.get("invoice_name")
+
+    # if invoice name is provided, update the invoice
+    if invoice_name:
+        updated = update_sales_invoice(invoice_name, items=data.get("items", []))
+        return updated.as_dict()
+
     # Validate required fields
-    required_fields = [
-        "customer",
-        "company",
-    ]
+    required_fields = ["customer", "company"]
     for field in required_fields:
         if not data.get(field):
             frappe.throw(f"{field} is required for creating a sales invoice")
@@ -42,11 +48,10 @@ def add_sales_invoice():
     if not frappe.db.exists("Company", data.get("company")):
         frappe.throw(f"Company {data.get('company')} does not exist")
 
-    # Create Sales Invoice using standard Frappe method
+    # create new sales invoice
     sales_invoice = frappe.new_doc("Sales Invoice")
 
     # Set main fields
-
     sales_invoice.customer = data.get("customer")
     sales_invoice.company = data.get("company")
     sales_invoice.naming_series = data.get("naming_series") or "WEB-.YY.-.#####"
@@ -74,6 +79,7 @@ def add_sales_invoice():
         "custom_linked_table",
         "custom_party_size",
         "disable_rounded_total",
+        "custom_cutlery",
     ]
 
     for field in optional_fields:
@@ -131,7 +137,6 @@ def add_sales_invoice():
             )
 
     # Add payments to child table (for tracking/display only)
-    # Note: This doesn't create Payment Entry documents automatically
     if data.get("payments"):
         for payment in data.get("payments", []):
             sales_invoice.append(
@@ -141,6 +146,7 @@ def add_sales_invoice():
                     "amount": flt(payment.get("amount", 0)),
                 },
             )
+
     # include pos invoice
     sales_invoice.is_pos = 1
 
