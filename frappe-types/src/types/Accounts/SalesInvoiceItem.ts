@@ -46,6 +46,10 @@ export interface SalesInvoiceItem{
 	custom_kitchen_note?: string
 	/**	Is Print? : Check	*/
 	custom_is_print?: 0 | 1
+	/**	Is Add-ons Item? : Check	*/
+	custom_is_add_ons_item?: 0 | 1
+	/**	New Ordered Item : Check	*/
+	custom_new_ordered_item?: 0 | 1
 	/**	Quantity : Float	*/
 	qty?: number
 	/**	Stock UOM : Link - UOM	*/
