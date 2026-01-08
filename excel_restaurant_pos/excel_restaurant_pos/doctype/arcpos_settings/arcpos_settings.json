@@ -15,7 +15,9 @@
   "short_description",
   "section_break_cvn3d",
   "logo",
+  "pos_logo_dark",
   "print_format_logo",
+  "pos_order_view",
   "default_order_type",
   "customer",
   "taxes_and_charges_template",
@@ -26,6 +28,7 @@
   "column_break_j2kfz",
   "print_format_qr",
   "favicon",
+  "pos_favicon_dark",
   "heading_title",
   "company",
   "print_format_for_order",
@@ -42,13 +45,17 @@
   "pos_base_url",
   "section_break_ekz8j",
   "website_logo",
+  "website_logo_dark",
   "allow_delivery_charge",
   "dca",
   "website_tips",
   "branding_text",
   "branding_url",
   "column_break_sihii",
+  "website_signup_logo",
+  "website_signup_logo_dark",
   "website_fabicon",
+  "website_favicon_dark",
   "variants_view_website",
   "allow_service_charge",
   "sfa",
@@ -163,6 +170,7 @@
    "label": "Website Logo"
   },
   {
+   "description": "Preferred dimension is 1920 x 425 px",
    "fieldname": "banner_image_list",
    "fieldtype": "Table",
    "label": "Banner Image List",
@@ -321,13 +329,49 @@
    "fieldname": "website_fabicon",
    "fieldtype": "Attach Image",
    "label": "FavIcon"
+  },
+  {
+   "fieldname": "pos_order_view",
+   "fieldtype": "Select",
+   "label": "Order View",
+   "options": "Item Name with Image\nOnly Item Name"
+  },
+  {
+   "fieldname": "pos_logo_dark",
+   "fieldtype": "Attach Image",
+   "label": "Logo (Dark)"
+  },
+  {
+   "fieldname": "pos_favicon_dark",
+   "fieldtype": "Attach Image",
+   "label": "FavIcon (Dark)"
+  },
+  {
+   "fieldname": "website_logo_dark",
+   "fieldtype": "Attach Image",
+   "label": "Website Logo (Dark)"
+  },
+  {
+   "fieldname": "website_signup_logo",
+   "fieldtype": "Attach Image",
+   "label": "Signup Logo"
+  },
+  {
+   "fieldname": "website_signup_logo_dark",
+   "fieldtype": "Attach Image",
+   "label": "Signup Logo (Dark)"
+  },
+  {
+   "fieldname": "website_favicon_dark",
+   "fieldtype": "Attach Image",
+   "label": "FavIcon (Dark)"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-01-05 15:22:46.592125",
+ "modified": "2026-01-07 15:43:19.501759",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",

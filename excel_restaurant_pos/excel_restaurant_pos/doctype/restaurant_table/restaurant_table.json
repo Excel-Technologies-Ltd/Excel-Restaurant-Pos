@@ -100,7 +100,8 @@
    "fieldname": "table_no",
    "fieldtype": "Int",
    "label": "Table No",
-   "mandatory_depends_on": "eval:doc.criteria=='Table'"
+   "mandatory_depends_on": "eval:doc.criteria=='Table'",
+   "unique": 1
   },
   {
    "fieldname": "column_break_ad20c",
@@ -151,7 +152,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-05 10:24:18.160879",
+ "modified": "2026-01-07 12:09:25.043682",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Restaurant Table",
