@@ -25,6 +25,8 @@ export interface ItemGroup{
 	is_restaurant_pos?: 0 | 1
 	/**	Publish to Website : Check	*/
 	custom_publish_to_website?: 0 | 1
+	/**	Priority : Float	*/
+	custom_priority?: number
 	/**	Is Add Ons : Check	*/
 	is_add_ons?: 0 | 1
 	/**	Image : Attach Image	*/
