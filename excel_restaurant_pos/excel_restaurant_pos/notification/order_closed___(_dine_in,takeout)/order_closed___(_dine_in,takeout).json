@@ -13,17 +13,17 @@
  "event": "Value Change",
  "idx": 0,
  "is_standard": 1,
- "message": "<h3>Order Closed</h3>\n\n<p>Order {{ doc.name }} has has been closed. Please take necessary action.</p>\n\n\n<ul>\n<li>Customer: {{ doc.customer }}</li>\n<li>Amount: {{ doc.grand_total }}</li>\n</ul>",
+ "message": "take from template",
  "message_type": "HTML",
  "minutes_offset": 0,
- "modified": "2026-01-11 11:11:34.402808",
+ "modified": "2026-01-13 09:29:49.767457",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Order Closed - ( Dine-in,Takeout)",
  "owner": "Administrator",
  "recipients": [
   {
-   "receiver_by_document_field": "custom_email_address"
+   "receiver_by_document_field": "custom_email_send_to"
   }
  ],
  "send_system_notification": 0,

@@ -7,7 +7,9 @@ def change_sales_invoice(doc, method=None):
     Validate Sales Invoice
     """
     table_name = doc.custom_linked_table
-    order_from = doc.custom_order_from.lower()
+    order_from = None
+    if doc.custom_order_from:
+        order_from = doc.custom_order_from.lower()
 
     # generate args
     args = {"table_name": table_name, "sales_invoice": doc.name}
