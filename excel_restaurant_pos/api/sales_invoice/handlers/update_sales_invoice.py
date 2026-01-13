@@ -49,4 +49,10 @@ def update_sales_invoice(invoice_name, items):
         )
     sales_invoice.save(ignore_permissions=True)
 
+    customer_order_status = ""
+
+    disallow_from = ["QR - Table","Table","In Store"]
+
+    # if customer_order_status not in disallow_from and customer_order_status != "Rejected":
+
     return sales_invoice

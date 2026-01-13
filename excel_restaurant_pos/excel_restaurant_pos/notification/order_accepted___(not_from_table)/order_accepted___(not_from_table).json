@@ -1,0 +1,35 @@
+{
+ "attach_files": "",
+ "attach_print": 0,
+ "channel": "Email",
+ "condition": "doc.custom_order_from not in [\"QR - Table\",\"Table\",\"In Store\"] and doc.custom_order_status == \"Accepted\"",
+ "condition_type": "Python",
+ "creation": "2026-01-11 11:01:58.003475",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Sales Invoice",
+ "enabled": 1,
+ "event": "Value Change",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "<h3>Table Order Accepted</h3>\n\n<p>Table order {{ doc.name }} has been accepted. Please take necessary action.</p>\n\n\n<h4>Details</h4>\n\n<ul>\n<li>Customer: {{ doc.customer }}</li>\n<li>Amount: {{ doc.grand_total }}</li>\n</ul>",
+ "message_type": "HTML",
+ "minutes_offset": 0,
+ "modified": "2026-01-11 11:41:00.641979",
+ "modified_by": "Administrator",
+ "module": "Excel Restaurant Pos",
+ "name": "Order Accepted - (not from table)",
+ "owner": "Administrator",
+ "recipients": [
+  {
+   "receiver_by_document_field": "custom_email_send_to"
+  }
+ ],
+ "send_system_notification": 0,
+ "send_to_all_assignees": 0,
+ "sender": "ArcPOS Notification",
+ "sender_email": "notifications@excelbd.com",
+ "subject": "Your order {{ doc.name }} is accepted",
+ "value_changed": "custom_order_status"
+}

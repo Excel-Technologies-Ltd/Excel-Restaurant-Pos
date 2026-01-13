@@ -7,7 +7,9 @@ def after_save_sales_invoice(doc, method=None):
     After save sales invoice
     """
     table_name = doc.custom_linked_table
-    order_from = doc.custom_order_from.lower()
+    order_from = None
+    if doc.custom_order_from:
+        order_from = doc.custom_order_from.lower()
 
     # if the sales invoice is linked to a table and the order is from a table, enqueue the table occupy
     if table_name and order_from == "table":
