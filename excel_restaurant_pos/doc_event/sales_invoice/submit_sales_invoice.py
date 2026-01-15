@@ -7,7 +7,7 @@ from .handlers.create_payment_entry import create_payment_entry
 from .handlers.update_item_sales_count import update_item_sales_count
 
 
-def submit_sales_invoice(doc: frappe.Document, method: str):
+def submit_sales_invoice(doc, method: str):
     """
     Submit Sales Invoice
     Args:

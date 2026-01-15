@@ -3,7 +3,7 @@
 import frappe
 
 
-def on_trash_sales_invoice(doc: frappe.Document, method: str):
+def on_trash_sales_invoice(doc, method: str):
     """
     Document event handler for Sales Invoice trash.
     Args:

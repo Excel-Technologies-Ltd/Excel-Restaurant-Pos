@@ -5,7 +5,7 @@ import frappe
 from excel_restaurant_pos.doc_event.shared import handle_table_occupy
 
 
-def after_save_sales_invoice(doc: frappe.Document, method: str):
+def after_save_sales_invoice(doc, method: str):
     """
     After save sales invoice
     """

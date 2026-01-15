@@ -5,7 +5,7 @@ import frappe
 from excel_restaurant_pos.doc_event.shared import handle_table_release
 
 
-def change_sales_invoice(doc: frappe.Document, method: str):
+def change_sales_invoice(doc, method: str):
     """
     Validate Sales Invoice
     """

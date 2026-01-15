@@ -3,7 +3,7 @@
 import frappe
 
 
-def before_insert_sales_invoice(doc: frappe.Document, method: str):
+def before_insert_sales_invoice(doc, method: str):
     """
     Validate Sales Invoice
     Args:
