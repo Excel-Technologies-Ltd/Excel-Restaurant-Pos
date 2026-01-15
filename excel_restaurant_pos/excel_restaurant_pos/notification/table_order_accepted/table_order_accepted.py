@@ -30,6 +30,7 @@ def get_context(context):
             message=f"No primary email found for Sales Invoice {doc.name} (Customer: {doc.customer}) - skipping notification",
             title="Notification Skipped: No Email Address",
         )
+
         # Set empty string to prevent notification from being sent
         doc.custom_email_send_to = ""
         return

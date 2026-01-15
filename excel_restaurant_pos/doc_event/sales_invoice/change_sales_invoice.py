@@ -1,8 +1,11 @@
+"""Document event handlers for Sales Invoice changes."""
+
 import frappe
+
 from excel_restaurant_pos.doc_event.shared import handle_table_release
 
 
-def change_sales_invoice(doc, method=None):
+def change_sales_invoice(doc: frappe.Document, method: str):
     """
     Validate Sales Invoice
     """

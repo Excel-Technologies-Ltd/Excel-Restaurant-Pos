@@ -1,8 +1,11 @@
+"""Document event handlers for Sales Invoice after save."""
+
 import frappe
+
 from excel_restaurant_pos.doc_event.shared import handle_table_occupy
 
 
-def after_save_sales_invoice(doc, method=None):
+def after_save_sales_invoice(doc: frappe.Document, method: str):
     """
     After save sales invoice
     """

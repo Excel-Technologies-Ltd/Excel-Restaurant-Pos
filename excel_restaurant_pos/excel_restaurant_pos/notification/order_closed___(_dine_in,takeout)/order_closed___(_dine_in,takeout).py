@@ -16,6 +16,11 @@ def get_context(context):
     doc = context.get("doc")
     default_customer = frappe.db.get_single_value("ArcPOS Settings", "customer")
 
+    feedback = frappe.get_doc("ArcPOS Feedback", {"sales_invoice_no": doc.name})
+
+    if feedback:
+        doc.feedback_name = feedback.name
+
     # define the primary email
     primary_email = None
 
