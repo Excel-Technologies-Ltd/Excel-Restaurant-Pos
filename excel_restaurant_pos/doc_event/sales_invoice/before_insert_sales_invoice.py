@@ -14,6 +14,7 @@ def before_insert_sales_invoice(doc, method: str):
     status = None
     table_name = None
 
+
     if doc.custom_order_from:
         order_from = doc.custom_order_from.lower()
 
@@ -21,5 +22,5 @@ def before_insert_sales_invoice(doc, method: str):
         table_name = doc.custom_linked_table
         status = frappe.db.get_value("Restaurant Table", table_name, "status")
 
-    if status != "Available":
+    if status and status != "Available":
         frappe.throw(f"{table_name} is already occupied or unavailable")
