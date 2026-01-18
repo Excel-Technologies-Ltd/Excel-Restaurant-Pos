@@ -12,6 +12,8 @@ def get_customer_primary_email(customer_name):
     email_list = get_customer_email_list(customer_name)
     primary_email = None
 
+    print(email_list)
+
     # loop through the email list
     for email in email_list:
         if email.is_primary:
@@ -41,7 +43,7 @@ def get_customer_email_list(customer_name):
     email_list = frappe.get_all(
         "Contact Email",
         filters=[["parent", "in", contact_names]],
-        fields=["email_id"],
+        fields=["email_id", "is_primary"],
     )
 
     return email_list
