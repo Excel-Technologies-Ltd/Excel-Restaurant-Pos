@@ -118,15 +118,15 @@ def _add_taxes(sales_invoice, taxes):
         return
 
     for tax_data in taxes:
-        sales_invoice.append(
-            "taxes",
-            {
-                "charge_type": tax_data.get("charge_type", "On Net Total"),
-                "account_head": tax_data.get("account_head"),
-                "rate": flt(tax_data.get("rate", 0)),
-                "description": tax_data.get("description", ""),
-            },
-        )
+            sales_invoice.append(
+                "taxes",
+                {
+                    "charge_type": tax_data.get("charge_type", "On Net Total"),
+                    "account_head": tax_data.get("account_head"),
+                    "rate": flt(tax_data.get("rate", 0)),
+                    "description": tax_data.get("description", ""),
+                },
+            )
 
 
 def _add_payments(sales_invoice, payments):
@@ -135,13 +135,13 @@ def _add_payments(sales_invoice, payments):
         return
 
     for payment in payments:
-        sales_invoice.append(
-            "payments",
-            {
-                "mode_of_payment": payment.get("mode_of_payment"),
-                "amount": flt(payment.get("amount", 0)),
-            },
-        )
+            sales_invoice.append(
+                "payments",
+                {
+                    "mode_of_payment": payment.get("mode_of_payment"),
+                    "amount": flt(payment.get("amount", 0)),
+                },
+            )
 
 
 @frappe.whitelist(allow_guest=True)
