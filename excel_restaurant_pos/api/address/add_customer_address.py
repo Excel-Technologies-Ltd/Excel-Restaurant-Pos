@@ -1,4 +1,8 @@
+"""API endpoint for adding customer addresses."""
+
 import frappe
+
+from .handlers.add_address_with_link import add_address_with_link
 
 
 @frappe.whitelist(allow_guest=True)
@@ -17,29 +21,26 @@ def add_customer_address():
         return frappe.throw("Customer not found")
 
     # append address to customer
-    new_address = frappe.new_doc("Address")
-    new_address.address_title = customer.customer_name
-    new_address.address_type = frappe.form_dict.get("address_type", "Billing")
-    new_address.address_line1 = frappe.form_dict.get("address_line1", "")
-    new_address.address_line2 = frappe.form_dict.get("address_line2", "")
-    new_address.city = frappe.form_dict.get("city", "")
-    new_address.state = frappe.form_dict.get("state", "")
-    new_address.country = frappe.form_dict.get("country", "Canada")
-    new_address.pincode = frappe.form_dict.get("pincode", None)
-    new_address.email_id = frappe.form_dict.get("email_id", None)
-    new_address.phone = frappe.form_dict.get("phone", None)
+    address_info: dict = {}
 
-    # append link to address
-    new_address.append(
-        "links",
-        {
-            "link_doctype": "Customer",
-            "link_name": customer.name,
-        },
-    )
+    # required fields
+    required_fields = ["address_type", "address_line1", "city", "country"]
+    for field in required_fields:
+        if not frappe.form_dict.get(field):
+            frappe.throw(f"{field} is required", frappe.MandatoryError)
+        address_info[field] = frappe.form_dict.get(field)
 
-    # save address
-    new_address.save({"ignore_permissions": True})
+    # optional fields
+    optional_fields = ["address_line2", "state", "pincode"]
+    for field in optional_fields:
+        if frappe.form_dict.get(field):
+            address_info[field] = frappe.form_dict.get(field)
+
+    # create address
+    new_address = add_address_with_link(address_info, "Customer", customer.name)
 
     # return address
-    return new_address.as_dict()
+    return {
+        "message": "Address added successfully",
+        "address": new_address,
+    }

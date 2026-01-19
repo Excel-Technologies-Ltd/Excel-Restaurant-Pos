@@ -1,57 +1,56 @@
-import frappe
+"""API endpoint for creating or updating sales invoices."""
+
 import json
+
+import frappe
 from frappe.utils import flt, now_datetime, get_time
+
 from .handlers.update_sales_invoice import update_sales_invoice
 
 
-@frappe.whitelist(allow_guest=True)
-def add_or_update_invoice():
-    """
-    Create a new Sales Invoice from user-provided data
-    Uses default Frappe creation method with validation
-    Allows guest access by using ignore_permissions=True
-
-    """
-    # Get data from request
-    data = frappe.form_dict
-
-    # Parse JSON if items/taxes are sent as JSON strings
+def _parse_json_fields(data):
+    """Parse JSON strings in data if present."""
     if isinstance(data.get("items"), str):
         data["items"] = json.loads(data["items"])
     if isinstance(data.get("taxes"), str):
         data["taxes"] = json.loads(data.get("taxes", "[]"))
 
-    # get invoice name
-    invoice_name = data.get("invoice_name")
 
-    # if invoice name is provided, update the invoice
-    if invoice_name:
-        updated = update_sales_invoice(invoice_name, items=data.get("items", []))
-        return updated.as_dict()
-
-    # Validate required fields
+def _validate_required_fields(data):
+    """Validate required fields for invoice creation."""
     required_fields = ["customer", "company"]
     for field in required_fields:
         if not data.get(field):
             frappe.throw(f"{field} is required for creating a sales invoice")
 
-    # validate items
-    items = data.get("items", [])
-    if not items or len(items) == 0:
-        frappe.throw("At least one item is required for creating a sales invoice")
 
-    # Verify customer exists
+def _validate_entities(data):
+    """Validate that customer and company exist."""
     if not frappe.db.exists("Customer", data.get("customer")):
         frappe.throw(f"Customer {data.get('customer')} does not exist")
-
-    # Verify company exists
     if not frappe.db.exists("Company", data.get("company")):
         frappe.throw(f"Company {data.get('company')} does not exist")
 
-    # create new sales invoice
-    sales_invoice = frappe.new_doc("Sales Invoice")
 
-    # Set main fields
+def _validate_items(items):
+    """Validate items and check if they exist in database."""
+    if not items or len(items) == 0:
+        frappe.throw("At least one item is required for creating a sales invoice")
+
+    item_codes = [item_data.get("item_code") for item_data in items]
+    existing = frappe.get_all(
+        "Item", filters={"item_code": ["in", item_codes]}, pluck="item_code"
+    )
+    missing = set(item_codes) - set(existing)
+
+    if missing:
+        frappe.throw(
+            f"Items not found: {', '.join(missing)}. Please check the item codes and try again."
+        )
+
+
+def _set_main_fields(sales_invoice, data):
+    """Set main required fields on sales invoice."""
     sales_invoice.customer = data.get("customer")
     sales_invoice.company = data.get("company")
     sales_invoice.naming_series = data.get("naming_series") or "WEB-.YY.-.#####"
@@ -59,7 +58,9 @@ def add_or_update_invoice():
     sales_invoice.posting_time = data.get("posting_time") or get_time(now_datetime())
     sales_invoice.due_date = data.get("due_date") or sales_invoice.posting_date
 
-    # Optional fields
+
+def _set_optional_fields(sales_invoice, data):
+    """Set optional fields on sales invoice."""
     optional_fields = [
         "customer_name",
         "discount_amount",
@@ -86,26 +87,13 @@ def add_or_update_invoice():
         if data.get(field):
             setattr(sales_invoice, field, data.get(field))
 
-    # validate item codes
-    item_codes = [item_data.get("item_code") for item_data in items]
-    existing = frappe.get_all(
-        "Item", filters={"item_code": ["in", item_codes]}, pluck="item_code"
-    )
-    missing = set(item_codes) - set(existing)
 
-    # throw error if items not found in the database
-    if missing:
-        frappe.throw(
-            f"Items not found: {', '.join(missing)}. Please check the item codes and try again."
-        )
-
-    # Add items (child table)
+def _add_items(sales_invoice, items):
+    """Add items to sales invoice."""
     for item_data in items:
-        # Validate item fields
         if not item_data.get("item_code"):
             frappe.throw("item_code is required for all items")
 
-        # Append item to Sales Invoice
         sales_invoice.append(
             "items",
             {
@@ -123,9 +111,13 @@ def add_or_update_invoice():
             },
         )
 
-    # Add taxes if provided (child table)
-    if data.get("taxes"):
-        for tax_data in data.get("taxes", []):
+
+def _add_taxes(sales_invoice, taxes):
+    """Add taxes to sales invoice."""
+    if not taxes:
+        return
+
+    for tax_data in taxes:
             sales_invoice.append(
                 "taxes",
                 {
@@ -136,9 +128,13 @@ def add_or_update_invoice():
                 },
             )
 
-    # Add payments to child table (for tracking/display only)
-    if data.get("payments"):
-        for payment in data.get("payments", []):
+
+def _add_payments(sales_invoice, payments):
+    """Add payments to sales invoice."""
+    if not payments:
+        return
+
+    for payment in payments:
             sales_invoice.append(
                 "payments",
                 {
@@ -147,11 +143,35 @@ def add_or_update_invoice():
                 },
             )
 
-    # include pos invoice
-    sales_invoice.is_pos = 1
 
-    # save the sales invoice
+@frappe.whitelist(allow_guest=True)
+def add_or_update_invoice():
+    """
+    Create a new Sales Invoice from user-provided data
+    Uses default Frappe creation method with validation
+    Allows guest access by using ignore_permissions=True
+    """
+    data = frappe.form_dict
+    _parse_json_fields(data)
+
+    invoice_name = data.get("invoice_name")
+    if invoice_name:
+        updated = update_sales_invoice(invoice_name, items=data.get("items", []))
+        return updated.as_dict()
+
+    items = data.get("items", [])
+    _validate_required_fields(data)
+    _validate_items(items)
+    _validate_entities(data)
+
+    sales_invoice = frappe.new_doc("Sales Invoice")
+    _set_main_fields(sales_invoice, data)
+    _set_optional_fields(sales_invoice, data)
+    _add_items(sales_invoice, items)
+    _add_taxes(sales_invoice, data.get("taxes"))
+    _add_payments(sales_invoice, data.get("payments"))
+
+    sales_invoice.is_pos = 1
     sales_invoice.save(ignore_permissions=True)
 
-    # return the created sales invoice
     return sales_invoice.as_dict()

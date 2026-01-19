@@ -16,6 +16,11 @@ def get_context(context):
     doc = context.get("doc")
     default_customer = frappe.db.get_single_value("ArcPOS Settings", "customer")
 
+    feedback = frappe.get_doc("ArcPOS Feedback", {"sales_invoice_no": doc.name})
+
+    if feedback:
+        doc.feedback_name = feedback.name
+
     # define the primary email
     primary_email = None
 
@@ -26,6 +31,12 @@ def get_context(context):
 
     # Don't send notification if no primary email is found
     if not primary_email:
-        raise ValueError("No primary email found - skipping notification")
+        frappe.log_error(
+            message=f"No primary email found for Sales Invoice {doc.name} (Customer: {doc.customer}) - skipping notification",
+            title="Notification Skipped: No Email Address",
+        )
+        # Set empty string to prevent notification from being sent
+        doc.custom_email_send_to = ""
+        return
 
     doc.custom_email_send_to = primary_email

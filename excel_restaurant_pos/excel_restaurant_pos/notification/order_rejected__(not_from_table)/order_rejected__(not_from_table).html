@@ -1,11 +1,1144 @@
-<h3>Table Order Rejected</h3>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="preload"
+      as="image"
+      href="https://arcpos.aninda.me/files/order-not-completed.png"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="https://arcpos.aninda.me/files/bancan-logo.png"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="https://arcpos.aninda.me/files/logos_facebook.png"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="https://arcpos.aninda.me/files/logos_instagram.png"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="https://arcpos.aninda.me/files/logos_tiktok.png"
+    />
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style>
+      @media only screen and (max-width: 600px) {
+        body {
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .container {
+          width: 100% !important;
+          max-width: 100% !important;
+          padding: 0 !important;
+        }
+        .banner-section {
+          width: 100% !important;
+          padding: 0 !important;
+          max-width: 100% !important;
+        }
+        .banner-image {
+          width: 100% !important;
+          height: auto !important;
+        }
+        .logo-overlay {
+          width: 60px !important;
+          height: auto !important;
+          margin: 0 !important;
+        }
+        .logo-overlay-section {
+          left: 15px !important;
+          top: 10px !important;
+        }
 
-<p>Table order {{ doc.name }} has been rejected. Please take necessary action.</p>
+        .items-section {
+          padding: 0 15px 20px !important;
+        }
+        .item-row-container {
+          padding: 15px 0 !important;
+          border-bottom: 2px solid #e2e8f0 !important;
+        }
+        .item-name-column {
+          width: 100% !important;
+          display: block !important;
+          text-align: left !important;
+          margin-bottom: 8px !important;
+          padding-bottom: 0 !important;
+        }
+        .item-quantity-column {
+          width: auto !important;
+          display: inline-block !important;
+          text-align: left !important;
+          margin-right: 15px !important;
+          padding: 0 !important;
+        }
+        .item-price-column {
+          width: auto !important;
+          display: inline-block !important;
+          text-align: left !important;
+          padding: 0 !important;
+          float: right !important;
+        }
+        .item-name {
+          font-size: 16px !important;
+          font-weight: 600 !important;
+          margin-bottom: 6px !important;
+        }
+        .item-quantity {
+          font-size: 14px !important;
+          color: #718096 !important;
+        }
+        .item-price {
+          font-size: 16px !important;
+          font-weight: 600 !important;
+          color: #2d3748 !important;
+        }
+        .item-bottom-border {
+          display: none !important;
+        }
 
-
-<h4>Details</h4>
-
-<ul>
-<li>Customer: {{ doc.customer }}</li>
-<li>Amount: {{ doc.grand_total }}</li>
-</ul>
+        .footer-section {
+          padding: 25px 15px 15px !important;
+        }
+        .footer-left-column,
+        .footer-right-column {
+          width: 100% !important;
+          display: block !important;
+          min-width: 100% !important;
+        }
+        .footer-left-column {
+          text-align: center !important;
+          margin-bottom: 20px !important;
+        }
+        .footer-right-column {
+          text-align: center !important;
+          margin-top: 0 !important;
+        }
+        .footer-logo {
+          margin: 0 auto 12px !important;
+          width: 70px !important;
+          height: auto !important;
+        }
+        .footer-tagline {
+          text-align: center !important;
+          font-size: 12px !important;
+        }
+        .footer-address {
+          text-align: center !important;
+          font-size: 13px !important;
+        }
+        .footer-contact {
+          text-align: center !important;
+          font-size: 13px !important;
+        }
+        .footer-social-heading {
+          text-align: center !important;
+          font-size: 15px !important;
+        }
+        .footer-social-text {
+          text-align: center !important;
+          font-size: 12px !important;
+        }
+        .social-icons {
+          text-align: center !important;
+          margin-top: 15px !important;
+        }
+        .social-link,
+        .social-link-first {
+          margin: 0 6px !important;
+        }
+        .footer-copyright {
+          font-size: 11px !important;
+        }
+        .footer-disclaimer {
+          font-size: 10px !important;
+        }
+        .social-icon {
+          width: 26px !important;
+          height: 26px !important;
+        }
+      }
+    </style>
+  </head>
+  <body style="background-color: #ffffff">
+    <!--$--><!--html--><!--head-->
+    <div
+      style="
+        display: none;
+        overflow: hidden;
+        line-height: 1px;
+        opacity: 0;
+        max-height: 0;
+        max-width: 0;
+      "
+      data-skip-in-text="true"
+    >
+      Thank You - Your Account has been Created
+    </div>
+    <!--body-->
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center"
+    >
+      <tbody>
+        <tr>
+          <td
+            style="
+              background-color: #ffffff;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                'Helvetica Neue', Ubuntu, sans-serif;
+            "
+          >
+            <table
+              align="center"
+              width="100%"
+              class="container"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="
+                max-width: 600px;
+                background-color: #ffffff;
+                margin: 0 auto;
+                width: 100%;
+                padding: 0;
+                border-radius: 0;
+              "
+            >
+              <tbody>
+                <tr style="width: 100%">
+                  <td>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      class="banner-section"
+                      style="width: 100%; padding: 0 0 0px"
+                    >
+                      <tbody>
+                        <tr>
+                          <td>
+                            <table
+                              align="center"
+                              width="100%"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              role="presentation"
+                              style="position: relative; display: block"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td>
+                                    <img
+                                      class="banner-image"
+                                      alt="Welcome banner"
+                                      src="https://arcpos.aninda.me/files/table-order-approved.jpg"
+                                      style="
+                                        display: block;
+                                        outline: none;
+                                        border: none;
+                                        text-decoration: none;
+                                        width: 100%;
+                                        max-width: 100%;
+                                        height: auto;
+                                        border-radius: 0;
+                                      "
+                                      width="600"
+                                    />
+                                    <table
+                                      align="center"
+                                      width="100%"
+                                      border="0"
+                                      cellpadding="0"
+                                      cellspacing="0"
+                                      role="presentation"
+                                      class="logo-overlay-section"
+                                      style="
+                                        position: absolute;
+                                        top: 10px;
+                                        left: 20px;
+                                        text-align: left;
+                                        width: auto;
+                                        padding: 0;
+                                      "
+                                    >
+                                      <tbody>
+                                        <tr>
+                                          <td>
+                                            <img
+                                              class="logo-overlay"
+                                              alt="Bancan Logo"
+                                              height="58"
+                                              src="https://arcpos.aninda.me/files/bancan-logo.png"
+                                              style="
+                                                display: block;
+                                                outline: none;
+                                                border: none;
+                                                text-decoration: none;
+                                                margin: 0;
+                                                width: 90px;
+                                                max-width: 100%;
+                                                height: auto;
+                                              "
+                                              width="90"
+                                            />
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="padding: 0 20px 40px; text-align: center"
+                    >
+                      <tbody>
+                        <tr>
+                          <td>
+                            <h1
+                              style="
+                                color: #dc2626;
+                                font-size: 24px;
+                                font-weight: bold;
+                                margin: 0 0 10px;
+                                padding: 0;
+                                line-height: 1.3;
+                              "
+                            >
+                              Your Delivery Order has been Rejected
+                            </h1>
+                            <p
+                              style="
+                                font-size: 36px;
+                                line-height: 1.2;
+                                color: #dc2626;
+                                font-family: cursive, serif;
+                                font-weight: normal;
+                                margin: 0 0 5px;
+                                padding: 0;
+                                margin-top: 0;
+                                margin-right: 0;
+                                margin-bottom: 5px;
+                                margin-left: 0;
+                              "
+                            >
+                              We are Sorry
+                            </p>
+                            <p
+                              style="
+                                font-size: 20px;
+                                line-height: 1.2;
+                                color: #dc2626;
+                                font-family: cursive, serif;
+                                font-weight: normal;
+                                margin: 0 0 20px;
+                                padding: 0;
+                                margin-top: 0;
+                                margin-right: 0;
+                                margin-bottom: 20px;
+                                margin-left: 0;
+                              "
+                            >
+                             {% if doc.customer == "CUST-2025-00001" %}
+                              {{ doc.custom_customer_full_name }}
+                             {% else %}
+                              {{ doc.customer_name }}
+                             {% endif %}
+                            </p>
+                            <p
+                              style="
+                                font-size: 16px;
+                                line-height: 24px;
+                                color: #4a5568;
+                                margin: 0 0 25px;
+                                padding: 0;
+                                margin-top: 0;
+                                margin-right: 0;
+                                margin-bottom: 25px;
+                                margin-left: 0;
+                              "
+                            >
+                             Unfortunately, we are sorry to inform you that your order has been rejected.
+                            </p>
+                            <p
+                            style="
+                              font-size: 14px;
+                              line-height: 24px;
+                              background-color: transparent;
+                              border: 2px solid #dc2626;
+                              border-radius: 8px;
+                              color: #dc2626;
+                              font-weight: bold;
+                              text-decoration: none;
+                              text-align: center;
+                              display: inline-block;
+                              padding: 12px 20px;
+                              margin: 0 auto;
+                              width: auto;
+                              max-width: 100%;
+                              cursor: pointer;
+                              margin-top: 0;
+                              margin-right: auto;
+                              margin-bottom: 0;
+                              margin-left: auto;
+                            "
+                          >
+                           {{ doc.name }}
+                          </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      class="items-section"
+                      style="padding: 0 20px 30px"
+                    >
+                      <tbody>
+                        <tr>
+                          <td>
+                            <table
+                              align="center"
+                              width="100%"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              role="presentation"
+                              style="text-align: center; margin: 0 0 15px"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td>
+                                    <h1
+                                      style="
+                                        color: #4a5568;
+                                        font-size: 18px;
+                                        font-weight: normal;
+                                        margin: 0;
+                                        padding: 0 0 8px;
+                                        display: inline-block;
+                                        border-bottom: 2px solid #dc2626;
+                                      "
+                                    >
+                                      Items in your order
+                                    </h1>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            {% for item in doc.items %}
+                            <table
+                              align="center"
+                              width="100%"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              role="presentation"
+                              class="item-row-container"
+                              style="padding: 15px 0"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td>
+                                    <table
+                                      align="center"
+                                      width="100%"
+                                      border="0"
+                                      cellpadding="0"
+                                      cellspacing="0"
+                                      role="presentation"
+                                    >
+                                      <tbody style="width: 100%">
+                                        <tr style="width: 100%">
+                                          <td
+                                            class="item-name-column"
+                                            data-id="__react-email-column"
+                                            style="
+                                              width: 50%;
+                                              vertical-align: top;
+                                            "
+                                          >
+                                            <p
+                                              class="item-name"
+                                              style="
+                                                font-size: 16px;
+                                                line-height: 24px;
+                                                color: #4a5568;
+                                                font-weight: normal;
+                                                margin: 0 0 5px;
+                                                padding: 0;
+                                                margin-top: 0;
+                                                margin-right: 0;
+                                                margin-bottom: 5px;
+                                                margin-left: 0;
+                                              "
+                                            >
+                                              {{ item.item_name }}
+                                            </p>
+                                          </td>
+                                          <td
+                                            class="item-quantity-column"
+                                            data-id="__react-email-column"
+                                            style="
+                                              width: 25%;
+                                              vertical-align: top;
+                                              text-align: center;
+                                            "
+                                          >
+                                            <p
+                                              class="item-quantity"
+                                              style="
+                                                font-size: 14px;
+                                                line-height: 24px;
+                                                color: #718096;
+                                                margin: 0;
+                                                padding: 0;
+                                                text-align: center;
+                                                margin-top: 0;
+                                                margin-bottom: 0;
+                                                margin-left: 0;
+                                                margin-right: 0;
+                                              "
+                                            >
+                                              Qty
+                                              <!-- -->{{ item.qty }}
+                                            </p>
+                                          </td>
+                                          <td
+                                            class="item-price-column"
+                                            data-id="__react-email-column"
+                                            style="
+                                              width: 25%;
+                                              vertical-align: top;
+                                              text-align: right;
+                                            "
+                                          >
+                                            <p
+                                              class="item-price"
+                                              style="
+                                                font-size: 16px;
+                                                line-height: 24px;
+                                                color: #4a5568;
+                                                font-weight: normal;
+                                                margin: 0;
+                                                padding: 0;
+                                                text-align: right;
+                                                margin-top: 0;
+                                                margin-bottom: 0;
+                                                margin-left: 0;
+                                                margin-right: 0;
+                                              "
+                                            >
+                                              $<!-- -->{{ item.rate }}
+                                            </p>
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                    <hr
+                                      class="item-bottom-border"
+                                      style="
+                                        width: 100%;
+                                        border: none;
+                                        border-top: 1px solid #eaeaea;
+                                        border-color: #a0aec0;
+                                        border-width: 0 0 2px 0;
+                                        border-style: solid;
+                                        margin: 0;
+                                      "
+                                    />
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            {% endfor %}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      style="padding: 0 20px 20px"
+                    >
+                      <tbody>
+                        <tr>
+                          <td>
+                            <table
+                              align="center"
+                              width="100%"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              role="presentation"
+                            >
+                              <tbody style="width: 100%">
+                                <tr style="width: 100%">
+                                  <td
+                                    data-id="__react-email-column"
+                                    style="width: 50%; vertical-align: top"
+                                  >
+                                    <p
+                                      style="
+                                        font-size: 16px;
+                                        line-height: 24px;
+                                        color: #4a5568;
+                                        margin: 0 0 10px;
+                                        padding: 0;
+                                        margin-top: 0;
+                                        margin-right: 0;
+                                        margin-bottom: 10px;
+                                        margin-left: 0;
+                                      "
+                                    ></p>
+                                  </td>
+                                  <td
+                                    data-id="__react-email-column"
+                                    style="
+                                      width: 50%;
+                                      vertical-align: top;
+                                      text-align: right;
+                                    "
+                                  >
+                                    <p
+                                      style="
+                                        font-size: 16px;
+                                        line-height: 24px;
+                                        color: #4a5568;
+                                        margin: 0 0 10px;
+                                        padding: 0;
+                                        text-align: right;
+                                        font-weight: bold;
+                                        margin-top: 0;
+                                        margin-right: 0;
+                                        margin-bottom: 10px;
+                                        margin-left: 0;
+                                      "
+                                    >
+                                      Subtotal $<!-- -->{{ doc.total }}
+                                    </p>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              align="center"
+                              width="100%"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              role="presentation"
+                            >
+                              <tbody style="width: 100%">
+                                <tr style="width: 100%">
+                                  <td
+                                    data-id="__react-email-column"
+                                    style="width: 50%; vertical-align: top"
+                                  >
+                                    <p
+                                      style="
+                                        font-size: 16px;
+                                        line-height: 24px;
+                                        color: #4a5568;
+                                        margin: 0 0 10px;
+                                        padding: 0;
+                                        margin-top: 0;
+                                        margin-right: 0;
+                                        margin-bottom: 10px;
+                                        margin-left: 0;
+                                      "
+                                    ></p>
+                                  </td>
+                                  <td
+                                    data-id="__react-email-column"
+                                    style="
+                                      width: 50%;
+                                      vertical-align: top;
+                                      text-align: right;
+                                    "
+                                  >
+                                    <p
+                                      style="
+                                        font-size: 16px;
+                                        line-height: 24px;
+                                        color: #4a5568;
+                                        margin: 0 0 10px;
+                                        padding: 0;
+                                        margin-top: 0;
+                                        margin-right: 0;
+                                        margin-bottom: 10px;
+                                        margin-left: 0;
+                                      "
+                                    >
+                                      HST $<!-- -->{{ doc.total_taxes_and_charges }}
+                                    </p>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              align="center"
+                              width="100%"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              role="presentation"
+                              style="
+                                background-color: #dc2626;
+                                border-radius: 5px;
+                                padding: 15px 20px;
+                                margin-top: 10px;
+                              "
+                            >
+                              <tbody>
+                                <tr>
+                                  <td>
+                                    <table
+                                      align="center"
+                                      width="100%"
+                                      border="0"
+                                      cellpadding="0"
+                                      cellspacing="0"
+                                      role="presentation"
+                                    >
+                                      <tbody style="width: 100%">
+                                        <tr style="width: 100%">
+                                          <td data-id="__react-email-column">
+                                            <p
+                                              style="
+                                                font-size: 18px;
+                                                line-height: 24px;
+                                                color: #ffffff;
+                                                font-weight: bold;
+                                                margin: 0;
+                                                padding: 0;
+                                                margin-top: 0;
+                                                margin-bottom: 0;
+                                                margin-left: 0;
+                                                margin-right: 0;
+                                              "
+                                            >
+                                              Total
+                                            </p>
+                                          </td>
+                                          <td
+                                            data-id="__react-email-column"
+                                            style="text-align: right"
+                                          >
+                                            <p
+                                              style="
+                                                font-size: 18px;
+                                                line-height: 24px;
+                                                color: #ffffff;
+                                                font-weight: bold;
+                                                margin: 0;
+                                                padding: 0;
+                                                margin-top: 0;
+                                                margin-bottom: 0;
+                                                margin-left: 0;
+                                                margin-right: 0;
+                                              "
+                                            >
+                                              $<!-- -->{{ doc.grand_total }}
+                                            </p>
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table
+                      align="center"
+                      width="100%"
+                      border="0"
+                      cellpadding="0"
+                      cellspacing="0"
+                      role="presentation"
+                      class="footer-section"
+                      style="
+                        background-color: #f7fafc;
+                        border-radius: 12px 12px 0 0;
+                        padding: 30px 20px 20px;
+                        margin-top: 0;
+                      "
+                    >
+                      <tbody>
+                        <tr>
+                          <td>
+                            <hr
+                              style="
+                                width: 100%;
+                                border: none;
+                                border-top: 1px solid #eaeaea;
+                                border-color: #e2e8f0;
+                                border-width: 0 0 1px 0;
+                                margin: 0 0 20px;
+                              "
+                            />
+                            <table
+                              align="center"
+                              width="100%"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              role="presentation"
+                            >
+                              <tbody style="width: 100%">
+                                <tr style="width: 100%">
+                                  <td
+                                    class="footer-left-column"
+                                    data-id="__react-email-column"
+                                    style="
+                                      width: 55%;
+                                      vertical-align: top;
+                                      min-width: 200px;
+                                    "
+                                  >
+                                    <img
+                                      class="footer-logo"
+                                      alt="Bancan Kitchen Logo"
+                                      height="58"
+                                      src="https://arcpos.aninda.me/files/bancan-logo.png"
+                                      style="
+                                        display: block;
+                                        outline: none;
+                                        border: none;
+                                        text-decoration: none;
+                                        margin: 0 0 10px;
+                                        max-width: 100%;
+                                        height: auto;
+                                      "
+                                      width="90"
+                                    />
+                                    <p
+                                      class="footer-tagline"
+                                      style="
+                                        font-size: 13px;
+                                        line-height: 20px;
+                                        color: #4a5568;
+                                        margin: 0 0 12px;
+                                        padding: 0;
+                                        font-style: italic;
+                                        font-weight: 500;
+                                        margin-top: 0;
+                                        margin-right: 0;
+                                        margin-bottom: 12px;
+                                        margin-left: 0;
+                                      "
+                                    >
+                                      Premium meals, delivered fresh to your
+                                      door
+                                    </p>
+                                    <p
+                                      class="footer-address"
+                                      style="
+                                        font-size: 14px;
+                                        line-height: 22px;
+                                        color: #4a5568;
+                                        margin: 0 0 10px;
+                                        padding: 0;
+                                        word-break: break-word;
+                                        margin-top: 0;
+                                        margin-right: 0;
+                                        margin-bottom: 10px;
+                                        margin-left: 0;
+                                      "
+                                    >
+                                      804 Eglinton Ave E<br />Toronto, ON M4G
+                                      2L1
+                                    </p>
+                                    <p
+                                      class="footer-contact"
+                                      style="
+                                        font-size: 14px;
+                                        line-height: 22px;
+                                        color: #4a5568;
+                                        margin: 0;
+                                        padding: 0;
+                                        margin-top: 0;
+                                        margin-bottom: 0;
+                                        margin-left: 0;
+                                        margin-right: 0;
+                                      "
+                                    >
+                                      <a
+                                        href="tel:+1234567890"
+                                        style="
+                                          color: #dc2626;
+                                          text-decoration-line: none;
+                                          text-decoration: none;
+                                        "
+                                        target="_blank"
+                                        >(416) 555-0123</a
+                                      ><br /><a
+                                        href="mailto:info@bancankitchen.com"
+                                        style="
+                                          color: #dc2626;
+                                          text-decoration-line: none;
+                                          text-decoration: none;
+                                        "
+                                        target="_blank"
+                                        >info@bancankitchen.com</a
+                                      >
+                                    </p>
+                                  </td>
+                                  <td
+                                    class="footer-right-column"
+                                    data-id="__react-email-column"
+                                    style="
+                                      width: 45%;
+                                      vertical-align: top;
+                                      text-align: right;
+                                      min-width: 150px;
+                                    "
+                                  >
+                                    <p
+                                      class="footer-social-heading"
+                                      style="
+                                        font-size: 16px;
+                                        line-height: 24px;
+                                        color: #4a5568;
+                                        font-weight: 600;
+                                        margin: 0 0 8px;
+                                        padding: 0;
+                                        margin-top: 0;
+                                        margin-right: 0;
+                                        margin-bottom: 8px;
+                                        margin-left: 0;
+                                      "
+                                    >
+                                      Follow Us
+                                    </p>
+                                    <p
+                                      class="footer-social-text"
+                                      style="
+                                        font-size: 13px;
+                                        line-height: 18px;
+                                        color: #718096;
+                                        margin: 0 0 12px;
+                                        padding: 0;
+                                        margin-top: 0;
+                                        margin-right: 0;
+                                        margin-bottom: 12px;
+                                        margin-left: 0;
+                                      "
+                                    >
+                                      See our food and latest updates
+                                    </p>
+                                    <table
+                                      align="center"
+                                      width="100%"
+                                      border="0"
+                                      cellpadding="0"
+                                      cellspacing="0"
+                                      role="presentation"
+                                      class="social-icons"
+                                      style="margin-top: 0; text-align: right"
+                                    >
+                                      <tbody>
+                                        <tr>
+                                          <td>
+                                            <a
+                                              href="#"
+                                              class="social-link-first"
+                                              style="
+                                                color: #067df7;
+                                                text-decoration-line: none;
+                                                display: inline-block;
+                                                text-decoration: none;
+                                                margin-left: 0;
+                                                vertical-align: middle;
+                                              "
+                                              target="_blank"
+                                              ><img
+                                                class="social-icon"
+                                                alt="Facebook"
+                                                height="28"
+                                                src="https://arcpos.aninda.me/files/logos_facebook.png"
+                                                style="
+                                                  display: block;
+                                                  outline: none;
+                                                  border: none;
+                                                  text-decoration: none;
+                                                  width: 28px;
+                                                  height: 28px;
+                                                  max-width: 100%;
+                                                  margin: 0;
+                                                  padding: 0;
+                                                "
+                                                width="28" /></a
+                                            ><a
+                                              href="#"
+                                              class="social-link"
+                                              style="
+                                                color: #067df7;
+                                                text-decoration-line: none;
+                                                display: inline-block;
+                                                text-decoration: none;
+                                                margin-left: 12px;
+                                                vertical-align: middle;
+                                              "
+                                              target="_blank"
+                                              ><img
+                                                class="social-icon"
+                                                alt="Instagram"
+                                                height="28"
+                                                src="https://arcpos.aninda.me/files/logos_instagram.png"
+                                                style="
+                                                  display: block;
+                                                  outline: none;
+                                                  border: none;
+                                                  text-decoration: none;
+                                                  width: 28px;
+                                                  height: 28px;
+                                                  max-width: 100%;
+                                                  margin: 0;
+                                                  padding: 0;
+                                                "
+                                                width="28" /></a
+                                            ><a
+                                              href="#"
+                                              class="social-link"
+                                              style="
+                                                color: #067df7;
+                                                text-decoration-line: none;
+                                                display: inline-block;
+                                                text-decoration: none;
+                                                margin-left: 12px;
+                                                vertical-align: middle;
+                                              "
+                                              target="_blank"
+                                              ><img
+                                                class="social-icon"
+                                                alt="TikTok"
+                                                height="28"
+                                                src="https://arcpos.aninda.me/files/logos_tiktok.png"
+                                                style="
+                                                  display: block;
+                                                  outline: none;
+                                                  border: none;
+                                                  text-decoration: none;
+                                                  width: 28px;
+                                                  height: 28px;
+                                                  max-width: 100%;
+                                                  margin: 0;
+                                                  padding: 0;
+                                                "
+                                                width="28"
+                                            /></a>
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <hr
+                              style="
+                                width: 100%;
+                                border: none;
+                                border-top: 1px solid #eaeaea;
+                                border-color: #e2e8f0;
+                                border-width: 0 0 1px 0;
+                                margin: 20px 0 15px;
+                              "
+                            />
+                            <p
+                              class="footer-copyright"
+                              style="
+                                font-size: 12px;
+                                line-height: 18px;
+                                color: #718096;
+                                margin: 0 0 6px;
+                                padding: 0;
+                                text-align: center;
+                                margin-top: 0;
+                                margin-right: 0;
+                                margin-bottom: 6px;
+                                margin-left: 0;
+                              "
+                            >
+                              ©
+                              <!-- -->2026<!-- -->
+                              Bancan Kitchen. All rights reserved.
+                            </p>
+                            <p
+                              class="footer-disclaimer"
+                              style="
+                                font-size: 11px;
+                                line-height: 16px;
+                                color: #718096;
+                                margin: 0;
+                                padding: 0;
+                                text-align: center;
+                                font-style: italic;
+                                margin-top: 0;
+                                margin-bottom: 0;
+                                margin-left: 0;
+                                margin-right: 0;
+                              "
+                            >
+                              This is an automated message. Please do not reply
+                              to this email.
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--/$-->
+  </body>
+</html>
