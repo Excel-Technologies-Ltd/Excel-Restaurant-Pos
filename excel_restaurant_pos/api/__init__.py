@@ -9,6 +9,8 @@ from .settings import settings_api_routes
 from .territory import territory_api_routes
 from .file import file_api_routes
 from .table import table_api_routes
+from .item_price import item_price_api_routes
+from .customer import customer_api_routes
 
 
 api_routes = {
@@ -23,4 +25,6 @@ api_routes = {
     **territory_api_routes,
     **file_api_routes,
     **table_api_routes,
+    **item_price_api_routes,
+    **customer_api_routes,
 }

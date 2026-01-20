@@ -1,12 +1,18 @@
+"""Document event handlers for Sales Invoice submission."""
+
 import frappe
+
 from .handlers.create_feedback import create_feedback
 from .handlers.create_payment_entry import create_payment_entry
 from .handlers.update_item_sales_count import update_item_sales_count
 
 
-def submit_sales_invoice(doc, method=None):
+def submit_sales_invoice(doc, method: str):
     """
     Submit Sales Invoice
+    Args:
+        doc: The Sales Invoice document.
+        method: The method being called.
     tasks:
         Create arcpos feedback doc (in short queue)
         Increase item sales count
