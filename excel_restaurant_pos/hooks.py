@@ -34,6 +34,8 @@ fixtures = [
                     "ArcPOS Manager",
                     "Bartender",
                     "Delivery Staff",
+                    "ArcPOS Stock User",
+                    "ArcPOS Recipe User"
                 ],
             ]
         ],
