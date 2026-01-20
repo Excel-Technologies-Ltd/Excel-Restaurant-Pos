@@ -31,6 +31,7 @@
   "pos_favicon_dark",
   "heading_title",
   "company",
+  "default_outlet",
   "print_format_for_order",
   "variants_view",
   "allowed_kop",
@@ -372,14 +373,20 @@
    "fieldname": "allowed_production",
    "fieldtype": "Check",
    "label": "Allowed Production?"
+  },
+  {
+   "fieldname": "default_outlet",
+   "fieldtype": "Link",
+   "label": "Default Outlet",
+   "options": "Territory"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-01-13 15:29:32.540194",
- "modified_by": "Administrator",
+ "modified": "2026-01-19 16:16:42.842362",
+ "modified_by": "azmin@excelbd.com",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",
  "owner": "Administrator",
