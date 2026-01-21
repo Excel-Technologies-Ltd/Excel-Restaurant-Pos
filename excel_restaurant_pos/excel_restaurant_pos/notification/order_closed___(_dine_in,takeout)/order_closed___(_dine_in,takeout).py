@@ -1,7 +1,7 @@
 """Notification context for order closed (dine-in, takeout) emails."""
 
-# pylint: disable=invalid-name
 import frappe
+
 from excel_restaurant_pos.excel_restaurant_pos.notification.utils import (
     get_customer_primary_email,
 )
@@ -16,10 +16,13 @@ def get_context(context):
     doc = context.get("doc")
     default_customer = frappe.db.get_single_value("ArcPOS Settings", "customer")
 
-    feedback = frappe.get_doc("ArcPOS Feedback", {"sales_invoice_no": doc.name})
+    # Get feedback document by sales_invoice_no
+    feedback_name = frappe.db.get_value(
+        "ArcPOS Feedback", {"sales_invoice_no": doc.name}, "name"
+    )
 
-    if feedback:
-        doc.feedback_name = feedback.name
+    if feedback_name:
+        doc.feedback_name = feedback_name
 
     # define the primary email
     primary_email = None
