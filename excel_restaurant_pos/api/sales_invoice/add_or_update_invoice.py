@@ -6,6 +6,7 @@ import frappe
 from frappe.utils import flt, now_datetime, get_time
 from .handlers.update_sales_invoice import update_sales_invoice
 
+
 # parse json fields if present
 def _parse_json_fields(data):
     """Parse JSON strings in data if present."""
@@ -87,6 +88,11 @@ def _set_optional_fields(sales_invoice, data):
         "custom_party_size",
         "disable_rounded_total",
         "custom_cutlery",
+        "custom_address_line1",
+        "custom_city",
+        "custom_state",
+        "custom_pincode",
+        "custom_country",
     ]
 
     for field in optional_fields:
@@ -126,15 +132,15 @@ def _add_taxes(sales_invoice, taxes):
         return
 
     for tax_data in taxes:
-            sales_invoice.append(
-                "taxes",
-                {
-                    "charge_type": tax_data.get("charge_type", "On Net Total"),
-                    "account_head": tax_data.get("account_head"),
-                    "rate": flt(tax_data.get("rate", 0)),
-                    "description": tax_data.get("description", ""),
-                },
-            )
+        sales_invoice.append(
+            "taxes",
+            {
+                "charge_type": tax_data.get("charge_type", "On Net Total"),
+                "account_head": tax_data.get("account_head"),
+                "rate": flt(tax_data.get("rate", 0)),
+                "description": tax_data.get("description", ""),
+            },
+        )
 
 
 # add custom quotes
@@ -160,6 +166,7 @@ def _add_custom_quotes(sales_invoice, custom_quotes):
             },
         )
 
+
 # add payments
 def _add_payments(sales_invoice, payments):
     """Add payments to sales invoice."""
@@ -167,13 +174,13 @@ def _add_payments(sales_invoice, payments):
         return
 
     for payment in payments:
-            sales_invoice.append(
-                "payments",
-                {
-                    "mode_of_payment": payment.get("mode_of_payment"),
-                    "amount": flt(payment.get("amount", 0)),
-                },
-            )
+        sales_invoice.append(
+            "payments",
+            {
+                "mode_of_payment": payment.get("mode_of_payment"),
+                "amount": flt(payment.get("amount", 0)),
+            },
+        )
 
 
 @frappe.whitelist(allow_guest=True)

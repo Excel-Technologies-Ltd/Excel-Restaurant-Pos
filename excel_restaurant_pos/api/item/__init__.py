@@ -1,7 +1,7 @@
 from .get_item_list import get_item_list
 from .get_item_details import get_item_details
 from .most_sold_item import get_most_sold_item
-from .item import *  # noqa: F403
+from .item import *
 from .test import test
 
 __all__ = [
