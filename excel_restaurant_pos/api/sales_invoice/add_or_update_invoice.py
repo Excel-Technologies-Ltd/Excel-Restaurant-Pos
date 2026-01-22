@@ -4,18 +4,21 @@ import json
 
 import frappe
 from frappe.utils import flt, now_datetime, get_time
-
 from .handlers.update_sales_invoice import update_sales_invoice
 
 
+# parse json fields if present
 def _parse_json_fields(data):
     """Parse JSON strings in data if present."""
     if isinstance(data.get("items"), str):
         data["items"] = json.loads(data["items"])
     if isinstance(data.get("taxes"), str):
         data["taxes"] = json.loads(data.get("taxes", "[]"))
+    if isinstance(data.get("custom_quotes"), str):
+        data["custom_quotes"] = json.loads(data.get("custom_quotes", "[]"))
 
 
+# validate required fields
 def _validate_required_fields(data):
     """Validate required fields for invoice creation."""
     required_fields = ["customer", "company"]
@@ -24,6 +27,7 @@ def _validate_required_fields(data):
             frappe.throw(f"{field} is required for creating a sales invoice")
 
 
+# validate entities
 def _validate_entities(data):
     """Validate that customer and company exist."""
     if not frappe.db.exists("Customer", data.get("customer")):
@@ -32,6 +36,7 @@ def _validate_entities(data):
         frappe.throw(f"Company {data.get('company')} does not exist")
 
 
+# validate items
 def _validate_items(items):
     """Validate items and check if they exist in database."""
     if not items or len(items) == 0:
@@ -49,6 +54,7 @@ def _validate_items(items):
         )
 
 
+# set main fields
 def _set_main_fields(sales_invoice, data):
     """Set main required fields on sales invoice."""
     sales_invoice.customer = data.get("customer")
@@ -59,6 +65,7 @@ def _set_main_fields(sales_invoice, data):
     sales_invoice.due_date = data.get("due_date") or sales_invoice.posting_date
 
 
+# set optional fields
 def _set_optional_fields(sales_invoice, data):
     """Set optional fields on sales invoice."""
     optional_fields = [
@@ -81,6 +88,11 @@ def _set_optional_fields(sales_invoice, data):
         "custom_party_size",
         "disable_rounded_total",
         "custom_cutlery",
+        "custom_address_line1",
+        "custom_city",
+        "custom_state",
+        "custom_pincode",
+        "custom_country",
     ]
 
     for field in optional_fields:
@@ -88,6 +100,7 @@ def _set_optional_fields(sales_invoice, data):
             setattr(sales_invoice, field, data.get(field))
 
 
+# add items
 def _add_items(sales_invoice, items):
     """Add items to sales invoice."""
     for item_data in items:
@@ -112,36 +125,62 @@ def _add_items(sales_invoice, items):
         )
 
 
+# add taxes
 def _add_taxes(sales_invoice, taxes):
     """Add taxes to sales invoice."""
     if not taxes:
         return
 
     for tax_data in taxes:
-            sales_invoice.append(
-                "taxes",
-                {
-                    "charge_type": tax_data.get("charge_type", "On Net Total"),
-                    "account_head": tax_data.get("account_head"),
-                    "rate": flt(tax_data.get("rate", 0)),
-                    "description": tax_data.get("description", ""),
-                },
-            )
+        sales_invoice.append(
+            "taxes",
+            {
+                "charge_type": tax_data.get("charge_type", "On Net Total"),
+                "account_head": tax_data.get("account_head"),
+                "rate": flt(tax_data.get("rate", 0)),
+                "description": tax_data.get("description", ""),
+            },
+        )
 
 
+# add custom quotes
+def _add_custom_quotes(sales_invoice, custom_quotes):
+    """Add custom quotes to sales invoice."""
+    if not custom_quotes:
+        return
+
+    for custom_quote in custom_quotes:
+        sales_invoice.append(
+            "custom_quotes",
+            {
+                "delivery_quote_id": custom_quote.get("delivery_quote_id"),
+                "created": custom_quote.get("created"),
+                "currency": custom_quote.get("currency"),
+                "currency_type": custom_quote.get("currency_type"),
+                "dropoff_eta": custom_quote.get("dropoff_eta"),
+                "duration": custom_quote.get("duration"),
+                "fee": custom_quote.get("fee"),
+                "expires": custom_quote.get("expires"),
+                "dropoff_deadline": custom_quote.get("dropoff_deadline"),
+                "pickup_duration": custom_quote.get("pickup_duration"),
+            },
+        )
+
+
+# add payments
 def _add_payments(sales_invoice, payments):
     """Add payments to sales invoice."""
     if not payments:
         return
 
     for payment in payments:
-            sales_invoice.append(
-                "payments",
-                {
-                    "mode_of_payment": payment.get("mode_of_payment"),
-                    "amount": flt(payment.get("amount", 0)),
-                },
-            )
+        sales_invoice.append(
+            "payments",
+            {
+                "mode_of_payment": payment.get("mode_of_payment"),
+                "amount": flt(payment.get("amount", 0)),
+            },
+        )
 
 
 @frappe.whitelist(allow_guest=True)
@@ -169,6 +208,7 @@ def add_or_update_invoice():
     _set_optional_fields(sales_invoice, data)
     _add_items(sales_invoice, items)
     _add_taxes(sales_invoice, data.get("taxes"))
+    _add_custom_quotes(sales_invoice, data.get("custom_quotes"))
     _add_payments(sales_invoice, data.get("payments"))
 
     sales_invoice.is_pos = 1

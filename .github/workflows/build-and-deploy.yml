@@ -53,6 +53,10 @@ jobs:
             {
               "url": "https://github.com/Excel-Technologies-Ltd/Excel-ERPNext.git",
               "branch": "version-14"
+            },
+            {
+              "url": "https://github.com/Excel-Technologies-Ltd/uber-direct.git",
+              "branch": "main"
             }
           ]'
 
