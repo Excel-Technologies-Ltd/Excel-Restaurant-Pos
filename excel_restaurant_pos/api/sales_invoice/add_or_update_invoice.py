@@ -5,6 +5,7 @@ import json
 import frappe
 from frappe.utils import flt, now_datetime, get_time
 from .handlers.update_sales_invoice import update_sales_invoice
+from excel_restaurant_pos.utils import iso_to_frappe_datetime
 
 
 # parse json fields if present
@@ -154,14 +155,14 @@ def _add_custom_quotes(sales_invoice, custom_quotes):
             "custom_quotes",
             {
                 "delivery_quote_id": custom_quote.get("delivery_quote_id"),
-                "created": custom_quote.get("created"),
+                "created": iso_to_frappe_datetime(custom_quote.get("created")),
                 "currency": custom_quote.get("currency"),
                 "currency_type": custom_quote.get("currency_type"),
-                "dropoff_eta": custom_quote.get("dropoff_eta"),
+                "dropoff_eta": iso_to_frappe_datetime(custom_quote.get("dropoff_eta")),
                 "duration": custom_quote.get("duration"),
                 "fee": custom_quote.get("fee"),
-                "expires": custom_quote.get("expires"),
-                "dropoff_deadline": custom_quote.get("dropoff_deadline"),
+                "expires": iso_to_frappe_datetime(custom_quote.get("expires")),
+                "dropoff_deadline": iso_to_frappe_datetime(custom_quote.get("dropoff_deadline")),
                 "pickup_duration": custom_quote.get("pickup_duration"),
             },
         )
