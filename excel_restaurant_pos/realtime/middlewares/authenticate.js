@@ -1,5 +1,4 @@
 const { get_conf } = require("../../../../frappe/node_utils");
-const { get_url } = require("../../../../frappe/realtime/utils");
 const conf = get_conf();
 
 /**
