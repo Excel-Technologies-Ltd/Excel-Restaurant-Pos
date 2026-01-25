@@ -1,145 +1,22 @@
 import socketio
-import requests
 import os
-import sys
 
 # Configuration
-ENVIRONMENT = os.getenv("ENV", "production")  # production, local-backend, local-frontend
-AUTH_MODE = os.getenv("AUTH_MODE", "bearer")  # "bearer" (recommended) or "session"
+ENVIRONMENT = os.getenv("ENV", "production")
+BASE_URL = "https://arcpos.aninda.me"
+SITE_NAME = "arcpos.aninda.me"
 
-CONFIGS = {
-    "production": {
-        "url": "https://arcpos.aninda.me",
-        "site": "arcpos.aninda.me"
-    },
-    "local-backend": {
-        "url": "http://backend:8000",
-        "site": "pos.localhost"
-    },
-    "local-frontend": {
-        "url": "http://frontend:8080",
-        "site": "pos.localhost"
-    },
-    "host-local": {
-        "url": "http://pos.localhost:2008",
-        "site": "pos.localhost"
-    }
-}
+# Bearer Token - Replace with your actual token
+BEARER_TOKEN = os.getenv("BEARER_TOKEN", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYXptaW5AZXhjZWxiZC5jb20iLCJleHAiOjE3NjkzMjgwNTYsImlhdCI6MTc2OTMyNDQ1NiwidHlwZSI6ImFjY2VzcyJ9.hSQa33n4DonyD96lSJX2rlnqWXXBxSZxdpwZFg6rnTk")
 
-if ENVIRONMENT not in CONFIGS:
-    print(f"❌ Unknown environment: {ENVIRONMENT}")
-    print(f"Available: {', '.join(CONFIGS.keys())}")
-    sys.exit(1)
-
-config = CONFIGS[ENVIRONMENT]
-BASE_URL = config["url"]
-SITE_NAME = config["site"]
-
-# Authentication credentials
-USERNAME = "azmin@excelbd.com"
-PASSWORD = "Azmin@123#"
-
-# Optional: Use pre-generated Bearer token (set via environment variable)
-BEARER_TOKEN = os.getenv("BEARER_TOKEN")
-
-print(f"🔧 Environment: {ENVIRONMENT}")
-print(f"🌐 Base URL: {BASE_URL}")
-print(f"📍 Site: {SITE_NAME}")
-print(f"🔐 Auth Mode: {AUTH_MODE}")
-print("")
-
-
-def get_bearer_token():
-    """Get JWT Bearer token from your custom auth endpoint"""
-    if BEARER_TOKEN:
-        print(f"🎫 Using pre-set Bearer token: {BEARER_TOKEN[:40]}...")
-        return BEARER_TOKEN
-
-    print("🔐 Getting Bearer token from API...")
-
-    # Use your custom JWT auth endpoint
-    auth_endpoint = "/api/method/excel_restaurant_pos.api.auth.login.login"
-
-    headers = {
-        "X-Frappe-Site-Name": SITE_NAME,
-        "Content-Type": "application/json"
-    }
-
-    auth_data = {
-        "user": USERNAME,
-        "pwd": PASSWORD
-    }
-
-    try:
-        response = requests.post(
-            f"{BASE_URL}{auth_endpoint}",
-            json=auth_data,
-            headers=headers
-        )
-
-        if response.status_code == 200:
-            data = response.json()
-
-            # Extract token from response
-            # Your API returns: {"message": {"data": {"access_token": "..."}}}
-            token = None
-            if isinstance(data, dict):
-                message = data.get("message", {})
-                if isinstance(message, dict):
-                    data_obj = message.get("data", {})
-                    if isinstance(data_obj, dict):
-                        token = data_obj.get("access_token")
-
-                # Fallback: check for token at root level
-                if not token:
-                    token = (
-                        data.get("token") or
-                        data.get("access_token") or
-                        message.get("access_token")
-                    )
-
-            if token:
-                print(f"✅ Got Bearer token: {token[:40]}...")
-                return token
-            else:
-                raise Exception(f"No access_token in response: {data}")
-
-        else:
-            error_msg = response.text
-            raise Exception(f"Login failed: {response.status_code} - {error_msg}")
-
-    except Exception as e:
-        print(f"❌ Failed to get Bearer token: {e}")
-        raise Exception(f"Could not authenticate: {e}")
-
-
-def get_session_cookie():
-    """Get session cookie via traditional login (fallback method)"""
-    print("🔐 Authenticating with session cookies...")
-
-    login_url = f"{BASE_URL}/api/method/login"
-    login_data = {
-        "usr": USERNAME,
-        "pwd": PASSWORD
-    }
-
-    headers = {
-        "X-Frappe-Site-Name": SITE_NAME
-    }
-
-    response = requests.post(login_url, data=login_data, headers=headers)
-
-    if response.status_code != 200:
-        raise Exception(f"Login failed: {response.status_code} - {response.text}")
-
-    cookies = response.cookies
-
-    if 'sid' not in cookies:
-        raise Exception("No session cookie received from login")
-
-    print(f"✅ Authenticated with session. SID: {cookies.get('sid')[:20]}...")
-    return cookies
-
+print("=" * 60)
+print("Socket.IO Client - Bearer Token Authentication")
+print("=" * 60)
+print(f" URL: {BASE_URL}")
+print(f" Site: {SITE_NAME}")
+print(f" Token: {BEARER_TOKEN[:40]}...")
+print("=" * 60)
+print()
 
 # Create Socket.IO client
 sio = socketio.Client(logger=True, engineio_logger=True)
@@ -147,42 +24,142 @@ sio = socketio.Client(logger=True, engineio_logger=True)
 
 @sio.event
 def connect():
-    print(f"✅ Socket connected! ID: {sio.sid}")
+    print()
+    print("=" * 60)
+    print(f" Socket connected! ID: {sio.sid}")
+    print("=" * 60)
+    print()
+
+    # Join user-specific room to receive notifications
+    user_email = "azmin@excelbd.com"  # Extracted from your token
+    user_room = f"{SITE_NAME}:user:{user_email}"
+
+    print(f" Joining user room: {user_room}")
+    # The server automatically joins user room, but we can listen for events
+    print(f" Listening for notifications...")
+    print()
 
 
 @sio.event
 def connect_error(data):
-    print(f"❌ Socket connection failed: {data}")
+    print()
+    print("=" * 60)
+    print(f" Socket connection failed: {data}")
+    print("=" * 60)
+    print()
 
 
 @sio.event
 def disconnect():
-    print("⚠️ Disconnected from server")
+    print()
+    print("=" * 60)
+    print("  Disconnected from server")
+    print("=" * 60)
+    print()
 
 
+# Notification event handlers
+@sio.on('notification')
+def on_notification(data):
+    print()
+    print("" + "=" * 59)
+    print("NOTIFICATION RECEIVED")
+    print("=" * 60)
+    print(f"Type: {data.get('type', 'N/A')}")
+    print(f"Message: {data.get('message', data)}")
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key not in ['type', 'message']:
+                print(f"{key}: {value}")
+    print("=" * 60)
+    print()
+
+
+@sio.on('msgprint')
+def on_msgprint(data):
+    print()
+    print("" + "=" * 59)
+    print("MESSAGE PRINT")
+    print("=" * 60)
+    print(f"Message: {data.get('message', data) if isinstance(data, dict) else data}")
+    if isinstance(data, dict):
+        print(f"Indicator: {data.get('indicator', 'blue')}")
+        if data.get('title'):
+            print(f"Title: {data.get('title')}")
+    print("=" * 60)
+    print()
+
+
+@sio.on('eval_js')
+def on_eval_js(data):
+    print()
+    print("⚡" + "=" * 59)
+    print("EVAL JS")
+    print("=" * 60)
+    print(f"Script: {data}")
+    print("=" * 60)
+    print()
+
+
+@sio.on('list_update')
+def on_list_update(data):
+    print()
+    print("" + "=" * 59)
+    print("LIST UPDATE")
+    print("=" * 60)
+    print(f"DocType: {data.get('doctype', 'N/A')}")
+    print(f"Name: {data.get('name', 'N/A')}")
+    print("=" * 60)
+    print()
+
+
+@sio.on('doc_update')
+def on_doc_update(data):
+    print()
+    print("" + "=" * 59)
+    print("DOCUMENT UPDATE")
+    print("=" * 60)
+    print(f"DocType: {data.get('doctype', 'N/A')}")
+    print(f"Name: {data.get('name', 'N/A')}")
+    print(f"Modified: {data.get('modified', 'N/A')}")
+    print("=" * 60)
+    print()
+
+
+@sio.on('new_email')
+def on_new_email(data):
+    print()
+    print("" + "=" * 59)
+    print("NEW EMAIL")
+    print("=" * 60)
+    print(f"Data: {data}")
+    print("=" * 60)
+    print()
+
+
+# Catch all other events
 @sio.on('*')
 def catch_all(event, data):
-    print(f"📨 Received event '{event}': {data}")
+    print()
+    print("" + "=" * 59)
+    print(f"EVENT: {event}")
+    print("=" * 60)
+    print(f"Data: {data}")
+    print("=" * 60)
+    print()
 
 
 if __name__ == "__main__":
     try:
+        # Prepare headers with Bearer token
         headers = {
+            'Authorization': f'Bearer {BEARER_TOKEN}',
             'X-Frappe-Site-Name': SITE_NAME
         }
 
-        if AUTH_MODE == "bearer":
-            # Bearer token authentication (recommended)
-            token = get_bearer_token()
-            headers['Authorization'] = f'Bearer {token}'
-            print(f"🔌 Connecting to Socket.IO with Bearer token...")
-
-        else:
-            # Session cookie authentication (traditional method)
-            cookies = get_session_cookie()
-            cookie_dict = {cookie.name: cookie.value for cookie in cookies}
-            headers['Cookie'] = '; '.join([f"{name}={value}" for name, value in cookie_dict.items()])
-            print(f"🔌 Connecting to Socket.IO with session cookies...")
+        print(f"🔌 Connecting to Socket.IO at {BASE_URL}...")
+        print(f"   Using Bearer token authentication")
+        print()
 
         # Connect to Socket.IO
         sio.connect(
@@ -192,17 +169,21 @@ if __name__ == "__main__":
             headers=headers
         )
 
-        print("✅ Socket.IO connection established. Waiting for events...")
+        print(" Socket.IO connection established. Waiting for events...")
         print("   Press Ctrl+C to disconnect")
-        print("")
+        print()
 
         # Wait for events
         sio.wait()
 
     except KeyboardInterrupt:
-        print("\n⚠️  Interrupted by user")
+        print()
+        print("  Interrupted by user")
         sio.disconnect()
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print()
+        print("=" * 60)
+        print(f" Error: {e}")
+        print("=" * 60)
         import traceback
         traceback.print_exc()

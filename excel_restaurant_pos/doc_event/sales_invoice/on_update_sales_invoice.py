@@ -214,7 +214,7 @@ def send_notification_to_role(doc, rule):
         print(f"Notification Body: {body}")
 
         # ALWAYS save system notifications for all users (even if they don't have tokens)
-        print(f"\n📧 Sending SYSTEM NOTIFICATIONS to {len(user_emails)} users:")
+        print(f"\n Sending SYSTEM NOTIFICATIONS to {len(user_emails)} users:")
         system_notifications_sent = 0
         for user_email in user_emails:
             print(f"  → Attempting to send system notification to: {user_email}")
@@ -232,6 +232,13 @@ def send_notification_to_role(doc, rule):
                 })
                 notification.insert(ignore_permissions=True)
                 system_notifications_sent += 1
+                frappe.publish_realtime('sales_invoice_notification_'+user_email, data = {
+                    'title': title,
+                    'body': body,
+                    'document_type': 'Sales Invoice',
+                    'document_name': doc.name
+                }, 
+                )
                 print(f"    ✓ SUCCESS: System notification saved for: {user_email}")
             except Exception as e:
                 print(f"    ✗ FAILED: Error saving system notification for {user_email}: {str(e)}")
@@ -240,7 +247,7 @@ def send_notification_to_role(doc, rule):
                     "System Notification Error"
                 )
 
-        print(f"\n✅ System notifications sent: {system_notifications_sent}/{len(user_emails)}\n")
+        print(f"\n System notifications sent: {system_notifications_sent}/{len(user_emails)}\n")
 
         # Try to send push notifications if Expo SDK is available
         try:
@@ -270,12 +277,12 @@ def send_notification_to_role(doc, rule):
         print(f"Found {len(tokens)} Expo tokens in database")
 
         if not tokens:
-            print("⚠️  No Expo tokens found, skipping push notifications")
+            print("  No Expo tokens found, skipping push notifications")
             print(f"--- Notification complete (system only) ---\n")
             return
 
         # Prepare push notification messages
-        print(f"\n📱 Preparing PUSH NOTIFICATIONS:")
+        print(f"\n Preparing PUSH NOTIFICATIONS:")
         push_messages = []
         token_to_user_map = {}
 
@@ -284,7 +291,7 @@ def send_notification_to_role(doc, rule):
             if token_doc.token:
                 # Validate Expo push token format
                 if not PushClient.is_exponent_push_token(token_doc.token):
-                    print(f"    ✗ INVALID token format for: {token_doc.user}")
+                    print(f"     INVALID token format for: {token_doc.user}")
                     frappe.log_error(
                         f"Invalid Expo token for user {token_doc.user}: {token_doc.token}",
                         "Invalid Expo Token"
@@ -314,14 +321,14 @@ def send_notification_to_role(doc, rule):
             else:
                 print(f"    ✗ No token found for: {token_doc.user}")
 
-        print(f"\n📤 Total push messages to send: {len(push_messages)}")
+        print(f"\n Total push messages to send: {len(push_messages)}")
 
         # Send push notifications if tokens are available
         if push_messages:
             push_client = PushClient()
             push_sent_count = 0
 
-            print(f"\n🚀 Sending push notifications via Expo...")
+            print(f"\n Sending push notifications via Expo...")
             try:
                 # Send notifications in chunks (Expo recommends max 100 per request)
                 chunk_size = 100
@@ -365,9 +372,9 @@ def send_notification_to_role(doc, rule):
                     "Expo Push Notification Error"
                 )
 
-            print(f"\n✅ Push notifications sent: {push_sent_count}/{len(push_messages)}")
+            print(f"\n Push notifications sent: {push_sent_count}/{len(push_messages)}")
         else:
-            print("⚠️  No valid push messages to send")
+            print("  No valid push messages to send")
 
         print(f"\n=== Notification complete (system + push) ===\n")
 
