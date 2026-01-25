@@ -32,6 +32,7 @@
   "variants_view",
   "taxes_and_charges_template",
   "pos_tips",
+  "default_tip_account_pos",
   "allowed_dc_pos",
   "default_dc_account_pos",
   "fixed_dc_amount_pos",
@@ -59,6 +60,7 @@
   "default_dc_account",
   "dca",
   "website_tips",
+  "default_tip_account_web",
   "branding_text",
   "branding_url",
   "web_section_view",
@@ -487,13 +489,29 @@
    "fieldtype": "Select",
    "label": "Item Section View",
    "options": "Single\nMultiple"
+  },
+  {
+   "depends_on": "eval:doc.pos_tips!='Not Allowed'",
+   "fieldname": "default_tip_account_pos",
+   "fieldtype": "Link",
+   "label": "Default Tip Account",
+   "mandatory_depends_on": "eval:doc.pos_tips!='Not Allowed'",
+   "options": "Account"
+  },
+  {
+   "depends_on": "eval:doc.website_tips!='Not Allowed'",
+   "fieldname": "default_tip_account_web",
+   "fieldtype": "Link",
+   "label": "Default Tip Account",
+   "mandatory_depends_on": "eval:doc.website_tips!='Not Allowed'",
+   "options": "Account"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-01-24 16:50:48.941023",
+ "modified": "2026-01-25 15:01:52.737470",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",
