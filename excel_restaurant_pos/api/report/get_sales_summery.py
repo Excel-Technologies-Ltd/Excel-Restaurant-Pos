@@ -3,7 +3,7 @@ from calendar import monthrange
 from frappe.utils import getdate
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_sales_summery(start_date=None, end_date=None):
     """
     Get sales summary report.

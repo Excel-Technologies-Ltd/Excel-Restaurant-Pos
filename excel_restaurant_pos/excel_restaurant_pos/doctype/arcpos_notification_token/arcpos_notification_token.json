@@ -11,7 +11,7 @@
   "user",
   "user_name",
   "column_break_chprm",
-  "token"
+  "token_list"
  ],
  "fields": [
   {
@@ -22,11 +22,6 @@
    "unique": 1
   },
   {
-   "fieldname": "token",
-   "fieldtype": "Data",
-   "label": "Token"
-  },
-  {
    "fetch_from": "user.full_name",
    "fieldname": "user_name",
    "fieldtype": "Data",
@@ -35,12 +30,18 @@
   },
   {
    "fieldname": "column_break_chprm",
-   "fieldtype": "Column Break"
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "token_list",
+   "fieldtype": "Table",
+   "label": "Token List",
+   "options": "Push Token List"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-20 14:15:02.385002",
+ "modified": "2026-01-26 12:19:25.951504",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Notification Token",
