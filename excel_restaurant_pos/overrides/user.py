@@ -7,7 +7,7 @@ from excel_restaurant_pos.shared.arcpos_settings.system_settings import default_
 from excel_restaurant_pos.shared.email_templates.get_template import template_by_name
 
 @frappe.whitelist(allow_guest=True)
-def sign_up(email, full_name, password, redirect_to=None):
+def sign_up(email, mobile_no, full_name, password, redirect_to=None):
     """Register user with OTP verification"""
 
     # Check if user already exists
@@ -40,6 +40,7 @@ def sign_up(email, full_name, password, redirect_to=None):
     cache_data = {
         "email": email,
         "full_name": full_name,
+        "mobile_no": mobile_no,
         "password": password,
         "redirect_to": redirect_to,
         "otp": otp,
@@ -140,6 +141,7 @@ def verify_otp(verification_key, otp):
             "doctype": "User",
             "email": user_data["email"],
             "first_name": user_data["full_name"],
+            "mobile_no": user_data.get("mobile_no"),
             "enabled": 1,  # User is enabled after OTP verification
             "new_password": user_data["password"],
             "user_type": "Website User"
@@ -163,9 +165,11 @@ def verify_otp(verification_key, otp):
                 "doctype": "Customer",
                 "customer_name": user.full_name,
                 "email_id": user.email,
+                "mobile_no": user_data.get("mobile_no"),
                 "customer_type": "Individual",
                 "customer_group": selling_settings.customer_group or "All Customer Groups",
                 "territory": selling_settings.territory or "All Territories"
+
             })
             customer.flags.ignore_permissions = True
             details = customer.insert()

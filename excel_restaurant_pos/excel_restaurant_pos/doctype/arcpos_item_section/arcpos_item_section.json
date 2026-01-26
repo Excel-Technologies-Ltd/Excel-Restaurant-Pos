@@ -1,50 +1,40 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:user",
- "creation": "2026-01-20 14:13:31.886689",
+ "autoname": "field:section_name",
+ "creation": "2026-01-24 16:42:43.024266",
  "default_view": "List",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "user",
-  "user_name",
-  "column_break_chprm",
-  "token_list"
+  "section_name",
+  "status"
  ],
  "fields": [
   {
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "label": "User",
-   "options": "User",
+   "fieldname": "section_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section Name",
+   "reqd": 1,
    "unique": 1
   },
   {
-   "fetch_from": "user.full_name",
-   "fieldname": "user_name",
-   "fieldtype": "Data",
-   "label": "User Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_chprm",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "token_list",
-   "fieldtype": "Table",
-   "label": "Token List",
-   "options": "Push Token List"
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nInactive",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-26 12:19:25.951504",
+ "modified": "2026-01-24 16:43:14.736603",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
- "name": "ArcPOS Notification Token",
+ "name": "ArcPOS Item Section",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

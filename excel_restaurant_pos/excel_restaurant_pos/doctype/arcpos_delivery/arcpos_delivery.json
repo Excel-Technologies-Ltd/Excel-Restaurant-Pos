@@ -7,20 +7,124 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "order_no"
+  "order_no",
+  "delivery_id",
+  "courier_name",
+  "courier_rating",
+  "courier_vehicle_type",
+  "courier_phone_number",
+  "courier_img_href",
+  "courier_imminent",
+  "column_break_luxit",
+  "deliverable_action",
+  "external_id",
+  "fee",
+  "manifest_reference",
+  "status",
+  "tip",
+  "tracking_url",
+  "uuid",
+  "batch_id"
  ],
  "fields": [
   {
    "fieldname": "order_no",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Order No",
    "options": "Sales Invoice"
+  },
+  {
+   "fieldname": "delivery_id",
+   "fieldtype": "Data",
+   "label": "Delivery ID"
+  },
+  {
+   "fieldname": "courier_name",
+   "fieldtype": "Data",
+   "label": "Courier Name"
+  },
+  {
+   "fieldname": "courier_rating",
+   "fieldtype": "Data",
+   "label": "Courier Ratings"
+  },
+  {
+   "fieldname": "courier_vehicle_type",
+   "fieldtype": "Data",
+   "label": "Courier Vehicle Type"
+  },
+  {
+   "fieldname": "courier_img_href",
+   "fieldtype": "Long Text",
+   "label": "Courier Person Image"
+  },
+  {
+   "fieldname": "courier_imminent",
+   "fieldtype": "Data",
+   "label": "Courier Imminent"
+  },
+  {
+   "fieldname": "column_break_luxit",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "deliverable_action",
+   "fieldtype": "Data",
+   "label": "Deliverable Action"
+  },
+  {
+   "fieldname": "external_id",
+   "fieldtype": "Data",
+   "label": "External ID"
+  },
+  {
+   "fieldname": "fee",
+   "fieldtype": "Currency",
+   "label": "Fee"
+  },
+  {
+   "fieldname": "manifest_reference",
+   "fieldtype": "Data",
+   "label": "Manifest Reference"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "label": "Status"
+  },
+  {
+   "fieldname": "tip",
+   "fieldtype": "Currency",
+   "label": "Tip"
+  },
+  {
+   "fieldname": "tracking_url",
+   "fieldtype": "Text",
+   "label": "Tracking URL"
+  },
+  {
+   "fieldname": "uuid",
+   "fieldtype": "Data",
+   "label": "UUID"
+  },
+  {
+   "fieldname": "batch_id",
+   "fieldtype": "Data",
+   "label": "Batch ID"
+  },
+  {
+   "fieldname": "courier_phone_number",
+   "fieldtype": "Data",
+   "label": "Courier Phone Number",
+   "options": "Phone"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-20 15:56:33.182673",
- "modified_by": "Administrator",
+ "modified": "2026-01-22 14:27:34.824774",
+ "modified_by": "azmin@excelbd.com",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Delivery",
  "owner": "Administrator",
@@ -38,6 +142,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

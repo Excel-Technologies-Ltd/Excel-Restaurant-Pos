@@ -79,73 +79,46 @@ appNamespace.on("connection", (socket) => {
 // Subscribe to BOTH Frappe's standard "events" channel AND custom app events
 const subscriber = get_redis_subscriber();
 
-(async () => {
+// Handle Redis messages (synchronous, like Frappe's socketio.js)
+subscriber.on("message", function (_channel, message) {
 	try {
-		await subscriber.connect();
+		const data = JSON.parse(message);
+		const namespace = "/" + (data.namespace || ""); // Frappe uses site name as namespace
+		const room = data.room;
+		const event = data.event;
+		const payload = data.message;
 
-		// Subscribe to Frappe's standard "events" channel (receives all Frappe realtime events)
-		subscriber.subscribe("events", (message) => {
-			try {
-				const data = JSON.parse(message);
-				const namespace = "/" + data.namespace; // Frappe uses site name as namespace
-				const room = data.room;
-				const event = data.event;
-				const payload = data.message;
+		// Forward to Frappe namespace (same as Frappe's default server does)
+		// This ensures all Frappe events are received by clients connected to standard namespaces
+		const frappeNs = io.of(namespace);
+		if (room) {
+			frappeNs.to(room).emit(event, payload);
+		} else {
+			frappeNs.emit(event, payload);
+		}
 
-				// Forward to Frappe namespace (same as Frappe's default server does)
-				// This ensures all Frappe events are received by clients connected to standard namespaces
-				const frappeNs = io.of(namespace);
-				if (room) {
-					frappeNs.to(room).emit(event, payload);
-				} else {
-					frappeNs.emit(event, payload);
-				}
-
-				// Also forward to custom app namespace (if clients are connected there)
-				// This allows clients on custom namespace to also receive Frappe events
-				const appNamespace = `/excel_restaurant_pos/${data.namespace}`;
-				try {
-					const appNs = io.of(appNamespace);
-					if (room) {
-						appNs.to(room).emit(event, payload);
-					} else {
-						appNs.emit(event, payload);
-					}
-				} catch (err) {
-					// Namespace might not exist yet, that's okay
-				}
-			} catch (err) {
-				console.error("Error processing Frappe Redis message:", err);
+		// Also forward to custom app namespace (if clients are connected there)
+		// This allows clients on custom namespace to also receive Frappe events
+		if (data.namespace) {
+			const appNs = io.of(`/excel_restaurant_pos/${data.namespace}`);
+			if (room) {
+				appNs.to(room).emit(event, payload);
+			} else {
+				appNs.emit(event, payload);
 			}
-		});
-
-		// Subscribe to custom app events channel (for app-specific events)
-		subscriber.subscribe("excel_restaurant_pos_events", (message) => {
-			try {
-				const data = JSON.parse(message);
-				const namespace = data.namespace || "/excel_restaurant_pos/default";
-				const room = data.room;
-				const event = data.event;
-				const payload = data.message;
-
-				if (room) {
-					io.of(namespace).to(room).emit(event, payload);
-				} else {
-					io.of(namespace).emit(event, payload);
-				}
-			} catch (err) {
-				console.error("Error processing custom app Redis message:", err);
-			}
-		});
-
-		console.log("Redis subscriber connected for 'events' (Frappe) and 'excel_restaurant_pos_events' (Custom)");
+		}
 	} catch (err) {
-		console.error("Failed to connect Redis subscriber:", err);
+		console.error("Error processing Redis message:", err);
 	}
-})();
+});
+
+// Subscribe to Frappe's standard "events" channel (receives all Frappe realtime events)
+subscriber.subscribe("events");
+
+console.log("Redis subscriber connected for 'events' channel");
 
 // Start server
-const port = conf.excel_restaurant_pos_socketio_port || 9001; // Default to 9001, different from Frappe's 9000
+const port = conf.excel_restaurant_pos_socketio_port || conf.socketio_port || 9000; // Default to 9000 (same as Frappe)
 const uds = conf.excel_restaurant_pos_socketio_uds;
 
 server.listen(uds || port, () => {

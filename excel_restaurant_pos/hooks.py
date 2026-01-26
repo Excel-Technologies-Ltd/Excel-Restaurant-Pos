@@ -33,9 +33,16 @@ fixtures = [
                     "Restro Kitchen Staff",
                     "ArcPOS Manager",
                     "Bartender",
+                    "ArcPOS Deny",
                     "Delivery Staff",
                     "ArcPOS Stock User",
-                    "ArcPOS Recipe User"
+                    "ArcPOS Transfer Creator",
+                    "ArcPOS Transfer Approver",
+                    "ArcPOS PCM Creator",
+                    "ArcPOS PCM Approver",
+                    "ArcPOS Recipe User",
+                    "ArcPOS Recipe Approver",
+                    "ArcPOS Register User"
                 ],
             ]
         ],
