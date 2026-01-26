@@ -122,6 +122,7 @@ def _add_items(sales_invoice, items):
                 "custom_if_not_available": item_data.get("custom_if_not_available"),
                 "custom_special_note": item_data.get("custom_special_note"),
                 "custom_is_print": item_data.get("custom_is_print"),
+                "custom_guest_choice": item_data.get("custom_guest_choice"),
             },
         )
 
@@ -140,6 +141,12 @@ def _add_taxes(sales_invoice, taxes):
                 "account_head": tax_data.get("account_head"),
                 "rate": flt(tax_data.get("rate", 0)),
                 "description": tax_data.get("description", ""),
+                "custom_is_tax": tax_data.get("custom_is_tax", 0),
+                "custom_is_tip": tax_data.get("custom_is_tip", 0),
+                "custom_is_delivery_charge": tax_data.get(
+                    "custom_is_delivery_charge", 0
+                ),
+                "custom_is_service_charge": tax_data.get("custom_is_service_charge", 0),
             },
         )
 
@@ -162,7 +169,9 @@ def _add_custom_quotes(sales_invoice, custom_quotes):
                 "duration": custom_quote.get("duration"),
                 "fee": custom_quote.get("fee"),
                 "expires": iso_to_frappe_datetime(custom_quote.get("expires")),
-                "dropoff_deadline": iso_to_frappe_datetime(custom_quote.get("dropoff_deadline")),
+                "dropoff_deadline": iso_to_frappe_datetime(
+                    custom_quote.get("dropoff_deadline")
+                ),
                 "pickup_duration": custom_quote.get("pickup_duration"),
             },
         )
