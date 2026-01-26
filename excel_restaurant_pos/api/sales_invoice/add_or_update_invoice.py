@@ -140,6 +140,7 @@ def _add_taxes(sales_invoice, taxes):
                 "charge_type": tax_data.get("charge_type", "On Net Total"),
                 "account_head": tax_data.get("account_head"),
                 "rate": flt(tax_data.get("rate", 0)),
+                "tax_amount": flt(tax_data.get("tax_amount", 0)),
                 "description": tax_data.get("description", ""),
                 "custom_is_tax": tax_data.get("custom_is_tax", 0),
                 "custom_is_tip": tax_data.get("custom_is_tip", 0),
