@@ -3,7 +3,7 @@ import frappe
 from calendar import monthrange
 from frappe.utils import getdate
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_summery_report(start_date=None, end_date=None, item_group=None):
     """
     Get item performance summary report.

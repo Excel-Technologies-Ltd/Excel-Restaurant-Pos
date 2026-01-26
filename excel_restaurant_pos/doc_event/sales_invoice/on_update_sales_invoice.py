@@ -267,17 +267,17 @@ def send_notification_to_role(doc, rule):
             print(f"--- Notification complete (system only) ---\n")
             return
 
-        # Get Expo tokens for the users
-        tokens = frappe.get_all(
+        # Get Expo tokens for the users from ArcPOS Notification Token child table
+        token_docs = frappe.get_all(
             "ArcPOS Notification Token",
             filters={"user": ["in", user_emails]},
-            fields=["user", "token"]
+            fields=["name", "user"]
         )
 
-        print(f"Found {len(tokens)} Expo tokens in database")
+        print(f"Found {len(token_docs)} users with notification token documents")
 
-        if not tokens:
-            print("  No Expo tokens found, skipping push notifications")
+        if not token_docs:
+            print("  No users with notification tokens found, skipping push notifications")
             print(f"--- Notification complete (system only) ---\n")
             return
 
@@ -286,40 +286,51 @@ def send_notification_to_role(doc, rule):
         push_messages = []
         token_to_user_map = {}
 
-        for token_doc in tokens:
-            print(f"  → Processing token for user: {token_doc.user}")
-            if token_doc.token:
-                # Validate Expo push token format
-                if not PushClient.is_exponent_push_token(token_doc.token):
-                    print(f"     INVALID token format for: {token_doc.user}")
-                    frappe.log_error(
-                        f"Invalid Expo token for user {token_doc.user}: {token_doc.token}",
-                        "Invalid Expo Token"
+        for token_doc in token_docs:
+            print(f"  → Processing tokens for user: {token_doc.user}")
+
+            # Get all tokens from the token_list child table
+            user_tokens = frappe.get_all(
+                "Push Token List",
+                filters={"parent": token_doc.name, "parenttype": "ArcPOS Notification Token"},
+                fields=["token"]
+            )
+
+            if not user_tokens:
+                print(f"    ✗ No tokens found in token_list for: {token_doc.user}")
+                continue
+
+            for token_row in user_tokens:
+                if token_row.token:
+                    # Validate Expo push token format
+                    if not PushClient.is_exponent_push_token(token_row.token):
+                        print(f"    ✗ INVALID token format for: {token_doc.user}")
+                        frappe.log_error(
+                            f"Invalid Expo token for user {token_doc.user}: {token_row.token}",
+                            "Invalid Expo Token"
+                        )
+                        continue
+
+                    # Create push message
+                    push_message = PushMessage(
+                        to=token_row.token,
+                        title=title,
+                        body=body,
+                        data={
+                            "document_type": "Sales Invoice",
+                            "document_name": doc.name,
+                            "order_status": doc.get("custom_order_status") or "",
+                            "order_from": doc.get("custom_order_from") or "",
+                            "service_type": doc.get("custom_service_type") or "",
+                            "order_type": doc.get("custom_order_type") or "",
+                        },
+                        sound="default",
+                        priority="high"
                     )
-                    continue
 
-                # Create push message
-                push_message = PushMessage(
-                    to=token_doc.token,
-                    title=title,
-                    body=body,
-                    data={
-                        "document_type": "Sales Invoice",
-                        "document_name": doc.name,
-                        "order_status": doc.get("custom_order_status") or "",
-                        "order_from": doc.get("custom_order_from") or "",
-                        "service_type": doc.get("custom_service_type") or "",
-                        "order_type": doc.get("custom_order_type") or "",
-                    },
-                    sound="default",
-                    priority="high"
-                )
-
-                push_messages.append(push_message)
-                token_to_user_map[token_doc.token] = token_doc.user
-                print(f"    ✓ Push message prepared for: {token_doc.user}")
-            else:
-                print(f"    ✗ No token found for: {token_doc.user}")
+                    push_messages.append(push_message)
+                    token_to_user_map[token_row.token] = token_doc.user
+                    print(f"    ✓ Push message prepared for: {token_doc.user}")
 
         print(f"\n Total push messages to send: {len(push_messages)}")
 

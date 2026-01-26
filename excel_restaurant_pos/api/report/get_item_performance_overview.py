@@ -3,7 +3,7 @@ from calendar import monthrange
 from frappe.utils import getdate
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_item_performance_overview():
     """
     Get item performance overview report.
