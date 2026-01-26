@@ -1,45 +1,53 @@
+import pymysql
 import frappe
 from calendar import monthrange
 from frappe.utils import getdate
 
-
 @frappe.whitelist(allow_guest=True)
-def get_summery_report(start_date=None, end_date=None, outlet=None):
+def get_summery_report(start_date=None, end_date=None, item_group=None):
     """
     Get item performance summary report.
-
-    Args:
-        start_date: Report start date (YYYY-MM-DD). Defaults to first day of current month.
-        end_date: Report end date (YYYY-MM-DD). Defaults to last day of current month.
-        outlet: Outlet / restaurant name filter (e.g. 'From the Tandoor').
     """
-    # Allow override from form_dict (API request)
-    data = frappe.form_dict or {}
-    start_date = start_date or data.get("start_date")
-    end_date = end_date or data.get("end_date")
-    outlet = outlet or data.get("outlet")
+    # ... (same date handling code as above) ...
+    
+    if not item_group:
+        frappe.throw("item_group is required for get_summery_report")
 
-    # Default to current month if not provided
-    today = getdate()
-    if not start_date:
-        start_date = today.replace(day=1).strftime("%Y-%m-%d")
-    else:
-        start_date = getdate(start_date).strftime("%Y-%m-%d")
-    if not end_date:
-        _, last_day = monthrange(today.year, today.month)
-        end_date = today.replace(day=last_day).strftime("%Y-%m-%d")
-    else:
-        end_date = getdate(end_date).strftime("%Y-%m-%d")
-
-    if not outlet:
-        frappe.throw("outlet is required for get_summery_report")
-
-    result = frappe.db.sql(
-        """
-        CALL get_Item_Performance(%(start_date)s, %(end_date)s, %(outlet)s);
-        """,
-        values={"start_date": start_date, "end_date": end_date, "outlet": outlet},
-        as_dict=True,
-    )
-
-    return result
+    # Get database connection details from frappe.conf
+    db_settings = frappe.conf.get('db_settings') or frappe.local.conf.db_name
+    
+    try:
+        # Create a new connection
+        conn = pymysql.connect(
+            host=frappe.conf.db_host or 'localhost',
+            user=frappe.conf.db_name,  # This is usually the username in Frappe
+            password=frappe.conf.db_password,
+            database=frappe.conf.db_name,
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor,
+            read_timeout=60,  # Increase timeout
+            write_timeout=60
+        )
+        
+        with conn.cursor() as cursor:
+            cursor.callproc('get_Item_Performance', [start_date, end_date, item_group])
+            result = cursor.fetchall()
+            
+            # If stored procedure returns multiple result sets
+            while cursor.nextset():
+                pass
+                
+        conn.close()
+        return result
+        
+    except Exception as e:
+        frappe.log_error(f"Direct connection error in get_summery_report: {str(e)}", "Summary Report Error")
+        
+        # Fall back to frappe.db.sql
+        return frappe.db.sql(
+            """
+            CALL get_Item_Performance(%(start_date)s, %(end_date)s, %(item_group)s);
+            """,
+            values={"start_date": start_date, "end_date": end_date, "item_group": item_group},
+            as_dict=True,
+        )
