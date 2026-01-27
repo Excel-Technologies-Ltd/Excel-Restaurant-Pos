@@ -19,6 +19,8 @@ def receipt_payment():
     if not invoice_no:
         frappe.throw("Ticket not found")
 
+    # todo:  check ticket validity
+
     # get invoice
     invoice = frappe.get_doc("Sales Invoice", invoice_no)
     if not invoice:

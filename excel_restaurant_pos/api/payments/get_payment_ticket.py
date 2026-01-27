@@ -2,7 +2,7 @@ import requests
 import frappe
 from frappe.utils import now_datetime, get_datetime
 
-from excel_restaurant_pos.shared.sales_invoice import delete_invoice_from_db
+from excel_restaurant_pos.shared.sales_invoice import delete_draft_invoice
 from excel_restaurant_pos.utils import convert_to_flt_string, convert_to_decimal_string
 from .helper.get_ticket_from_db import get_ticket_from_db
 from .helper.get_payment_config import get_payment_config
@@ -71,7 +71,7 @@ def _get_existing_ticket_if_valid(invoice_number: str) -> dict | None:
 
         # If ticket is more than 8 minutes old, delete invoice and throw error
         if time_diff_minutes > 8:
-            delete_invoice_from_db(invoice_number)
+            delete_draft_invoice(invoice_number)
             frappe.throw("Invalid order or expired session", frappe.ValidationError)
 
         # Ticket is valid (less than 8 minutes old), return it
