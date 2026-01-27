@@ -22,6 +22,11 @@ def get_ticket_from_db(invoice_no: str) -> str | None:
         return None
 
     # Get the ticket value
-    ticket = frappe.db.get_value("Payment Ticket", {"invoice_no": invoice_no}, "ticket")
+    ticket = frappe.db.get_value(
+        "Payment Ticket",
+        {"invoice_no": invoice_no},
+        ["ticket", "creation"],
+        as_dict=True,
+    )
 
     return ticket

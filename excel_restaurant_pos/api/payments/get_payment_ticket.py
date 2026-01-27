@@ -1,38 +1,119 @@
 import requests
 import frappe
-
+from frappe.utils import now_datetime, get_datetime
 
 from excel_restaurant_pos.shared.sales_invoice import delete_invoice_from_db
 from excel_restaurant_pos.utils import convert_to_flt_string, convert_to_decimal_string
+from .helper.get_ticket_from_db import get_ticket_from_db
 from .helper.get_payment_config import get_payment_config
 from .helper.save_ticket_to_db import save_ticket_to_db
-from .helper.get_ticket_from_db import get_ticket_from_db
 
 
-@frappe.whitelist(allow_guest=True)
-def get_payment_ticket():
+def _validate_invoice_number() -> str:
+    """
+    Validate and extract invoice number from form_dict.
 
-    # validate invoice number
+    Returns:
+        str: The invoice number
+
+    Raises:
+        frappe.ValidationError: If invoice number is not provided
+    """
     invoice_number = frappe.form_dict.get("invoice_number", None)
     if not invoice_number:
         frappe.throw("Invoice number is required")
+    return invoice_number
 
-    # get the invoice
+
+def _get_invoice(invoice_number: str):
+    """
+    Get and validate the sales invoice.
+
+    Args:
+        invoice_number: The invoice number to retrieve
+
+    Returns:
+        Document: The Sales Invoice document
+
+    Raises:
+        frappe.DoesNotExistError: If invoice is not found
+    """
     invoice = frappe.get_doc("Sales Invoice", invoice_number)
     if not invoice:
         frappe.throw("Invoice not found", frappe.DoesNotExistError)
+    return invoice
 
-    # get the ticket from the database
-    ticket = get_ticket_from_db(invoice_number)
-    if ticket:
-        # dlete the invoice and throw error
-        delete_invoice_from_db(invoice_number)
-        frappe.throw("Invalid order or expired session", frappe.ValidationError)
 
-    # get the payment config from the site config
-    payment_config = get_payment_config()
+def _get_existing_ticket_if_valid(invoice_number: str) -> dict | None:
+    """
+    Check if a valid payment ticket exists for the invoice.
 
-    # prepare the payment ticket payload
+    A ticket is considered valid if it exists and was created less than 8 minutes ago.
+
+    Args:
+        invoice_number: The invoice number to check
+
+    Returns:
+        dict | None: {"ticket": ticket} if valid ticket exists, None otherwise
+
+    Raises:
+        frappe.ValidationError: If ticket exists but is expired (> 8 minutes old)
+    """
+    payment_ticket_data = get_ticket_from_db(invoice_number)
+
+    if payment_ticket_data and payment_ticket_data.get("ticket"):
+        ticket = payment_ticket_data.get("ticket")
+        creation_time = get_datetime(payment_ticket_data.get("creation"))
+        current_time = now_datetime()
+
+        # Calculate time difference in minutes
+        time_diff_minutes = (current_time - creation_time).total_seconds() / 60
+
+        # If ticket is more than 8 minutes old, delete invoice and throw error
+        if time_diff_minutes > 8:
+            delete_invoice_from_db(invoice_number)
+            frappe.throw("Invalid order or expired session", frappe.ValidationError)
+
+        # Ticket is valid (less than 8 minutes old), return it
+        return {"ticket": ticket}
+
+    return None
+
+
+def _prepare_cart_items(invoice) -> list:
+    """
+    Prepare cart items from invoice items.
+
+    Args:
+        invoice: The Sales Invoice document
+
+    Returns:
+        list: Formatted list of cart items
+    """
+    fmt_items = []
+    for item in invoice.items:
+        fmt_items.append(
+            {
+                "description": item.item_name,
+                "product_code": item.item_code,
+                "unit_cost": convert_to_flt_string(item.rate),
+                "quantity": convert_to_decimal_string(item.qty),
+            }
+        )
+    return fmt_items
+
+
+def _prepare_payment_payload(invoice, payment_config: dict) -> dict:
+    """
+    Prepare the payment ticket request payload.
+
+    Args:
+        invoice: The Sales Invoice document
+        payment_config: Payment gateway configuration
+
+    Returns:
+        dict: The payment ticket payload
+    """
     payload = {
         "store_id": payment_config["store_id"],
         "api_token": payment_config["api_token"],
@@ -45,32 +126,34 @@ def get_payment_ticket():
         "cust_id": invoice.customer,
     }
 
-    # prepare the cart
-    cart = {}
-    # prepare items
-    fmt_items = []
-    for item in invoice.items:
-        fmt_items.append(
-            {
-                "url": item.image,
-                "description": item.description,
-                "product_code": item.item_code,
-                "unit_cost": convert_to_flt_string(item.rate),
-                "quantity": convert_to_decimal_string(item.qty),
-            }
-        )
-    cart["items"] = fmt_items
-    cart["subtotal"] = convert_to_flt_string(invoice.base_grand_total)
-    cart["tax"] = {
-        "amount": convert_to_flt_string(invoice.total_taxes_and_charges),
-        "description": "Taxes",
+    cart = {
+        "items": _prepare_cart_items(invoice),
+        "subtotal": convert_to_flt_string(invoice.base_grand_total),
+        "tax": {
+            "amount": convert_to_flt_string(invoice.total_taxes_and_charges),
+            "description": "Taxes",
+        },
     }
 
     payload["cart"] = cart
+    return payload
 
-    print(payload)
 
-    # send the payment ticket request
+def _request_payment_ticket(payload: dict, payment_config: dict) -> str:
+    """
+    Send request to payment gateway and parse response.
+
+    Args:
+        payload: The payment ticket request payload
+        payment_config: Payment gateway configuration
+
+    Returns:
+        str: The payment ticket string
+
+    Raises:
+        frappe.ValidationError: If request fails or response is invalid
+    """
+    # Send the payment ticket request
     try:
         response = requests.post(payment_config["ticket_url"], json=payload, timeout=30)
     except requests.exceptions.RequestException as e:
@@ -115,7 +198,42 @@ def get_payment_ticket():
     if not ticket:
         frappe.throw("Payment ticket not found in response", frappe.ValidationError)
 
-    # save the ticket to the database
+    return ticket
+
+
+@frappe.whitelist(allow_guest=True)
+def get_payment_ticket():
+    """
+    Get payment ticket for an invoice.
+
+    Checks for existing valid ticket first. If none exists or it's expired,
+    creates a new ticket from the payment gateway.
+
+    Returns:
+        dict: {"ticket": ticket_string}
+    """
+    # Validate and get invoice number
+    invoice_number = _validate_invoice_number()
+
+    # Get and validate invoice
+    invoice = _get_invoice(invoice_number)
+
+    # Check for existing valid ticket
+    existing_ticket = _get_existing_ticket_if_valid(invoice_number)
+    if existing_ticket:
+        return existing_ticket
+
+    # Get payment config
+    payment_config = get_payment_config()
+
+    # Prepare payload
+    payload = _prepare_payment_payload(invoice, payment_config)
+    print(payload)
+
+    # Request new ticket from payment gateway
+    ticket = _request_payment_ticket(payload, payment_config)
+
+    # Save ticket to database
     save_ticket_to_db(invoice_number, ticket)
 
     return {"ticket": ticket}
