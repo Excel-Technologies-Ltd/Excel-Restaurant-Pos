@@ -53,6 +53,8 @@ export interface SalesInvoice{
 	credit_limit?: number
 	/**	Remaining Credit : Float	*/
 	remaining_credit?: number
+	/**	Initial Status : Select - Depends on Server Script	*/
+	custom_initial_status?: "" | "To Approve" | "In Progress"
 	/**	With ArcPOS Payment : Check	*/
 	custom_with_arcpos_payment?: 0 | 1
 	/**	Cutlery : Check	*/
