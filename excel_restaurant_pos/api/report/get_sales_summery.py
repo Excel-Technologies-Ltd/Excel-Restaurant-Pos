@@ -1,58 +1,55 @@
 import frappe
-from calendar import monthrange
-from frappe.utils import getdate
-
+from .report_helper import (
+    validate_required_yyyy_mm_dd,
+    validate_start_end_date,
+)
 
 @frappe.whitelist()
-def get_sales_summery(start_date=None, end_date=None):
+def get_sales_summery():
     """
     Get sales summary report.
 
     Args:
-        start_date: Report start date (YYYY-MM-DD). Defaults to first day of current month.
-        end_date: Report end date (YYYY-MM-DD). Defaults to last day of current month.
+        start_date: Report start date (YYYY-MM-DD). Required.
+        end_date: Report end date (YYYY-MM-DD). Required.
     """
     data = frappe.form_dict or {}
-    start_date = start_date or data.get("start_date")
-    end_date = end_date or data.get("end_date")
+    start_date = data.get("start_date")
+    end_date = data.get("end_date")
 
-    today = getdate()
-    if not start_date:
-        start_date = today.replace(day=1).strftime("%Y-%m-%d")
-    else:
-        start_date = getdate(start_date).strftime("%Y-%m-%d")
-    if not end_date:
-        _, last_day = monthrange(today.year, today.month)
-        end_date = today.replace(day=last_day).strftime("%Y-%m-%d")
-    else:
-        end_date = getdate(end_date).strftime("%Y-%m-%d")
+    start_date = validate_required_yyyy_mm_dd("Start Date", start_date)
+    end_date = validate_required_yyyy_mm_dd("End Date", end_date)
+    validate_start_end_date(start_date, end_date)
 
-    result = frappe.db.sql(
-        """
-        SELECT
-            SUM(COALESCE(TI.`total`, 0)) AS `Net Sales`,
-            SUM(COALESCE(TI.`discount_amount`, 0)) AS `Discounts`,
-            SUM(
-                CASE
-                    WHEN TSTC.`custom_is_tax` = 1 THEN TSTC.`tax_amount`
-                    ELSE 0
-                END
-            ) AS `Taxes & Fees`,
-            SUM(
-                CASE
-                    WHEN TSTC.`custom_is_tax` = 0 THEN TSTC.`tax_amount`
-                    ELSE 0
-                END
-            ) AS `Tips`,
-            (SUM(COALESCE(TI.`total`, 0)) + SUM(COALESCE(TI.`discount_amount`, 0))) AS `Gross Sales`
-        FROM `tabSales Invoice` TI
-        LEFT JOIN `tabSales Taxes and Charges` TSTC ON TI.`name` = TSTC.`parent`
-        WHERE TI.`docstatus` = 1
-            AND TI.`posting_date` >= %(start_date)s
-            AND TI.`posting_date` < %(end_date)s
-        """,
-        values={"start_date": start_date, "end_date": end_date},
-        as_dict=True,
-    )
+    values = {"start_date": start_date, "end_date": end_date}
 
-    return result
+    try:
+        # SQL function-style call (often returns JSON text)
+        rows = frappe.db.sql(
+            "SELECT `get_Sales Summary`(%(start_date)s, %(end_date)s) AS `data`",
+            values=values,
+            as_dict=True,
+        )
+
+        data = (rows or [{}])[0].get("data")
+        if data is None:
+            return None
+
+        # If function returns JSON string, parse to dict/list
+        if isinstance(data, str):
+            return frappe.parse_json(data)
+
+        return data
+    except Exception:
+        frappe.log_error(
+            title="get_sales_summery failed",
+            message=frappe.get_traceback(),
+        )
+        frappe.throw(
+            frappe._(
+                "Failed to fetch Sales Summary. Please contact your system administrator."
+            ),
+            frappe.ValidationError,
+        )
+
+
