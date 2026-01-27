@@ -1,5 +1,9 @@
 import requests
 import frappe
+
+
+from excel_restaurant_pos.shared.sales_invoice import delete_invoice_from_db
+from excel_restaurant_pos.utils import convert_to_flt_string, convert_to_decimal_string
 from .helper.get_payment_config import get_payment_config
 from .helper.save_ticket_to_db import save_ticket_to_db
 from .helper.get_ticket_from_db import get_ticket_from_db
@@ -21,7 +25,9 @@ def get_payment_ticket():
     # get the ticket from the database
     ticket = get_ticket_from_db(invoice_number)
     if ticket:
-        return {"ticket": ticket}
+        # dlete the invoice and throw error
+        delete_invoice_from_db(invoice_number)
+        frappe.throw("Invalid order or expired session", frappe.ValidationError)
 
     # get the payment config from the site config
     payment_config = get_payment_config()
@@ -34,7 +40,7 @@ def get_payment_ticket():
         "environment": payment_config["environment"],
         "language": "en",
         "action": "preload",
-        "txn_total": invoice.grand_total,
+        "txn_total": convert_to_flt_string(invoice.grand_total),
         "order_no": invoice.name,
         "cust_id": invoice.customer,
     }
@@ -49,18 +55,20 @@ def get_payment_ticket():
                 "url": item.image,
                 "description": item.description,
                 "product_code": item.item_code,
-                "unit_cost": item.rate,
-                "quantity": item.qty,
+                "unit_cost": convert_to_flt_string(item.rate),
+                "quantity": convert_to_decimal_string(item.qty),
             }
         )
     cart["items"] = fmt_items
-    cart["subtotal"] = invoice.base_grand_total
+    cart["subtotal"] = convert_to_flt_string(invoice.base_grand_total)
     cart["tax"] = {
-        "amount": invoice.total_taxes_and_charges,
+        "amount": convert_to_flt_string(invoice.total_taxes_and_charges),
         "description": "Taxes",
     }
 
     payload["cart"] = cart
+
+    print(payload)
 
     # send the payment ticket request
     try:
@@ -93,6 +101,7 @@ def get_payment_ticket():
         frappe.throw("Invalid response from payment gateway", frappe.ValidationError)
 
     res = response_data.get("response", {})
+    print(res)
     if res.get("success", "false").lower() != "true":
         error_message = res.get("message", "Unknown error from payment gateway")
         frappe.log_error(
