@@ -12,6 +12,7 @@ from .table import table_api_routes
 from .item_price import item_price_api_routes
 from .customer import customer_api_routes
 from .report import report_api_routes
+from .payments import payments_api_routes
 
 
 api_routes = {
@@ -29,4 +30,5 @@ api_routes = {
     **item_price_api_routes,
     **customer_api_routes,
     **report_api_routes,
+    **payments_api_routes,
 }
