@@ -11,7 +11,8 @@
   "refresh_token_expiry",
   "user_default_role",
   "registration_template",
-  "forgot_password_template"
+  "forgot_password_template",
+  "two_factor_auth_template"
  ],
  "fields": [
   {
@@ -50,12 +51,19 @@
    "label": "Forgot Password Template",
    "options": "Email Template",
    "reqd": 1
+  },
+  {
+   "fieldname": "two_factor_auth_template",
+   "fieldtype": "Link",
+   "label": "Two Factor Auth Template",
+   "options": "Email Template",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-12-17 11:18:27.359462",
+ "modified": "2026-01-27 08:52:00.214486",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS System Settings",
