@@ -72,4 +72,4 @@ def check_receipt(ticket: str) -> bool:
         frappe.throw("Invalid response from payment gateway", frappe.ValidationError)
 
     # Return True if receipt_status is "1", False otherwise
-    return response_data
+    return response_data.get("response", {})
