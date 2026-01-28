@@ -83,24 +83,38 @@ const subscriber = get_redis_subscriber();
 subscriber.on("message", function (_channel, message) {
 	try {
 		const data = JSON.parse(message);
-		const namespace = "/" + (data.namespace || ""); // Frappe uses site name as namespace
 		const room = data.room;
 		const event = data.event;
 		const payload = data.message;
 
-		// Forward to Frappe namespace (same as Frappe's default server does)
-		// This ensures all Frappe events are received by clients connected to standard namespaces
-		const frappeNs = io.of(namespace);
+		// Frappe sends namespace as null, but includes site name in room
+		// Room format: "{site}:doc:{doctype}/{name}" or "{site}:doctype:{doctype}" or "{site}:user:{email}"
+		// Extract site name from room to determine namespace
+		let namespace = data.namespace;
+		if (!namespace && room) {
+			// Extract site name from room (first part before ":")
+			const roomParts = room.split(":");
+			if (roomParts.length >= 2) {
+				namespace = roomParts[0]; // e.g., "arcpos.aninda.me"
+			}
+		}
+
+		// Build namespace path
+		const namespacePath = "/" + (namespace || "");
+
+		console.log(`[Redis] Event: ${event}, Namespace: ${namespacePath}, Room: ${room || "broadcast"}`);
+
+		// Forward to the site-specific namespace
+		const targetNs = io.of(namespacePath);
 		if (room) {
-			frappeNs.to(room).emit(event, payload);
+			targetNs.to(room).emit(event, payload);
 		} else {
-			frappeNs.emit(event, payload);
+			targetNs.emit(event, payload);
 		}
 
 		// Also forward to custom app namespace (if clients are connected there)
-		// This allows clients on custom namespace to also receive Frappe events
-		if (data.namespace) {
-			const appNs = io.of(`/excel_restaurant_pos/${data.namespace}`);
+		if (namespace) {
+			const appNs = io.of(`/excel_restaurant_pos/${namespace}`);
 			if (room) {
 				appNs.to(room).emit(event, payload);
 			} else {
