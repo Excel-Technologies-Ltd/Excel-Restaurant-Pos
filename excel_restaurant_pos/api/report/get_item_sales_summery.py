@@ -51,7 +51,7 @@ def get_item_sales_summery():
         "TSII.`docstatus` = 1",
         "TI.`docstatus` = 1",
         "TI.`posting_date` >= %(start_date)s",
-        "TI.`posting_date` < %(end_date)s",
+        "TI.`posting_date` <= %(end_date)s",
     ]
 
     values = {
