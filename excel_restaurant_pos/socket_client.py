@@ -1,5 +1,6 @@
 import socketio
 import os
+import requests
 
 # Configuration
 ENVIRONMENT = os.getenv("ENV", "production")
@@ -7,7 +8,7 @@ BASE_URL = "https://arcpos.aninda.me"
 SITE_NAME = "arcpos.aninda.me"
 
 # Bearer Token - Replace with your actual token
-BEARER_TOKEN = os.getenv("BEARER_TOKEN", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYXptaW5AZXhjZWxiZC5jb20iLCJleHAiOjE3NjkzMjgwNTYsImlhdCI6MTc2OTMyNDQ1NiwidHlwZSI6ImFjY2VzcyJ9.hSQa33n4DonyD96lSJX2rlnqWXXBxSZxdpwZFg6rnTk")
+BEARER_TOKEN = os.getenv("BEARER_TOKEN", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYXptaW5AZXhjZWxiZC5jb20iLCJleHAiOjE3Njk1ODQzNTQsImlhdCI6MTc2OTU4MDc1NCwidHlwZSI6ImFjY2VzcyJ9.s4rufCcEAK6odLh5CwlWEAbRI5lg5ULIWY8eP0mpEwQ")
 
 print("=" * 60)
 print("Socket.IO Client - Bearer Token Authentication")
@@ -20,6 +21,24 @@ print()
 
 # Create Socket.IO client
 sio = socketio.Client(logger=True, engineio_logger=True)
+
+
+def fetch_notifications():
+    """Fetch the last 20 notifications from the API"""
+    try:
+        response = requests.get(
+            f"{BASE_URL}/api/method/excel_restaurant_pos.api.notification.get_notification_list.my_notifications",
+            headers={
+                'Authorization': f'Bearer {BEARER_TOKEN}',
+                'X-Frappe-Site-Name': SITE_NAME
+            }
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data.get('message', {})
+    except Exception as e:
+        print(f"Error fetching notifications: {e}")
+        return None
 
 
 @sio.event
@@ -35,8 +54,24 @@ def connect():
     user_room = f"{SITE_NAME}:user:{user_email}"
 
     print(f" Joining user room: {user_room}")
-    # The server automatically joins user room, but we can listen for events
     print(f" Listening for notifications...")
+    print()
+
+    # Fetch last 20 notifications on connect
+    print("Fetching last 20 notifications...")
+    result = fetch_notifications()
+    if result:
+        notifications = result.get('notifications', [])
+        unread_count = result.get('unread_count', 0)
+        print(f"Unread count: {unread_count}")
+        print(f"Total fetched: {len(notifications)}")
+        print("-" * 60)
+        for notif in notifications:
+            read_status = "Read" if notif.get('read') else "Unread"
+            print(f"[{read_status}] {notif.get('subject', 'No subject')}")
+            print(f"   From: {notif.get('from_user', 'N/A')} | Type: {notif.get('type', 'N/A')}")
+            print(f"   Created: {notif.get('creation', 'N/A')}")
+            print("-" * 60)
     print()
 
 
@@ -59,7 +94,7 @@ def disconnect():
 
 
 # Notification event handlers
-@sio.on('notification')
+@sio.on('sales_invoice_notification_azmin@excelbd.com')
 def on_notification(data):
     print()
     print("" + "=" * 59)

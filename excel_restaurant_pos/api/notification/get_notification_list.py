@@ -41,3 +41,5 @@ def my_notifications():
         "notifications": notifications,
         "unread_count": unread_count
     }
+
+
