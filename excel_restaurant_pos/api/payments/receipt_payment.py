@@ -2,6 +2,9 @@ import frappe
 
 from excel_restaurant_pos.api.sales_invoice.add_or_update_invoice import _add_payments
 from .helper.check_receipt import check_receipt
+from excel_restaurant_pos.doc_event.sales_invoice.handlers.create_payment_entry import (
+    create_payment_entry,
+)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -21,10 +24,14 @@ def receipt_payment():
     if not invoice_no:
         frappe.throw("Ticket not found")
 
-    # check receipt status
+    # check receipt status info
     receipt_status = check_receipt(ticket)
-    receipt_result = receipt_status.get("receipt", {})
+
+    # define required values for validation
+    receipt_result = receipt_status.get("receipt", {}).get("result", "")
     success_result = receipt_status.get("success", "false")
+
+    # check payment is successful and the receipt is approved
     if success_result != "true" or receipt_result != "a":
         frappe.throw("Invalid or expired payment ticket", frappe.ValidationError)
 
@@ -39,26 +46,17 @@ def receipt_payment():
         frappe.throw("Invoice not found")
 
     # check receipt payment
-    payments = frappe.form_dict.get("payments", [])
+    payments = frappe.form_dict.get("payments", None)
     if not payments:
         frappe.throw("Payments are required")
 
-    # add payments to invoice
-    _add_payments(invoice, payments)
-
-    # update order invoice satus and also each item status
-    if invoice.custom_service_type and invoice.custom_service_type == "Delivery":
-        invoice.custom_order_status = "In kitchen"
-        for item in invoice.items:
-            item.custom_order_item_status = "In kitchen"
-
-    # set requird properties to create payment entry, while submit invoice
-    invoice.is_pos = 1
-    invoice.custom_with_arcpos_payment = 1
-
     # submit sales invoice with payment data
+    invoice.docstatus = 1
     invoice.save(ignore_permissions=True)
-    invoice.submit(ignore_permissions=True)
+
+    # enqueue payment entry creation
+    args = {"sales_invoice": invoice.name, "payments": payments}
+    frappe.enqueue(create_payment_entry, queue="short", **args)
 
     # return True
     return {"success": True}

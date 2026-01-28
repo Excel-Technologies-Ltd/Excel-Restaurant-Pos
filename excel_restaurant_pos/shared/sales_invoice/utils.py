@@ -13,16 +13,43 @@ def get_receivable_account(company):
     return receivable_account
 
 
-def get_mode_of_payment_account(mode_of_payment, company):
+def get_mode_of_payment_account(mode_of_payment: str, company=None):
     """
     Get mode of payment account for company
     Args:
         mode_of_payment: Mode of payment
         company: Company name
     """
+
+    if not company:
+        company = frappe.get_single_value("ArcPOS Settings", "company")
+
+    # default cash and bank account
     cash_account = frappe.get_value("Company", company, "default_cash_account")
     bank_account = frappe.get_value("Company", company, "default_bank_account")
-    return cash_account if mode_of_payment == "Cash" else bank_account
+
+    # get mode of payment
+    mode_of_payment_account = frappe.get_doc("Mode of Payment", mode_of_payment)
+    if not mode_of_payment_account:
+        frappe.throw(f"Mode of payment {mode_of_payment} not found")
+
+    payment_account = None
+    # get accounts for the company
+    for account in mode_of_payment_account.accounts:
+        if account.company == company:
+            payment_account = account.default_account
+            break
+
+    # if no accounts found, use default cash or bank account
+    if not payment_account and mode_of_payment_account.type == "Cash":
+        payment_account = cash_account
+    elif not payment_account and mode_of_payment_account.type == "Bank":
+        payment_account = bank_account
+    elif not payment_account:
+        msg = f"Mode of payment {mode_of_payment} not found for company {company}"
+        frappe.throw(msg)
+
+    return payment_account
 
 
 def get_payable_account(company):

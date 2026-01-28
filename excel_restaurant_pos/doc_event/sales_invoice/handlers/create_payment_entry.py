@@ -6,44 +6,52 @@ from excel_restaurant_pos.shared.sales_invoice import (
 )
 
 
-def create_payment_entry(sales_invoice):
+def create_payment_entry(sales_invoice, payments=None):
+    frappe.set_user("Administrator")
+
     doc = frappe.get_doc("Sales Invoice", sales_invoice)
 
-    # Get required accounts
     receivable_account = get_receivable_account(doc.company)
     if not receivable_account:
         frappe.throw(f"Receivable account not found for company {doc.company}")
 
-    payment_account = get_mode_of_payment_account("Cash", doc.company)
-    if not payment_account:
-        frappe.throw(f"Payment account not found for company {doc.company}")
+    if not payments:
+        payments = doc.payments
 
-    # payments
-    payments = doc.payments
     for payment in payments:
+        mode_of_payment = (
+            payment.get("mode_of_payment")
+            if isinstance(payment, dict)
+            else payment.mode_of_payment
+        )
+        amount = payment.get("amount") if isinstance(payment, dict) else payment.amount
 
-        # Create Payment Entry
+        if not mode_of_payment or not amount:
+            continue
+
+        account = get_mode_of_payment_account(mode_of_payment, doc.company)
+        if not account:
+            continue
+
         payment_entry = frappe.new_doc("Payment Entry")
         payment_entry.payment_type = "Receive"
         payment_entry.posting_date = nowdate()
-        payment_entry.mode_of_payment = payment.mode_of_payment
+        payment_entry.mode_of_payment = mode_of_payment
         payment_entry.party_type = "Customer"
         payment_entry.party = doc.customer
         payment_entry.company = doc.company
 
-        payment_entry.target_exchange_rate = 1
         payment_entry.paid_from = receivable_account
-        payment_entry.paid_to = payment_account
-        payment_entry.paid_amount = payment.amount
-        payment_entry.received_amount = payment.amount
+        payment_entry.paid_to = account
+        payment_entry.paid_amount = amount
+        payment_entry.received_amount = amount
 
-        # Add reference to the Sales Invoice with allocated amount
         payment_entry.append(
             "references",
             {
                 "reference_doctype": "Sales Invoice",
                 "reference_name": doc.name,
-                "allocated_amount": payment.amount,
+                "allocated_amount": amount,
             },
         )
 

@@ -220,9 +220,9 @@ def add_or_update_invoice():
     _add_items(sales_invoice, items)
     _add_taxes(sales_invoice, data.get("taxes"))
     _add_custom_quotes(sales_invoice, data.get("custom_quotes"))
-    _add_payments(sales_invoice, data.get("payments"))
+    # _add_payments(sales_invoice, data.get("payments"))
 
-    sales_invoice.is_pos = 1
+    # sales_invoice.is_pos = 1
     sales_invoice.save(ignore_permissions=True)
 
     return sales_invoice.as_dict()
