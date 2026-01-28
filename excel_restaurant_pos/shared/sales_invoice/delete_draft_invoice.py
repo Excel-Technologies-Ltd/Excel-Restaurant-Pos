@@ -1,7 +1,7 @@
 import frappe
 
 
-def delete_draft_invoice(invoice_no: str):
+def delete_delivery_draft_invoice(invoice_no: str):
     """
     Delete a draft invoice from the database.
     """
@@ -14,6 +14,9 @@ def delete_draft_invoice(invoice_no: str):
     # delete invoice
     if invoice.docstatus != 0:
         frappe.throw("Invoice is not a draft", frappe.ValidationError)
+
+    if not invoice.custom_service_type or invoice.custom_service_type.lower() != "delivery":
+        frappe.throw("Invoice is not a delivery invoice", frappe.ValidationError)
 
     # delete invoice from db
     frappe.db.delete("Sales Invoice", invoice_no)

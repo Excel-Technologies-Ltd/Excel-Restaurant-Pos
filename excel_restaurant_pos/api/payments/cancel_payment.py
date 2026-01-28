@@ -1,5 +1,6 @@
 import frappe
 from excel_restaurant_pos.shared.sales_invoice import delete_invoice_from_db
+from .helper.check_receipt import check_receipt
 
 
 @frappe.whitelist(allow_guest=True)
@@ -10,13 +11,24 @@ def cancel_payment():
 
     # validate ticket
     ticket = frappe.form_dict.get("ticket")
-    if not ticket:
-        frappe.throw("Ticket is required")
+    invoice_name = frappe.form_dict.get("order_no")
+    if not ticket or not invoice_name:
+        frappe.throw("Ticket and order number are required")
 
     # get ticket details
     invoice_no = frappe.db.get_value("Payment Ticket", {"ticket": ticket}, "invoice_no")
     if not invoice_no:
         frappe.throw("Invoice not found")
+
+    # check if payment is alredy recipt or not
+    receipt_status = check_receipt(ticket)
+    r_result = receipt_status.get("receipt", {}).get("result")
+    s_result = receipt_status.get("success", "false")
+    order_number = receipt_status.get("request", {}).get("order_no")
+
+    # if payment is already recipt, throw error
+    if s_result == "true" and r_result == "a" and order_number == invoice_name:
+        frappe.throw("Unable to cancel payment", frappe.ValidationError)
 
     # get invoice
     invoice = frappe.get_doc("Sales Invoice", invoice_no)
