@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import add_days
 from .report_helper import (
     validate_required_yyyy_mm_dd,
     validate_start_end_date,
@@ -21,7 +22,10 @@ def get_sales_summery():
     end_date = validate_required_yyyy_mm_dd("End Date", end_date)
     validate_start_end_date(start_date, end_date)
 
-    values = {"start_date": start_date, "end_date": end_date}
+    # DB function likely treats end_date as exclusive (< end_date).
+    # To make the API behave inclusive, pass end_date + 1 day.
+    end_date_for_query = add_days(end_date, 1)
+    values = {"start_date": start_date, "end_date": end_date_for_query}
 
     try:
         # SQL function-style call (often returns JSON text)
