@@ -36,9 +36,9 @@ def cancel_payment():
         frappe.throw("Invoice not found")
 
     # if invoice is in draft, delete the invoice
-    if invoice.docstatus == 0:
-        delete_invoice_from_db(invoice_no)
-        frappe.throw("Invoice deleted successfully", frappe.ValidationError)
+    if invoice.docstatus != 0:
+        frappe.throw("Unable to cancel payment", frappe.ValidationError)
 
-    # return True
-    return {"success": True}
+    # delete sales invoice from db
+    delete_invoice_from_db(invoice_no)
+    return {"success": True, "message": "Invoice deleted successfully"}
