@@ -1,4 +1,5 @@
 import frappe
+from frappe_uberdirect.uber_integration.job_handlers import create_delivery_handler
 
 
 def payment_change_handler(invoice_name: str):
@@ -53,6 +54,18 @@ def payment_change_handler(invoice_name: str):
         for item in invoice.items:
             item.custom_order_item_status = "In kitchen"
             item.save(ignore_permissions=True)
+
+        # enqueue delivery create
+        try:
+            frappe.enqueue(
+                create_delivery_handler, queue="long", invoice_id=invoice.name
+            )
+        except Exception:
+            frappe.log_error(
+                "Error enqueuing delivery create",
+                f"Error enqueuing delivery create for invoice {invoice_name}",
+            )
+
     else:
         frappe.log_error(
             "Unmatched status update condition",
