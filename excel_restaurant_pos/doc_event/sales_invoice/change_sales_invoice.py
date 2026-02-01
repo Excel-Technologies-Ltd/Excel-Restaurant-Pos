@@ -5,6 +5,7 @@ import frappe
 from .handlers.payment_change_handler import payment_change_handler
 from .handlers.order_change_handler import order_change_handler
 from .handlers.order_cancel_handler import order_cancel_handler
+from .handlers.customer_change_handler import customer_change_handler
 
 
 def change_sales_invoice(doc, method: str):
@@ -28,6 +29,10 @@ def change_sales_invoice(doc, method: str):
         msg = f"Order status changed to {doc.custom_order_status}"
         frappe.log_error("Order status changed", msg)
         frappe.enqueue(order_change_handler, queue="default", invoice_name=doc.name)
+
+    # customer change logic
+    if doc.has_value_changed("customer"):
+        customer_change_handler(doc=doc)
 
     # table realease logic here
     # table_name = doc.custom_linked_table
