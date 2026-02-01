@@ -32,3 +32,4 @@ def customer_change_handler(doc):
         return
 
     doc.custom_email_send_to = primary_email
+    doc.save(ignore_permissions=True)
