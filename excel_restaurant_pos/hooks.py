@@ -169,7 +169,17 @@ doc_events = {
 # ---------------
 
 scheduler_events = {
-    "daily": ["excel_restaurant_pos.utils.jwt_auth.cleanup_expired_blacklist"]
+    "daily": ["excel_restaurant_pos.utils.jwt_auth.cleanup_expired_blacklist"],
+    "cron": {
+        # Delete marked-as-deleted draft invoices at midnight daily
+        "0 1 * * *": [
+            "excel_restaurant_pos.utils.scheduled_tasks.delete_marked_invoices"
+        ],
+        # Delete stale website orders every 20 minutes
+        "*/20 * * * *": [
+            "excel_restaurant_pos.utils.scheduled_tasks.delete_stale_website_orders"
+        ],
+    },
 }
 
 # Testing
