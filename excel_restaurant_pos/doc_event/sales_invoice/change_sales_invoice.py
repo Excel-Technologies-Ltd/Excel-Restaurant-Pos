@@ -6,6 +6,7 @@ from .handlers.payment_change_handler import payment_change_handler
 from .handlers.order_change_handler import order_change_handler
 from .handlers.order_cancel_handler import order_cancel_handler
 from .handlers.customer_change_handler import customer_change_handler
+from .handlers.change_delete_handler import change_delete_handler
 
 
 def change_sales_invoice(doc, method: str):
@@ -33,6 +34,10 @@ def change_sales_invoice(doc, method: str):
     # customer change logic
     if doc.has_value_changed("customer"):
         customer_change_handler(doc=doc)
+
+    # is deleted change logic
+    if doc.has_value_changed("custom_is_deleted") and doc.custom_is_deleted:
+        frappe.enqueue(change_delete_handler, queue="short", invoice_name=doc.name)
 
     # table realease logic here
     # table_name = doc.custom_linked_table

@@ -94,6 +94,8 @@ def _set_optional_fields(sales_invoice, data):
         "custom_state",
         "custom_pincode",
         "custom_country",
+        "custom_is_deleted",
+        "custom_address_instruction",
     ]
 
     for field in optional_fields:
