@@ -5,7 +5,8 @@ from .report_helper import (
     validate_start_end_date,
 )
 
-@frappe.whitelist()
+
+@frappe.whitelist(allow_guest=True)
 def get_sales_summery():
     """
     Get sales summary report.
@@ -55,5 +56,3 @@ def get_sales_summery():
             ),
             frappe.ValidationError,
         )
-
-
