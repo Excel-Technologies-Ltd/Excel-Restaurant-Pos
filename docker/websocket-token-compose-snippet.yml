@@ -1,0 +1,38 @@
+# Add this to your existing docker-compose / stack file to run the token-only Socket.IO server.
+#
+# 1) Optional: in configurator command, add one line so token socket port is in config:
+#    bench set-config -gp socketio_token_port 9001;
+#
+# 2) Add the websocket-token service (same image and sites volume as websocket):
+#
+#  websocket-token:
+#    <<: [*customizable_image]
+#    command:
+#      - node
+#      - /home/frappe/frappe-bench/apps/excel_restaurant_pos/socketio_token.js
+#    volumes:
+#      - sites:/home/frappe/frappe-bench/sites
+#    networks:
+#      - frappe_erp_overlay_network
+#      - traefik-public
+#    deploy:
+#      replicas: 1
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#      labels:
+#        traefik.docker.network: traefik-public
+#        traefik.enable: "true"
+#        traefik.constraint-label: traefik-public
+#        traefik.http.routers.pos-staging-erp-socket-token-http.rule: Host(${SITES:?No sites set}) && PathPrefix(`/socket-token`)
+#        traefik.http.routers.pos-staging-erp-socket-token-http.entrypoints: http
+#        traefik.http.routers.pos-staging-erp-socket-token-http.middlewares: https-redirect
+#        traefik.http.routers.pos-staging-erp-socket-token-https.rule: Host(${SITES}) && PathPrefix(`/socket-token`)
+#        traefik.http.routers.pos-staging-erp-socket-token-https.entrypoints: https
+#        traefik.http.routers.pos-staging-erp-socket-token-https.tls: "true"
+#        traefik.http.routers.pos-staging-erp-socket-token-https.tls.certresolver: le
+#        traefik.http.routers.pos-staging-erp-socket-token-https.priority: "100"
+#        traefik.http.services.pos-staging-erp-socket-token.loadbalancer.server.port: "9001"
+#
+# 3) Client: connect to same host with path /socket-token and namespace = site name:
+#    io(siteName, { path: "/socket-token", extraHeaders: { Authorization: "Bearer " + token }, secure: true });

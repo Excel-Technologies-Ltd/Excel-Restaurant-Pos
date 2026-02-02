@@ -7,9 +7,14 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "cd portal && yarn install",
     "dev": "cd portal && yarn dev",
-    "build": "cd portal && yarn build"
+    "build": "cd portal && yarn build",
+    "socketio_token": "node socketio_token.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "socket.io": "^4.7.2",
+    "superagent": "^8.0.0"
+  }
 }
