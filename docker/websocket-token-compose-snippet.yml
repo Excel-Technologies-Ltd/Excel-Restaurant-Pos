@@ -36,3 +36,20 @@
 #
 # 3) Client: connect to same host with path /socket-token and namespace = site name:
 #    io(siteName, { path: "/socket-token", extraHeaders: { Authorization: "Bearer " + token }, secure: true });
+
+
+ websocket:
+    <<: [*customizable_image]
+    command:
+      - node
+      - /home/frappe/frappe-bench/apps/frappe/socketio.js
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - frappe_erp_overlay_network
+      - traefik-public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s

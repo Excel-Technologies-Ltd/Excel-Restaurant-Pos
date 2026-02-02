@@ -33,7 +33,7 @@ function on_connection(socket) {
 	frappe_handlers(realtime, socket);
 
 	socket.on("open_in_editor", async (data) => {
-		await subscriber.connect();
+		if (typeof subscriber.connect === "function") await subscriber.connect();
 		subscriber.publish("open_in_editor", JSON.stringify(data));
 	});
 }
@@ -44,16 +44,32 @@ realtime.on("connection", on_connection);
 const subscriber = get_redis_subscriber();
 
 (async () => {
-	await subscriber.connect();
-	subscriber.subscribe("events", (message) => {
-		message = JSON.parse(message);
-		const namespace = "/" + message.namespace;
-		if (message.room) {
-			io.of(namespace).to(message.room).emit(message.event, message.message);
-		} else {
-			realtime.emit(message.event, message.message);
+	// Support both @redis/client (has .connect()) and older redis clients (auto-connect)
+	if (typeof subscriber.connect === "function") {
+		await subscriber.connect();
+	}
+	// node-redis v4: subscribe(channel, (message) => {}); older redis v3: on("message", (channel, message) => {})
+	const onMessage = (messageOrChannel, message) => {
+		const raw = typeof message === "string" ? message : messageOrChannel;
+		let messageObj;
+		try {
+			messageObj = JSON.parse(raw);
+		} catch {
+			return;
 		}
-	});
+		const namespace = "/" + messageObj.namespace;
+		if (messageObj.room) {
+			io.of(namespace).to(messageObj.room).emit(messageObj.event, messageObj.message);
+		} else {
+			realtime.emit(messageObj.event, messageObj.message);
+		}
+	};
+	if (subscriber.subscribe.length >= 2) {
+		subscriber.subscribe("events", onMessage);
+	} else {
+		subscriber.subscribe("events");
+		subscriber.on("message", (channel, message) => onMessage(channel, message));
+	}
 })();
 
 const port = conf.socketio_token_port || 9001;
