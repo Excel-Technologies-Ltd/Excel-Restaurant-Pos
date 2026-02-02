@@ -60,11 +60,8 @@ def get_item_details():
     # item prices
     regular_prices = frappe.get_all(
         "Item Price",
-        filters={
-            "item_code": ["in", regular_item_codes],
-            "price_list": "Standard Selling",
-        },
-        fields=["item_code", "price_list_rate", "valid_upto"],
+        filters={"item_code": ["in", regular_item_codes], "selling": 1},
+        fields=["item_code", "price_list", "price_list_rate", "valid_upto"],
     )
 
     addon_prices = frappe.get_all(
