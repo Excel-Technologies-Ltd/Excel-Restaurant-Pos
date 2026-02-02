@@ -52,7 +52,7 @@ function authenticate_token(socket, next) {
 		return;
 	}
 
-	const authorization_header = socket.request.headers.authorization;
+	const authorization_header = socket.handshake.auth?.token ?? socket.handshake.query?.token;	
 	if (!authorization_header || !authorization_header.toLowerCase().startsWith("bearer ")) {
 		next(new Error("Missing or invalid Authorization header. Use: Authorization: Bearer <token>"));
 		return;

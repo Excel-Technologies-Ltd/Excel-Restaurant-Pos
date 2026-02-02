@@ -13,7 +13,10 @@ const conf = get_conf();
 
 const server = http.createServer();
 
+// path: when behind a reverse proxy (e.g. /socket-token), set socketio_token_path in common_site_config so client path matches
+const socketPath = conf.socketio_token_path || "/socket.io";
 const io = new Server(server, {
+	path: socketPath,
 	cors: {
 		origin: true,
 		credentials: true,
@@ -74,5 +77,5 @@ const subscriber = get_redis_subscriber();
 
 const port = conf.socketio_token_port || 9001;
 server.listen(port, () => {
-	console.log(`Realtime (token auth) listening on: ws://0.0.0.0:${port}`);
+	console.log(`Realtime (token auth) listening on: ws://0.0.0.0:${port} path: ${socketPath}`);
 });
