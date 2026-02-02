@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import today, getdate
 
 
 # get item list
@@ -45,14 +46,30 @@ def get_item_list():
     # get item prices
     prices = frappe.get_all(
         "Item Price",
-        filters={"item_code": ["in", item_codes], "price_list": "Standard Selling"},
-        fields=["item_code", "price_list_rate"],
+        filters={"item_code": ["in", item_codes], "selling": 1},
+        fields=["item_code", "price_list", "price_list_rate", "valid_upto"],
     )
-    price_map = {price.item_code: price.price_list_rate for price in prices}
+
+    # Group prices by item_code (handle multiple prices per item)
+    # Filter out prices with expired valid_upto dates
+    today_date = getdate(today())
+    price_map = {}
+    for price in prices:
+        # Skip if valid_upto is set and has passed
+        if price.valid_upto:
+            valid_upto_date = getdate(price.valid_upto)
+            if valid_upto_date < today_date:
+                continue  # Price is expired, skip it
+
+        # only valid item is included
+        item_code = price.item_code
+        if item_code not in price_map:
+            price_map[item_code] = []
+        price_map[item_code].append(price)
 
     # attach price to item list
     for item in item_list:
-        item.price = price_map.get(item.item_code, 0)
+        item["prices"] = price_map.get(item.item_code, [])
 
     # return item list
     return item_list
