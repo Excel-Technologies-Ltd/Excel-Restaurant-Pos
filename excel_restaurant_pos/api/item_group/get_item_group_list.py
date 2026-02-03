@@ -6,7 +6,11 @@ def get_item_group_list():
     """
     Get distinct item group list that have items
     """
-    item_filters = [["variant_of", "is", "not set"], ["disabled", "=", 0]]
+    item_filters = [
+        ["variant_of", "is", "not set"],
+        ["disabled", "=", 0],
+        ["custom_is_website_item", "=", 1],
+    ]
 
     # Get all item groups (may contain duplicates)
     item_groups = frappe.get_all("Item", filters=item_filters, pluck="item_group")
