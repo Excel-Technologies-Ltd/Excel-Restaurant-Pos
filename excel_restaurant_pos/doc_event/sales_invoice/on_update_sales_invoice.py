@@ -77,8 +77,8 @@ def on_update_sales_invoice(doc, method: str):
                 print(f"Job enqueued: {job}")
                 # Log to Error Log for production visibility
                 frappe.log_error(
-                    f"Notification job enqueued for {doc.name}, role: {rule.if_role}, job: {job}",
-                    "Push Notification - Job Enqueued"
+                    message=f"Document: {doc.name}\nRole: {rule.if_role}",
+                    title="PN - Job Enqueued"
                 )
 
         if matched_rules == 0:
@@ -169,8 +169,8 @@ def send_notification_to_role_async(sales_invoice_name, rule_data):
     print(f"Sales Invoice: {sales_invoice_name}")
     print(f"Rule: {rule_data}")
     frappe.log_error(
-        f"Worker started processing notification for {sales_invoice_name}, role: {role}",
-        "Push Notification - Worker Started"
+        message=f"Document: {sales_invoice_name}\nRole: {role}",
+        title="PN - Worker Started"
     )
 
     try:
@@ -179,8 +179,8 @@ def send_notification_to_role_async(sales_invoice_name, rule_data):
         if frappe.cache().get_value(async_cache_key):
             print(f"Async notification already processed for {sales_invoice_name} role {role}, skipping")
             frappe.log_error(
-                f"Skipping duplicate: {sales_invoice_name}, role: {role}",
-                "Push Notification - Duplicate Skipped"
+                message=f"Document: {sales_invoice_name}\nRole: {role}",
+                title="PN - Duplicate Skipped"
             )
             return
 
@@ -198,16 +198,16 @@ def send_notification_to_role_async(sales_invoice_name, rule_data):
         frappe.db.commit()
         print(f"=== ASYNC NOTIFICATION SUCCESS ===\n\n")
         frappe.log_error(
-            f"Notification sent successfully for {sales_invoice_name}, role: {role}",
-            "Push Notification - Success"
+            message=f"Document: {sales_invoice_name}\nRole: {role}",
+            title="PN - Success"
         )
     except Exception as e:
         print(f"!!! ERROR in send_notification_to_role_async: {str(e)}")
         import traceback
         print(traceback.format_exc())
         frappe.log_error(
-            f"Error in send_notification_to_role_async: {str(e)}\nDocument: {sales_invoice_name}\nRule: {rule_data}\n\n{traceback.format_exc()}",
-            "Push Notification Error"
+            message=f"Error: {str(e)}\nDocument: {sales_invoice_name}\nRole: {role}\n\n{traceback.format_exc()}",
+            title="PN - Error"
         )
         frappe.db.rollback()
 
