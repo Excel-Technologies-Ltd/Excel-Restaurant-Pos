@@ -1,42 +1,56 @@
 """Document event handlers for Sales Invoice changes."""
 
 import frappe
+from datetime import timedelta
+from frappe.utils import now_datetime, get_datetime
+from frappe_uberdirect.utils.background_jobs import enqueue_delayed
 
+from .handlers.schedule_status_handler import schedule_status_handler
 from .handlers.payment_change_handler import payment_change_handler
 from .handlers.order_change_handler import order_change_handler
 from .handlers.order_cancel_handler import order_cancel_handler
 from .handlers.customer_change_handler import customer_change_handler
 from .handlers.change_delete_handler import change_delete_handler
+from .handlers.delayed_order_status_handler import delayed_order_status_handler
 
 
 def change_sales_invoice(doc, method: str):
     """
     Validate Sales Invoice
     """
+    # get order status
+    order_status = doc.get("custom_order_status", "").lower()
+    doc_status = doc.get("status", "").lower()
+    is_deleted = doc.get("custom_is_deleted", False)
 
     # payment change logic
-    if doc.has_value_changed("status") and doc.status == "Paid":
-        frappe.log_error("Status changed", f"Status changed to {doc.status}")
+    if doc.has_value_changed("status") and doc_status == "paid":
+        frappe.log_error("Status changed", f"Status changed to {doc_status}")
         frappe.enqueue(payment_change_handler, queue="default", invoice_name=doc.name)
 
     # cancelled status logic
-    if doc.has_value_changed("status") and doc.status == "Cancelled":
-        msg = f"Status changed to {doc.status}"
+    if doc.has_value_changed("status") and doc_status == "cancelled":
+        msg = f"Status changed to {doc_status}"
         frappe.log_error("Status changed", msg)
         frappe.enqueue(order_cancel_handler, queue="default", invoice_name=doc.name)
 
     # order status change logic
-    if doc.has_value_changed("custom_order_status"):
-        msg = f"Order status changed to {doc.custom_order_status}"
+    is_close_or_rejected = order_status in ["closed", "rejected"]
+    if doc.has_value_changed("custom_order_status") and is_close_or_rejected:
+        msg = f"Order status changed to {order_status}"
         frappe.log_error("Order status changed", msg)
         frappe.enqueue(order_change_handler, queue="default", invoice_name=doc.name)
+
+    # scheduled order status change logic
+    if doc.has_value_changed("custom_order_status") and order_status == "scheduled":
+        schedule_status_handler(doc=doc)
 
     # customer change logic
     if doc.has_value_changed("customer"):
         customer_change_handler(doc=doc)
 
     # is deleted change logic
-    if doc.has_value_changed("custom_is_deleted") and doc.custom_is_deleted:
+    if doc.has_value_changed("custom_is_deleted") and is_deleted:
         frappe.enqueue(change_delete_handler, queue="short", invoice_name=doc.name)
 
     # table realease logic here

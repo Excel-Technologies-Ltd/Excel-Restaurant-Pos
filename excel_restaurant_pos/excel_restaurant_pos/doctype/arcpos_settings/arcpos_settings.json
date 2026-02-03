@@ -77,6 +77,10 @@
   "section_break_qrwmt",
   "banner_image_list",
   "permissions_tab",
+  "send_email_after_delivery",
+  "default_alert_tone",
+  "column_break_0zqc1",
+  "send_email_after_pickup",
   "push_notification_permission_section",
   "role_wise_permission",
   "discount_permission_section",
@@ -522,14 +526,36 @@
   {
    "fieldname": "capi_access_token",
    "fieldtype": "Data",
-   "label": "CAPI Access Token"
+   "label": "Branding Footer Left"
+  },
+  {
+   "fieldname": "copyright_footer",
+   "fieldtype": "Data",
+   "label": "Copyright Footer"
+  },
+  {
+   "fieldname": "tag_line_for_qr",
+   "fieldtype": "Data",
+   "label": "Tag line for QR"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_print_for_online_order",
+   "fieldtype": "Check",
+   "label": "Auto Print for Online Order"
+  },
+  {
+   "description": "Set the \"File URL\" from File List.",
+   "fieldname": "default_alert_tone",
+   "fieldtype": "Data",
+   "label": "Default Alert Tone"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-02-03 15:03:50.441734",
+ "modified": "2026-02-03 15:48:00.753538",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",
