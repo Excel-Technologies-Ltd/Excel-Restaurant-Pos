@@ -36,7 +36,9 @@ def payment_change_handler(invoice_name: str):
 
     # status update logic
     if s_type in ["Dine-in", "Takeout"]:
-        _update_order_status(invoice, "Closed")
+        invoice.custom_order_status = "Closed"
+        for item in invoice.items:
+            item.custom_order_item_status = "Served"
 
     elif s_type == "Pickup" and o_type == "Pay Later":
         _update_order_status(invoice, "Picked Up")
