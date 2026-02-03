@@ -1,57 +1,56 @@
-const { get_conf } = require("../../../../frappe/node_utils");
-const conf = get_conf();
-
 /**
  * Authentication middleware for Excel Restaurant POS Socket.IO server
- * Supports bearer token authentication without requiring cookies
- * Handles both Frappe standard namespaces and custom app namespaces
+ * Supports bearer token authentication from multiple sources:
+ * 1. socket.handshake.auth.token - For browser WebSocket connections
+ * 2. Authorization header - For polling or proxied requests
  */
 function authenticate(socket, next) {
-	// Extract namespace and validate site name (similar to Frappe's approach)
-	let namespace = socket.nsp.name;
-	namespace = namespace.slice(1, namespace.length); // remove leading `/`
+	// Extract namespace (remove leading `/`)
+	let namespace = socket.nsp.name.slice(1);
 
-	// Extract site name from namespace
-	let site_name = get_site_name(socket, namespace);
+	// Get site name from namespace or handshake auth
+	let site_name = socket.handshake.auth?.site || namespace;
 
-	// Validate namespace matches site name (for Frappe namespaces)
+	// Handle custom app namespace: /excel_restaurant_pos/{site_name}
 	if (namespace.startsWith("excel_restaurant_pos/")) {
-		// Custom app namespace: /excel_restaurant_pos/{site_name}
 		const parts = namespace.split("/");
 		if (parts.length >= 2) {
 			site_name = parts[1];
 		}
-	} else if (namespace !== site_name) {
-		// For standard Frappe namespaces, validate they match
-		next(new Error("Invalid namespace"));
-		return;
 	}
 
-	// Origin validation disabled to allow external site connections
-	// CORS is handled at the Socket.IO server level (origin: true in index.js)
-	// Authentication is still enforced via bearer token below
+	// Get bearer token from multiple sources (in order of preference):
+	// 1. socket.handshake.auth.token (browser WebSocket - recommended)
+	// 2. Authorization header (polling/proxied requests)
+	let bearer_token = null;
 
-	const authorization_header = socket.request.headers.authorization;
+	// Check handshake auth first (works with browser WebSocket)
+	if (socket.handshake.auth?.token) {
+		bearer_token = socket.handshake.auth.token;
+		// Add "Bearer " prefix if not present
+		if (!bearer_token.toLowerCase().startsWith("bearer ")) {
+			bearer_token = `Bearer ${bearer_token}`;
+		}
+	}
+	// Fallback to Authorization header
+	else if (socket.request.headers.authorization) {
+		bearer_token = socket.request.headers.authorization;
+	}
 
-	// Validate that authorization header is provided
-	if (!authorization_header) {
-		next(new Error("Missing Authorization header. Bearer token required."));
+	// Validate token exists
+	if (!bearer_token) {
+		next(new Error("Authentication required. Provide token via auth option or Authorization header."));
 		return;
 	}
 
 	// Validate bearer token format
-	const bearerPattern = /^Bearer\s+.+$/i;
-	if (!bearerPattern.test(authorization_header)) {
-		next(
-			new Error(
-				"Invalid Authorization header format. Expected format: 'Bearer <token>'"
-			)
-		);
+	if (!/^Bearer\s+.+$/i.test(bearer_token)) {
+		next(new Error("Invalid token format. Expected: 'Bearer <token>'"));
 		return;
 	}
 
-	// Store authorization header and site name
-	socket.authorization_header = authorization_header;
+	// Store authorization and site name on socket
+	socket.authorization_header = bearer_token;
 	socket.site_name = site_name;
 
 	// Create frappe_request function for API calls
@@ -65,8 +64,8 @@ function authenticate(socket, next) {
 			Authorization: socket.authorization_header,
 		};
 
-		// Get the base URL from origin or use default
-		const baseUrl = socket.request.headers.origin || get_default_url(socket);
+		// Use site_name to build the API URL (don't use origin - it's the client domain for external connections)
+		const baseUrl = `https://${socket.site_name}`;
 
 		return fetch(baseUrl + path, {
 			...opts,
@@ -102,52 +101,5 @@ function authenticate(socket, next) {
 		});
 }
 
-function get_site_name(socket, namespace) {
-	if (socket.site_name) {
-		return socket.site_name;
-	} else if (socket.request.headers["x-frappe-site-name"]) {
-		socket.site_name = get_hostname(socket.request.headers["x-frappe-site-name"]);
-	} else if (
-		conf.default_site &&
-		["localhost", "127.0.0.1"].indexOf(get_hostname(socket.request.headers.host)) !== -1
-	) {
-		socket.site_name = conf.default_site;
-	} else if (socket.request.headers.origin) {
-		socket.site_name = get_hostname(socket.request.headers.origin);
-	} else if (namespace && !namespace.startsWith("excel_restaurant_pos/")) {
-		// Use namespace as site name for Frappe standard namespaces
-		socket.site_name = namespace;
-	} else {
-		socket.site_name = get_hostname(socket.request.headers.host);
-	}
-	return socket.site_name;
-}
-
-function get_hostname(url) {
-	if (!url) return undefined;
-	if (url.indexOf("://") > -1) {
-		url = url.split("/")[2];
-	}
-	return url.match(/:/g) ? url.slice(0, url.indexOf(":")) : url;
-}
-
-function get_default_url(socket) {
-	// Try to get URL from headers
-	if (socket.request.headers.origin) {
-		return socket.request.headers.origin;
-	}
-
-	if (socket.request.headers.host) {
-		const protocol = socket.request.headers["x-forwarded-proto"] || "http";
-		return `${protocol}://${socket.request.headers.host}`;
-	}
-
-	// Fallback to configured webserver
-	if (conf.webserver_port) {
-		return `http://localhost:${conf.webserver_port}`;
-	}
-
-	return "http://localhost:8000";
-}
 
 module.exports = authenticate;
