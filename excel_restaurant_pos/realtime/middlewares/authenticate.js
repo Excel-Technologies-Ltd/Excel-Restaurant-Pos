@@ -27,11 +27,9 @@ function authenticate(socket, next) {
 		return;
 	}
 
-	// Validate origin (similar to Frappe)
-	if (get_hostname(socket.request.headers.host) != get_hostname(socket.request.headers.origin)) {
-		next(new Error("Invalid origin"));
-		return;
-	}
+	// Origin validation disabled to allow external site connections
+	// CORS is handled at the Socket.IO server level (origin: true in index.js)
+	// Authentication is still enforced via bearer token below
 
 	const authorization_header = socket.request.headers.authorization;
 
