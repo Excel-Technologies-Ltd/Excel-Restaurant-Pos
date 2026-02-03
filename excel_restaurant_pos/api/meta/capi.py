@@ -613,7 +613,7 @@ def track_purchase():
     return result
 
 
-# @frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)
 def track_initiate_checkout():
     """
     Track InitiateCheckout event when a user starts the checkout process.
@@ -708,7 +708,7 @@ def track_initiate_checkout():
     return result
 
 
-# @frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)
 def track_add_payment_info():
     """
     Track AddPaymentInfo event when a user adds payment information.
