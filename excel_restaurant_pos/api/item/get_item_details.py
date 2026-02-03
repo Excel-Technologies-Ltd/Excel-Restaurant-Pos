@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import today, getdate
 
 
 # get item details
@@ -59,11 +60,8 @@ def get_item_details():
     # item prices
     regular_prices = frappe.get_all(
         "Item Price",
-        filters={
-            "item_code": ["in", regular_item_codes],
-            "price_list": "Standard Selling",
-        },
-        fields=["item_code", "price_list_rate"],
+        filters={"item_code": ["in", regular_item_codes], "selling": 1},
+        fields=["item_code", "price_list", "price_list_rate", "valid_upto"],
     )
 
     addon_prices = frappe.get_all(
@@ -72,15 +70,27 @@ def get_item_details():
         fields=["item_code", "price_list_rate"],
     )
 
-    addon_price_map = {price.item_code: price.price_list_rate for price in addon_prices}
+    # Filter out expired prices based on valid_upto (only for regular items)
+    today_date = getdate(today())
 
-    regular_price_map = {
-        price.item_code: price.price_list_rate for price in regular_prices
-    }
+    # Filter regular prices
+    valid_regular_prices = {}
+    for price in regular_prices:
+        if price.valid_upto:
+            valid_upto_date = getdate(price.valid_upto)
+            if valid_upto_date < today_date:
+                continue  # Price is expired, skip it
+
+        item_code = price.item_code
+        if item_code not in valid_regular_prices:
+            valid_regular_prices[item_code] = []
+        valid_regular_prices[item_code].append(price)
+
+    addon_price_map = {price.item_code: price.price_list_rate for price in addon_prices}
 
     # attach price to variants and addons
     for variant in variants_items:
-        variant.price = regular_price_map.get(variant.item_code, 0)
+        variant.price = valid_regular_prices.get(variant.item_code, [])
 
     # attach price to addons
     for addon in addons_items:
@@ -88,6 +98,6 @@ def get_item_details():
 
     # attach variants and addons to item details
     item_details["variants_items"] = variants_items
-    item_details["price"] = regular_price_map.get(item_code, 0)
+    item_details["prices"] = valid_regular_prices.get(item_code, [])
 
     return item_details
