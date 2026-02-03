@@ -2,6 +2,15 @@ import frappe
 from frappe_uberdirect.uber_integration.job_handlers import create_delivery_handler
 
 
+def _update_order_status(invoice, status):
+    """
+    Update order status.
+    """
+    invoice.custom_order_status = status
+    for item in invoice.items:
+        item.custom_order_item_status = status
+
+
 def payment_change_handler(invoice_name: str):
     """
     Handle payment change.
@@ -23,37 +32,31 @@ def payment_change_handler(invoice_name: str):
     s_type = invoice.get("custom_service_type", None)
     o_type = invoice.get("custom_order_type", None)
     o_from = invoice.get("custom_order_from", "").lower()
+    schedule_type = invoice.get("custom_order_schedule_type", "").lower()
 
     # status update logic
     if s_type in ["Dine-in", "Takeout"]:
-        invoice.custom_order_status = "Closed"
-        for item in invoice.items:
-            item.custom_order_item_status = "Served"
-            item.save(ignore_permissions=True)
+        _update_order_status(invoice, "Closed")
 
     elif s_type == "Pickup" and o_type == "Pay Later":
-        invoice.custom_order_status = "Picked Up"
-        for item in invoice.items:
-            item.custom_order_item_status = "Picked Up"
-            item.save(ignore_permissions=True)
+        _update_order_status(invoice, "Picked Up")
 
     elif s_type == "Pickup" and o_type == "Pay First":
-        invoice.custom_order_status = "In kitchen"
-        for item in invoice.items:
-            item.custom_order_item_status = "In kitchen"
-            item.save(ignore_permissions=True)
+        if schedule_type == "asap/standard":
+            _update_order_status(invoice, "In kitchen")
+        else:
+            _update_order_status(invoice, "Scheduled")
+            # todo: if not work than work here, schedule a job that actually run letter
 
     elif s_type == "Delivery" and o_type == "Pay Later" and "store" in o_from:
-        invoice.custom_order_status = "Delivered"
-        for item in invoice.items:
-            item.custom_order_item_status = "Delivered"
-            item.save(ignore_permissions=True)
+        _update_order_status(invoice, "Delivered")
 
     elif s_type == "Delivery" and o_type == "Pay First":
-        invoice.custom_order_status = "In kitchen"
-        for item in invoice.items:
-            item.custom_order_item_status = "In kitchen"
-            item.save(ignore_permissions=True)
+        if schedule_type == "asap/standard":
+            _update_order_status(invoice, "In kitchen")
+        else:
+            _update_order_status(invoice, "Scheduled")
+            # todo: if not work than work here, schedule a job that actually run letter
 
         # enqueue delivery create
         try:
@@ -70,7 +73,6 @@ def payment_change_handler(invoice_name: str):
         frappe.log_error(
             "Unmatched status update condition",
             f"Unmatched status update condition for invoice {invoice_name}",
-            f"Service Type: {s_type}, Order Type: {o_type}, Order From: {o_from}",
         )
         return
 

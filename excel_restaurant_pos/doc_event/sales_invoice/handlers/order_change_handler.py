@@ -13,13 +13,6 @@ def order_change_handler(invoice_name: str):
         frappe.log_error("Invoice not found", f"Invoice {invoice_name} not found")
         return
 
-    # validate order status
-    status = invoice.custom_order_status
-    if status not in ["Closed", "Rejected"]:
-        msg = f"Invalid order status {status} for invoice {invoice_name}, expected: Closed or Rejected"
-        frappe.log_error("Invalid order status", msg)
-        return
-
     # table release logic
     table_name = invoice.get("custom_linked_table", None)
     if not table_name:
