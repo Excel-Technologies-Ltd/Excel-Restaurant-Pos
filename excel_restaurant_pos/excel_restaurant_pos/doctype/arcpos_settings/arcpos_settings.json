@@ -40,6 +40,8 @@
   "allowed_sc_pos",
   "default_sc_account_pos",
   "fixed_sc_pos",
+  "branding_footer_right",
+  "branding_footer_left",
   "pos_print_settings_section",
   "print_format_for_order",
   "print_format_logo",
@@ -72,6 +74,9 @@
   "website_signup_logo_dark",
   "website_fabicon",
   "website_favicon_dark",
+  "manage_outlet_website",
+  "default_outlet_website",
+  "default_customer_website",
   "variants_view_website",
   "allow_service_charge",
   "default_sc_account",
@@ -80,7 +85,10 @@
   "section_break_qrwmt",
   "banner_image_list",
   "permissions_tab",
+  "send_email_after_delivery",
   "default_alert_tone",
+  "column_break_4chik",
+  "send_email_after_pickup",
   "push_notification_permission_section",
   "role_wise_permission",
   "discount_permission_section",
@@ -197,7 +205,7 @@
    "label": "Website Logo"
   },
   {
-   "description": "Preferred dimension is 1920 x 425 px",
+   "description": "Preferred Width is 1920 px",
    "fieldname": "banner_image_list",
    "fieldtype": "Table",
    "label": "Banner Image List",
@@ -545,17 +553,60 @@
    "label": "Auto Print for Online Order"
   },
   {
-   "description": "Set the \"File URL\" from File List.",
    "fieldname": "default_alert_tone",
-   "fieldtype": "Data",
+   "fieldtype": "Attach",
    "label": "Default Alert Tone"
+  },
+  {
+   "fieldname": "branding_footer_right",
+   "fieldtype": "Data",
+   "label": "Branding Footer (Right)"
+  },
+  {
+   "fieldname": "branding_footer_left",
+   "fieldtype": "Data",
+   "label": "Branding Footer (Left)"
+  },
+  {
+   "fieldname": "manage_outlet_website",
+   "fieldtype": "Select",
+   "label": "Manage Outlet",
+   "options": "Single\nMultiple"
+  },
+  {
+   "depends_on": "eval:doc.manage_outlet_website == \"Single\"",
+   "fieldname": "default_outlet_website",
+   "fieldtype": "Link",
+   "label": "Default Outlet",
+   "options": "Territory"
+  },
+  {
+   "depends_on": "eval:doc.manage_outlet_website == \"Single\"",
+   "fieldname": "default_customer_website",
+   "fieldtype": "Link",
+   "label": "Default Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "send_email_after_delivery",
+   "fieldtype": "Duration",
+   "label": "Send Email After Delivery (In Mins)"
+  },
+  {
+   "fieldname": "column_break_4chik",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "send_email_after_pickup",
+   "fieldtype": "Duration",
+   "label": "Send Email After Pickup (In Mins)"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-02-03 16:31:45.410092",
+ "modified": "2026-02-03 18:08:44.963625",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",
