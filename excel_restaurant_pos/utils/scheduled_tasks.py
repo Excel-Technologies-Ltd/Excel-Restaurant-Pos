@@ -1,4 +1,4 @@
-from excel_restaurant_pos.api.payments.helper import check_receipt
+from excel_restaurant_pos.api.payments.helper.check_receipt import check_receipt
 import frappe
 from frappe.utils import now_datetime
 from datetime import timedelta
@@ -72,8 +72,34 @@ def delete_stale_website_orders():
 
     for invoice_name in invoices:
         # if payment is done create payment entry manually
-        invoice = frappe.get_doc("Sales Invoice", invoice_name)
-        payment_ticket = frappe.get_doc("Payment Ticket", {"invoice_no": invoice_name})
+        try:
+            invoice = frappe.get_doc("Sales Invoice", invoice_name)
+        except Exception as e:
+            frappe.log_error(
+                message=f"Failed to get Sales Invoice {invoice_name}: {str(e)}",
+                title="Scheduled Website Order Deletion Error",
+            )
+            continue
+
+        # get payment ticket (get first record matching invoice_no)
+        payment_ticket = None
+        try:
+            payment_ticket_names = frappe.get_all(
+                "Payment Ticket",
+                filters={"invoice_no": invoice_name},
+                limit=1,
+                pluck="name",
+            )
+            if payment_ticket_names:
+                payment_ticket = frappe.get_doc(
+                    "Payment Ticket", payment_ticket_names[0]
+                )
+        except Exception as e:
+            frappe.log_error(
+                message=f"Failed to get Payment Ticket for invoice {invoice_name}: {str(e)}",
+                title="Scheduled Website Order Deletion Error",
+            )
+
         if not payment_ticket:
             _delete_sales_invoice(invoice_name)
             continue
@@ -125,7 +151,7 @@ def delete_stale_website_orders():
 
             # enqueue payment entry creation
             args = {"sales_invoice": invoice.name, "payments": payments}
-            frappe.enqueue(create_payment_entry, queue="short", **args)
+            create_payment_entry(**args)
 
         except Exception as e:
             frappe.log_error(
