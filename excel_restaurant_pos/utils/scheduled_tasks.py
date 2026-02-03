@@ -1,4 +1,4 @@
-from excel_restaurant_pos.api.payments.helper import check_receipt
+from excel_restaurant_pos.api.payments.helper.check_receipt import check_receipt
 import frappe
 from frappe.utils import now_datetime
 from datetime import timedelta
