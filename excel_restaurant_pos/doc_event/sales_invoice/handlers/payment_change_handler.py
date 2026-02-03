@@ -42,20 +42,20 @@ def payment_change_handler(invoice_name: str):
         _update_order_status(invoice, "Picked Up")
 
     elif s_type == "Pickup" and o_type == "Pay First":
-        if schedule_type == "asap/standard":
-            _update_order_status(invoice, "In kitchen")
-        else:
+        if schedule_type == "scheduled later":
             _update_order_status(invoice, "Scheduled")
+        else:
+            _update_order_status(invoice, "In kitchen")
             # todo: if not work than work here, schedule a job that actually run letter
 
     elif s_type == "Delivery" and o_type == "Pay Later" and "store" in o_from:
         _update_order_status(invoice, "Delivered")
 
     elif s_type == "Delivery" and o_type == "Pay First":
-        if schedule_type == "asap/standard":
-            _update_order_status(invoice, "In kitchen")
-        else:
+        if schedule_type == "scheduled later":
             _update_order_status(invoice, "Scheduled")
+        else:
+            _update_order_status(invoice, "In kitchen")
             # todo: if not work than work here, schedule a job that actually run letter
 
         # enqueue delivery create
