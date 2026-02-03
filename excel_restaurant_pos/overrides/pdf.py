@@ -8,7 +8,7 @@ from frappe.utils.pdf import read_options_from_html, get_cookie_options, inline_
 
 def prepare_options(html, options):
     """
-    Custom prepare_options that sets margin-left and margin-right to 5mm
+    Custom prepare_options that sets all margins to 5mm
     instead of the default 15mm.
     """
     if not options:
@@ -24,15 +24,15 @@ def prepare_options(html, options):
         }
     )
 
-    # Custom margins: 5mm instead of default 15mm
-    if not options.get("margin-right"):
-        options["margin-right"] = "5mm"
-
-    if not options.get("margin-left"):
-        options["margin-left"] = "5mm"
-
     html, html_options = read_options_from_html(html)
     options.update(html_options or {})
+
+    # Custom margins: 5mm instead of default 15mm
+    # Set AFTER html_options to override prepare_header_footer defaults
+    options["margin-right"] = "5mm"
+    options["margin-left"] = "5mm"
+    options["margin-top"] = "5mm"
+    options["margin-bottom"] = "5mm"
 
     # cookies
     options.update(get_cookie_options())
@@ -56,3 +56,5 @@ def prepare_options(html, options):
         options["page-size"] = pdf_page_size
 
     return html, options
+
+
