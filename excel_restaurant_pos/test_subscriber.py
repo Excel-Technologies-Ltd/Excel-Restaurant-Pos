@@ -9,7 +9,7 @@ from datetime import datetime
 # Configuration
 BASE_URL = os.getenv("SOCKET_URL", "https://arcpos.aninda.me")
 SITE_NAME = os.getenv("SITE_NAME", "arcpos.aninda.me")
-BEARER_TOKEN = os.getenv("BEARER_TOKEN", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYXptaW5AZXhjZWxiZC5jb20iLCJleHAiOjE3Njk1OTA1NjcsImlhdCI6MTc2OTU4Njk2NywidHlwZSI6ImFjY2VzcyJ9.KHYmGAHvyDgEn2bAV_gG_D1Ubbrw_LAQcjmYIrLS4Vw")
+BEARER_TOKEN = os.getenv("BEARER_TOKEN", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYXptaW5AZXhjZWxiZC5jb20iLCJleHAiOjE3NzAwMzY4MzEsImlhdCI6MTc3MDAzMzIzMSwidHlwZSI6ImFjY2VzcyJ9.DXZQU5KkhanRSGCZobkj0xBsbAyrAONxY025voRGbUg")
 USER_EMAIL = os.getenv("USER_EMAIL", "azmin@excelbd.com")
 
 NAMESPACE = f"/{SITE_NAME}"
