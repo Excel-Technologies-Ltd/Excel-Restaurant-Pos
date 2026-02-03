@@ -60,7 +60,8 @@ def on_update_sales_invoice(doc, method: str):
                 matched_rules += 1
                 print(f"Rule matched for role: {rule.if_role}")
                 # Enqueue notification sending to avoid blocking the save
-                frappe.enqueue(
+                print(f"Enqueueing notification job for {doc.name} role {rule.if_role}...")
+                job = frappe.enqueue(
                     send_notification_to_role_async,
                     queue="short",
                     timeout=300,
@@ -72,6 +73,12 @@ def on_update_sales_invoice(doc, method: str):
                         "if_service_type": rule.if_service_type,
                         "if_order_type": rule.if_order_type,
                     }
+                )
+                print(f"Job enqueued: {job}")
+                # Log to Error Log for production visibility
+                frappe.log_error(
+                    f"Notification job enqueued for {doc.name}, role: {rule.if_role}, job: {job}",
+                    "Push Notification - Job Enqueued"
                 )
 
         if matched_rules == 0:
@@ -156,16 +163,25 @@ def send_notification_to_role_async(sales_invoice_name, rule_data):
         sales_invoice_name: Name of the Sales Invoice document
         rule_data: Dictionary containing rule data
     """
+    # Log immediately when worker picks up the job
+    role = rule_data.get("if_role", "unknown")
     print(f"\n\n=== ASYNC NOTIFICATION START ===")
     print(f"Sales Invoice: {sales_invoice_name}")
     print(f"Rule: {rule_data}")
+    frappe.log_error(
+        f"Worker started processing notification for {sales_invoice_name}, role: {role}",
+        "Push Notification - Worker Started"
+    )
 
     try:
         # Deduplication check at async level using cache
-        role = rule_data.get("if_role", "unknown")
         async_cache_key = f"arcpos_async_notification_{sales_invoice_name}_{role}"
         if frappe.cache().get_value(async_cache_key):
             print(f"Async notification already processed for {sales_invoice_name} role {role}, skipping")
+            frappe.log_error(
+                f"Skipping duplicate: {sales_invoice_name}, role: {role}",
+                "Push Notification - Duplicate Skipped"
+            )
             return
 
         # Mark as processed with 30 second TTL
@@ -181,6 +197,10 @@ def send_notification_to_role_async(sales_invoice_name, rule_data):
         # Commit the transaction
         frappe.db.commit()
         print(f"=== ASYNC NOTIFICATION SUCCESS ===\n\n")
+        frappe.log_error(
+            f"Notification sent successfully for {sales_invoice_name}, role: {role}",
+            "Push Notification - Success"
+        )
     except Exception as e:
         print(f"!!! ERROR in send_notification_to_role_async: {str(e)}")
         import traceback
@@ -309,6 +329,10 @@ def send_notification_to_role(doc, rule):
             has_expo = True
         except ImportError:
             print("Expo Server SDK not installed, skipping push notifications")
+            frappe.log_error(
+                f"Expo Server SDK not installed. Install with: pip install exponent-server-sdk",
+                "Push Notification - SDK Missing"
+            )
             has_expo = False
 
         if not has_expo:
@@ -323,9 +347,17 @@ def send_notification_to_role(doc, rule):
         )
 
         print(f"Found {len(token_docs)} users with notification token documents")
+        # Log for production debugging
+        frappe.logger("push_notification").info(
+            f"Push notification for {doc.name}: users_notified={users_notified}, token_docs_count={len(token_docs)}"
+        )
 
         if not token_docs:
             print("  No users with notification tokens found, skipping push notifications")
+            frappe.log_error(
+                f"No push tokens found for users: {users_notified}. Document: {doc.name}",
+                "Push Notification - No Tokens"
+            )
             print(f"--- Notification complete (system only) ---\n")
             return
 
@@ -381,6 +413,10 @@ def send_notification_to_role(doc, rule):
                     print(f"    ✓ Push message prepared for: {token_doc.user}")
 
         print(f"\n Total push messages to send: {len(push_messages)}")
+        # Log for production debugging
+        frappe.logger("push_notification").info(
+            f"Push messages prepared for {doc.name}: count={len(push_messages)}, users={list(token_to_user_map.values())}"
+        )
 
         # Send push notifications if tokens are available
         if push_messages:
@@ -388,6 +424,7 @@ def send_notification_to_role(doc, rule):
             push_sent_count = 0
 
             print(f"\n Sending push notifications via Expo...")
+            frappe.logger("push_notification").info(f"Starting Expo push for {doc.name}")
             try:
                 # Send notifications in chunks (Expo recommends max 100 per request)
                 chunk_size = 100
@@ -432,8 +469,16 @@ def send_notification_to_role(doc, rule):
                 )
 
             print(f"\n Push notifications sent: {push_sent_count}/{len(push_messages)}")
+            # Log result for production debugging
+            frappe.logger("push_notification").info(
+                f"Push result for {doc.name}: sent={push_sent_count}/{len(push_messages)}"
+            )
         else:
             print("  No valid push messages to send")
+            frappe.log_error(
+                f"No valid push messages to send for {doc.name}. Token docs: {token_docs}",
+                "Push Notification - No Messages"
+            )
 
         print(f"\n=== Notification complete (system + push) ===\n")
 
