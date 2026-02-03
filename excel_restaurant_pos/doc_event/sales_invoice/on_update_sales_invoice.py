@@ -2,6 +2,7 @@
 
 import frappe
 from frappe import _
+from frappe.utils import now_datetime, add_to_date
 
 
 def on_update_sales_invoice(doc, method: str):
@@ -15,6 +16,16 @@ def on_update_sales_invoice(doc, method: str):
     3. Sends push and system notifications to users with matching roles
     """
     try:
+        # Prevent duplicate notifications using Redis cache
+        # Key is based on doc name only (modified timestamp can differ between on_update and on_change)
+        cache_key = f"arcpos_notification_processing_{doc.name}"
+        if frappe.cache().get_value(cache_key):
+            print(f"Notification already being processed for {doc.name}, skipping duplicate trigger")
+            return
+
+        # Mark as processing with 5 second TTL (short window to catch duplicate hook triggers)
+        frappe.cache().set_value(cache_key, True, expires_in_sec=5)
+
         # Check if ArcPOS Settings exists
         print("\n\n on_update_sales_invoice called \n\n")
         if not frappe.db.exists("ArcPOS Settings", "ArcPOS Settings"):
@@ -150,6 +161,16 @@ def send_notification_to_role_async(sales_invoice_name, rule_data):
     print(f"Rule: {rule_data}")
 
     try:
+        # Deduplication check at async level using cache
+        role = rule_data.get("if_role", "unknown")
+        async_cache_key = f"arcpos_async_notification_{sales_invoice_name}_{role}"
+        if frappe.cache().get_value(async_cache_key):
+            print(f"Async notification already processed for {sales_invoice_name} role {role}, skipping")
+            return
+
+        # Mark as processed with 30 second TTL
+        frappe.cache().set_value(async_cache_key, True, expires_in_sec=30)
+
         # Get the document
         doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
         print(f"Document loaded successfully: {doc.name}")
@@ -214,11 +235,31 @@ def send_notification_to_role(doc, rule):
         print(f"Notification Body: {body}")
 
         # ALWAYS save system notifications for all users (even if they don't have tokens)
+        # Track users who actually received notifications (for push notification deduplication)
+        users_notified = []
+
         print(f"\n Sending SYSTEM NOTIFICATIONS to {len(user_emails)} users:")
         system_notifications_sent = 0
         for user_email in user_emails:
             print(f"  → Attempting to send system notification to: {user_email}")
             try:
+                # Check if notification already exists for this user/document in last 30 seconds
+                thirty_seconds_ago = add_to_date(now_datetime(), seconds=-30)
+
+                existing_notification = frappe.db.exists(
+                    "Notification Log",
+                    {
+                        "for_user": user_email,
+                        "document_type": "Sales Invoice",
+                        "document_name": doc.name,
+                        "creation": [">=", thirty_seconds_ago]
+                    }
+                )
+
+                if existing_notification:
+                    print(f"    ⊘ SKIPPED: Recent notification already exists for: {user_email}")
+                    continue
+
                 notification = frappe.get_doc({
                     "doctype": "Notification Log",
                     "for_user": user_email,
@@ -232,12 +273,13 @@ def send_notification_to_role(doc, rule):
                 })
                 notification.insert(ignore_permissions=True)
                 system_notifications_sent += 1
+                users_notified.append(user_email)  # Track this user for push notifications
                 frappe.publish_realtime('sales_invoice_notification_'+user_email, data = {
                     'title': title,
                     'body': body,
                     'document_type': 'Sales Invoice',
                     'document_name': doc.name
-                }, 
+                },
                 )
                 print(f"    ✓ SUCCESS: System notification saved for: {user_email}")
             except Exception as e:
@@ -248,6 +290,12 @@ def send_notification_to_role(doc, rule):
                 )
 
         print(f"\n System notifications sent: {system_notifications_sent}/{len(user_emails)}\n")
+
+        # Skip push notifications if no users received system notifications
+        if not users_notified:
+            print("No users received new system notifications, skipping push notifications")
+            print(f"--- Notification complete (no new notifications) ---\n")
+            return
 
         # Try to send push notifications if Expo SDK is available
         try:
@@ -267,10 +315,10 @@ def send_notification_to_role(doc, rule):
             print(f"--- Notification complete (system only) ---\n")
             return
 
-        # Get Expo tokens for the users from ArcPOS Notification Token child table
+        # Get Expo tokens only for users who received new system notifications
         token_docs = frappe.get_all(
             "ArcPOS Notification Token",
-            filters={"user": ["in", user_emails]},
+            filters={"user": ["in", users_notified]},
             fields=["name", "user"]
         )
 
