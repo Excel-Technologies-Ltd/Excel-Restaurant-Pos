@@ -15,8 +15,12 @@ def delete_delivery_draft_invoice(invoice_no: str):
     if invoice.docstatus != 0:
         frappe.throw("Invoice is not a draft", frappe.ValidationError)
 
-    if not invoice.custom_service_type or invoice.custom_service_type.lower() != "delivery":
-        frappe.throw("Invoice is not a delivery invoice", frappe.ValidationError)
+    # check if invoice is a delivery or pickup invoice
+    valid_service_types = ["delivery", "pickup"]
+    service_type = invoice.get("custom_service_type", "").lower()
+    if service_type not in valid_service_types:
+        message = f"Invoice is not a {', '.join(valid_service_types)} service type"
+        frappe.throw(message, frappe.ValidationError)
 
     # delete invoice from db
     frappe.db.delete("Sales Invoice", invoice_no)
