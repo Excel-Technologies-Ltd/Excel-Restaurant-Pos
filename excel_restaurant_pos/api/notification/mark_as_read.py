@@ -49,7 +49,7 @@ def mark_as_read():
 
                 if table_status == "Occupied":
                     response["redirect_to"] = "Table"
-                    response["table_name"] = linked_table
+                    response["invoice_name"] = invoice_name
                 else:
                     response["redirect_to"] = "Order"
                     response["invoice_name"] = invoice_name
