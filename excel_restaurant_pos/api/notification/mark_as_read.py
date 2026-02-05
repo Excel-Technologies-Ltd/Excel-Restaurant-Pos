@@ -9,6 +9,7 @@ def mark_as_read():
 
     user = frappe.session.user
     notification_name = frappe.form_dict.get("name")
+    invoice_name = frappe.form_dict.get("invoice_name")
 
     if not user:
         frappe.throw("User not logged in")
@@ -26,7 +27,37 @@ def mark_as_read():
     notification.read = 1
     notification.save(ignore_permissions=True)
 
-    return {"success": True, "message": "Notification marked as read"}
+    # Prepare response
+    response = {"success": True, "message": "Notification marked as read"}
+
+    # Get Sales Invoice Details if invoice_name is provided
+    if invoice_name:
+        invoice_details = frappe.get_doc("Sales Invoice", invoice_name)
+
+        if invoice_details:
+            order_from = invoice_details.get("custom_order_from")
+            linked_table = invoice_details.get("custom_linked_table")
+
+            # Check if order is from Table or QR - Table and has a linked table
+            if order_from in ["Table", "QR - Table"] and linked_table:
+                # Get the Restaurant Table status
+                table_status = frappe.db.get_value(
+                    "Restaurant Table",
+                    linked_table,
+                    "status"
+                )
+
+                if table_status == "Occupied":
+                    response["redirect_to"] = "Table"
+                    response["table_name"] = linked_table
+                else:
+                    response["redirect_to"] = "Order"
+                    response["invoice_name"] = invoice_name
+            else:
+                response["redirect_to"] = "Order"
+                response["invoice_name"] = invoice_name
+
+    return response
 
 
 @frappe.whitelist()
