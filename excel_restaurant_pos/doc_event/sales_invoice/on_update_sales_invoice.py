@@ -16,6 +16,60 @@ def on_update_sales_invoice(doc, method: str):
     3. Sends push and system notifications to users with matching roles
     """
     try:
+        # Send Delivery or Pickup Notification
+        # Get ArcPOS Settings
+        settings = frappe.get_doc("ArcPOS Settings", "ArcPOS Settings")
+        print("\n\n Duration : ", settings.send_email_after_delivery, "\n\n\n")
+        template = settings.delivery_or_pickup_template
+
+        if template:
+            order_status = doc.get("custom_order_status") or ""
+            service_type = doc.get("custom_service_type") or ""
+
+            # Check if conditions match for sending notification
+            should_send = False
+            delay_minutes = 0
+
+            if order_status == "Delivered" and service_type == "Delivery":
+                should_send = True
+                delay_minutes = settings.send_email_after_delivery or 0
+            elif order_status == "Picked Up" and service_type == "Pickup":
+                should_send = True
+                delay_minutes = settings.send_email_after_pickup or 0
+
+            if should_send:
+                if delay_minutes and delay_minutes > 0:
+                    # Schedule notification with delay
+                    frappe.enqueue(
+                        send_delivery_pickup_notification,
+                        queue="short",
+                        timeout=300,
+                        enqueue_after_commit=True,
+                        at_front=False,
+                        job_id=f"delivery_pickup_notification_{doc.name}",
+                        deduplicate=True,
+                        sales_invoice_name=doc.name,
+                        template_name=template,
+                        scheduled_time=add_to_date(now_datetime(), minutes=delay_minutes)
+                    )
+                    print(f"Scheduled delivery/pickup notification for {doc.name} after {delay_minutes} minutes")
+                else:
+                    # Send notification immediately
+                    frappe.enqueue(
+                        send_delivery_pickup_notification,
+                        queue="short",
+                        timeout=300,
+                        enqueue_after_commit=True,
+                        sales_invoice_name=doc.name,
+                        template_name=template
+                    )
+                    print(f"Queued immediate delivery/pickup notification for {doc.name}")
+        else:
+            print("Delivery and Pickup Template is missing in ArcPOS Settings")
+
+
+
+
         # Prevent duplicate notifications using Redis cache
         # Key is based on doc name only (modified timestamp can differ between on_update and on_change)
         cache_key = f"arcpos_notification_processing_{doc.name}"
@@ -35,8 +89,7 @@ def on_update_sales_invoice(doc, method: str):
             )
             return
 
-        # Get ArcPOS Settings
-        settings = frappe.get_doc("ArcPOS Settings", "ArcPOS Settings")
+        
 
         # Check if there are any notification rules configured
         if not settings.role_wise_permission:
@@ -560,3 +613,77 @@ def get_notification_body(doc, rule):
         parts.append(f"Total: {frappe.utils.fmt_money(doc.grand_total, currency=doc.currency)}")
 
     return " | ".join(parts) if parts else f"Sales Invoice {doc.name} has been updated."
+
+
+def send_delivery_pickup_notification(sales_invoice_name, template_name, scheduled_time=None):
+    """
+    Send delivery or pickup notification to customer using the specified template.
+
+    Args:
+        sales_invoice_name: Name of the Sales Invoice document
+        template_name: Name of the Notification Template to use
+        scheduled_time: Optional scheduled time (used for delayed notifications)
+    """
+    try:
+        # If scheduled_time is set, check if it's time to send
+        if scheduled_time and now_datetime() < scheduled_time:
+            # Re-enqueue for later
+            remaining_seconds = (scheduled_time - now_datetime()).total_seconds()
+            if remaining_seconds > 0:
+                frappe.enqueue(
+                    send_delivery_pickup_notification,
+                    queue="short",
+                    timeout=300,
+                    enqueue_after_commit=True,
+                    job_id=f"delivery_pickup_notification_{sales_invoice_name}",
+                    deduplicate=True,
+                    sales_invoice_name=sales_invoice_name,
+                    template_name=template_name,
+                    scheduled_time=scheduled_time
+                )
+                return
+
+        # Get the Sales Invoice document
+        doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
+
+        # Get customer email
+        customer_email = None
+        if doc.contact_email:
+            customer_email = doc.contact_email
+        elif doc.customer:
+            customer_email = frappe.db.get_value("Customer", doc.customer, "email_id")
+
+        if not customer_email:
+            print(f"No customer email found for Sales Invoice {sales_invoice_name}")
+            frappe.log_error(
+                f"No customer email found for Sales Invoice {sales_invoice_name}",
+                "Delivery/Pickup Notification - No Email"
+            )
+            return
+
+        # Send notification using the template
+        frappe.sendmail(
+            recipients=[customer_email],
+            template=template_name,
+            args={
+                "doc": doc,
+                "customer_name": doc.customer_name or doc.customer,
+                "invoice_name": doc.name,
+                "order_status": doc.get("custom_order_status") or "",
+                "service_type": doc.get("custom_service_type") or "",
+                "grand_total": frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) if doc.grand_total else "",
+            },
+            now=True
+        )
+
+        print(f"Delivery/Pickup notification sent to {customer_email} for {sales_invoice_name}")
+        frappe.log_error(
+            f"Notification sent to {customer_email} for Sales Invoice {sales_invoice_name}",
+            "Delivery/Pickup Notification - Success"
+        )
+
+    except Exception as e:
+        frappe.log_error(
+            f"Error sending delivery/pickup notification: {str(e)}\nSales Invoice: {sales_invoice_name}",
+            "Delivery/Pickup Notification Error"
+        )
