@@ -96,6 +96,11 @@ def _set_optional_fields(sales_invoice, data):
         "custom_country",
         "custom_is_deleted",
         "custom_address_instruction",
+        "custom_pickup_ready",
+        "custom_pickup_deadline",
+        "custom_dropoff_ready",
+        "custom_dropoff_deadline",
+        "custom_order_schedule_type",
     ]
 
     for field in optional_fields:

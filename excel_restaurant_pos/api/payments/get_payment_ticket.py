@@ -94,7 +94,7 @@ def _prepare_cart_items(invoice) -> list:
     for item in invoice.items:
         fmt_items.append(
             {
-                "url": item.image,
+                "url": item.get("image", "").replace("/", "\\/"),
                 "description": item.item_name,
                 "product_code": item.item_code,
                 "unit_cost": convert_to_flt_string(item.rate),
@@ -129,10 +129,10 @@ def _prepare_payment_payload(invoice, payment_config: dict) -> dict:
 
     cart = {
         "items": _prepare_cart_items(invoice),
-        "subtotal": convert_to_flt_string(invoice.base_grand_total),
+        "subtotal": convert_to_flt_string(invoice.net_total),
         "tax": {
             "amount": convert_to_flt_string(invoice.total_taxes_and_charges),
-            "description": "Taxes",
+            "description": "Taxes and Charges",
         },
     }
 
