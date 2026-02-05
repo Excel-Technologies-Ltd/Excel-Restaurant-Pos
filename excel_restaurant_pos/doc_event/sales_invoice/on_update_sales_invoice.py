@@ -72,6 +72,7 @@ def on_update_sales_invoice(doc, method: str):
                         "if_order_status": rule.if_order_status,
                         "if_service_type": rule.if_service_type,
                         "if_order_type": rule.if_order_type,
+                        "item_is_new_order_item": rule.item_is_new_order_item,
                     }
                 )
                 print(f"Job enqueued: {job}")
@@ -108,6 +109,7 @@ def should_send_notification(doc, rule):
     if_order_status = rule.get("if_order_status") if isinstance(rule, dict) else rule.if_order_status
     if_service_type = rule.get("if_service_type") if isinstance(rule, dict) else rule.if_service_type
     if_order_type = rule.get("if_order_type") if isinstance(rule, dict) else rule.if_order_type
+    item_is_new_order_item = rule.get("item_is_new_order_item") if isinstance(rule, dict) else rule.item_is_new_order_item
 
     # Check if role is specified
     if not if_role:
@@ -149,6 +151,23 @@ def should_send_notification(doc, rule):
         if doc_order_type not in allowed_order_types:
             print(f"Order Type mismatch: {doc_order_type} not in {allowed_order_types}")
             return False
+
+    # Check if notification should only be sent for new order items
+    if item_is_new_order_item:
+        has_new_order_item = False
+        items = doc.get("items") or []
+        print(f"Checking {len(items)} items for custom_new_ordered_item...")
+        for item in items:
+            # Get value - handle both dict and document object
+            new_order_item_value = item.get("custom_new_ordered_item") if hasattr(item, "get") else getattr(item, "custom_new_ordered_item", 0)
+            print(f"  Item: {item.get('item_code') if hasattr(item, 'get') else item.item_code}, custom_new_ordered_item={new_order_item_value} (type: {type(new_order_item_value).__name__})")
+            if new_order_item_value == 1 or new_order_item_value == True:
+                has_new_order_item = True
+                break
+        if not has_new_order_item:
+            print(f"New Order Item check failed: No items with custom_new_ordered_item=1 found")
+            return False
+        print(f"New Order Item check passed: Found item(s) with custom_new_ordered_item=1")
 
     # All conditions matched
     print(f"All conditions matched for role: {if_role}")
