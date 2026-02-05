@@ -129,10 +129,10 @@ def _prepare_payment_payload(invoice, payment_config: dict) -> dict:
 
     cart = {
         "items": _prepare_cart_items(invoice),
-        "subtotal": convert_to_flt_string(invoice.base_grand_total),
+        "subtotal": convert_to_flt_string(invoice.net_total),
         "tax": {
             "amount": convert_to_flt_string(invoice.total_taxes_and_charges),
-            "description": "Taxes",
+            "description": "Taxes and Charges",
         },
     }
 
