@@ -16,3 +16,8 @@ class OverrideItem(Item):
         item_menus = self.get("custom_available_in_menus", [])
         combined: list[str] = [item.menu for item in item_menus]
         self.custom_combined_menus = ", ".join(combined)
+
+        # validate item sections and combined items
+        item_sections = self.get("custom_item_sections", [])
+        c_sections = [section.section_name for section in item_sections]
+        self.custom_combined_section = ", ".join(c_sections)
