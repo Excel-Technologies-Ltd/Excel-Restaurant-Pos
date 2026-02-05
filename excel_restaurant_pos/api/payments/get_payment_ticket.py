@@ -94,7 +94,7 @@ def _prepare_cart_items(invoice) -> list:
     for item in invoice.items:
         fmt_items.append(
             {
-                "url": item.image,
+                "url": item.get("image", "").replace("/", "\\/"),
                 "description": item.item_name,
                 "product_code": item.item_code,
                 "unit_cost": convert_to_flt_string(item.rate),
