@@ -15,6 +15,7 @@ from .customer import customer_api_routes
 from .report import report_api_routes
 from .payments import payments_api_routes
 from .meta import meta_api_routes
+from .pos_counter import pos_counter_api_routes
 
 
 api_routes = {
@@ -35,4 +36,5 @@ api_routes = {
     **report_api_routes,
     **payments_api_routes,
     **meta_api_routes,
+    **pos_counter_api_routes,
 }
