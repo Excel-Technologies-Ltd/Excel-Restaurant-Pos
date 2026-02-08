@@ -14,12 +14,15 @@ def customer_change_handler(doc):
         context: Dictionary containing the document context
     """
     default_customer = frappe.db.get_single_value("ArcPOS Settings", "customer")
+    d_web_customer = frappe.db.get_single_value(
+        "ArcPOS Settings", "default_customer_website"
+    )
 
     # define the primary email
     primary_email = None
 
     # if bill on default customer
-    if doc.customer == default_customer:
+    if doc.customer in [default_customer, d_web_customer]:
         primary_email = doc.custom_email_address
     else:
         primary_email = get_customer_primary_email(doc.customer)

@@ -22,11 +22,11 @@ def get_mode_of_payment_account(mode_of_payment: str, company=None):
     """
 
     if not company:
-        company = frappe.get_single_value("ArcPOS Settings", "company")
+        company = frappe.db.get_single_value("ArcPOS Settings", "company")
 
     # default cash and bank account
-    cash_account = frappe.get_value("Company", company, "default_cash_account")
-    bank_account = frappe.get_value("Company", company, "default_bank_account")
+    cash_account = frappe.db.get_value("Company", company, "default_cash_account")
+    bank_account = frappe.db.get_value("Company", company, "default_bank_account")
 
     # get mode of payment
     mode_of_payment_account = frappe.get_doc("Mode of Payment", mode_of_payment)
@@ -58,7 +58,7 @@ def get_payable_account(company):
     Args:
         company: Company name
     """
-    payable_account = frappe.get_value("Company", company, "default_payable_account")
+    payable_account = frappe.db.get_value("Company", company, "default_payable_account")
     return payable_account
 
 
@@ -68,5 +68,5 @@ def get_write_off_account(company):
     Args:
         company: Company name
     """
-    write_off_account = frappe.get_value("Company", company, "write_off_account")
+    write_off_account = frappe.db.get_value("Company", company, "write_off_account")
     return write_off_account
