@@ -20,14 +20,14 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Section",
-   "options": "Item Section",
+   "options": "ArcPOS Item Section",
    "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-08 16:50:36.950926",
+ "modified": "2026-02-08 17:13:59.483159",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Attachment",
