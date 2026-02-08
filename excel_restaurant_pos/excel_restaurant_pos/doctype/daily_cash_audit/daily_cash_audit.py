@@ -127,9 +127,9 @@ class DailyCashAudit(Document):
 
         if diff > 0:
             # Surplus: Debit Cash, Credit Income
-            income_account = frappe.db.get_value("Company", company, "default_income_account")
+            income_account = frappe.db.get_value("Company", company, "default_deferred_expense_account")
             if not income_account:
-                frappe.throw(_("Default Income Account is not set for Company {0}").format(company))
+                frappe.throw(_("Default Deferred Expense Account is not set for Company {0}").format(company))
 
             debit_account = cash_account
             credit_account = income_account
