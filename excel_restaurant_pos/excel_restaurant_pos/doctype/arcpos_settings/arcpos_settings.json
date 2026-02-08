@@ -96,8 +96,9 @@
   "meta_tab",
   "pixel_id",
   "capi_access_token",
-  "notificaiton_tab",
-  "delivery_or_pickup_template"
+  "column_break_dknb",
+  "catalog_id",
+  "catalog_access_token"
  ],
  "fields": [
   {
@@ -604,22 +605,25 @@
    "label": "Send Email After Pickup (In Mins)"
   },
   {
-   "fieldname": "notificaiton_tab",
-   "fieldtype": "Tab Break",
-   "label": "Notificaiton"
+   "fieldname": "column_break_dknb",
+   "fieldtype": "Column Break"
   },
   {
-   "fieldname": "delivery_or_pickup_template",
-   "fieldtype": "Link",
-   "label": "Delivery or Pickup Template",
-   "options": "Email Template"
+   "fieldname": "catalog_id",
+   "fieldtype": "Data",
+   "label": "Catalog ID"
+  },
+  {
+   "fieldname": "catalog_access_token",
+   "fieldtype": "Data",
+   "label": "Catalog Access Token"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-02-05 15:06:58.062688",
+ "modified": "2026-02-08 12:41:38.738356",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Settings",
@@ -636,6 +640,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

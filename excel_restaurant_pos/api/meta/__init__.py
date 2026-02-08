@@ -10,6 +10,12 @@ from .capi import (
     track_custom_event,
 )
 
+from .catalog import (
+    create_catalog_item_api,
+    update_catalog_item_api,
+    delete_catalog_item_api,
+)
+
 __all__ = [
     "track_view_content",
     "track_add_to_cart",
@@ -20,6 +26,9 @@ __all__ = [
     "track_add_to_wishlist",
     "track_find_location",
     "track_custom_event",
+    "create_catalog_item_api",
+    "update_catalog_item_api",
+    "delete_catalog_item_api",
 ]
 
 meta_api_routes = {
@@ -32,4 +41,7 @@ meta_api_routes = {
     "api.meta.add_to_wishlist": "excel_restaurant_pos.api.meta.capi.track_add_to_wishlist",
     "api.meta.find_location": "excel_restaurant_pos.api.meta.capi.track_find_location",
     "api.meta.custom_event": "excel_restaurant_pos.api.meta.capi.track_custom_event",
+    "api.meta.create_catalog_item": "excel_restaurant_pos.api.meta.create_catalog_item_api",
+    "api.meta.update_catalog_item": "excel_restaurant_pos.api.meta.update_catalog_item_api",
+    "api.meta.delete_catalog_item": "excel_restaurant_pos.api.meta.delete_catalog_item_api",
 }
