@@ -21,7 +21,7 @@ def format_date_ordinal(date_str: str) -> str:
     return f"{day}{suffix} {dt.strftime('%B %Y')}"
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist()
 def get_payment_overview(start_date=None, end_date=None, mode_of_payment=None):
     """
     Get payment overview report.
