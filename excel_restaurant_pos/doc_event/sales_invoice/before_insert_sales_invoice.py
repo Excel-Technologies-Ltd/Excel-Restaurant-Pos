@@ -10,15 +10,19 @@ def before_insert_sales_invoice(doc, method: str):
         doc: The Sales Invoice document.
         method: The method being called.
     """
+    # Bypass modified check for POS invoices created+submitted in one flow
+    # (Frappe's internal logic can update the doc between insert and submit, causing conflict)
+    if doc.get("is_pos") and doc.get("docstatus") == 1:
+        doc.flags.ignore_version = True
+
     order_from = None
     status = None
     table_name = None
 
-
     if doc.custom_order_from:
         order_from = doc.custom_order_from.lower()
 
-    if 'table' in order_from and doc.custom_linked_table:
+    if "table" in order_from and doc.custom_linked_table:
         table_name = doc.custom_linked_table
         status = frappe.db.get_value("Restaurant Table", table_name, "status")
 
