@@ -20,14 +20,14 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Section",
-   "options": "Restaurant Section",
+   "options": "Item Section",
    "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-08 15:51:06.968214",
+ "modified": "2026-02-08 16:50:36.950926",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Attachment",
