@@ -42,7 +42,9 @@ fixtures = [
                     "ArcPOS PCM Approver",
                     "ArcPOS Recipe User",
                     "ArcPOS Recipe Approver",
-                    "ArcPOS Register User"
+                    "ArcPOS Register User",
+                    "ArcPOS Pickup User",
+                    "ArcPOS Delivery User",
                 ],
             ]
         ],
