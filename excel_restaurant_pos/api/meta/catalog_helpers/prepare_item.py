@@ -20,7 +20,8 @@ def prepare_item(item_code: str):
 
     # price map
     price_map = {
-        price["price_list"]: price["price_list_rate"] for price in selling_prices
+        price["price_list"]: f"{price['price_list_rate']} CAD"
+        for price in selling_prices
     }
 
     # catalog item
@@ -33,11 +34,11 @@ def prepare_item(item_code: str):
         "id": item_code,
         "title": item.item_name,
         "description": description,
-        "image_link": img_url,
+        "image": [{"url": img_url}],
         "price": price_map["Standard Selling"],
         "sale_price": price_map["Standard Selling"],
-        "availability": "IN_STOCK",
-        "condition": "NEW",
+        "availability": "in stock",
+        "condition": "new",
         "link": f"https://order.bancankitchen.ca",
     }
 
