@@ -185,7 +185,7 @@ class DailyCashAudit(Document):
         for user in managers:
             user_roles = frappe.get_doc("User", user.name).get("roles")
             for role in user_roles:
-                if role.role == "ArcPOS Manager":
+                if role.role == "Restaurant Manager":
                     arcpos_managers.append(user.name)
                     break
 

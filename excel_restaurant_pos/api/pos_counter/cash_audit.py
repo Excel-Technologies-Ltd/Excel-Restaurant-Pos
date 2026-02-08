@@ -75,13 +75,13 @@ def submit_clock_in_clock_out():
 
     difference = flt(submitted_total) - flt(expected_cash)
     user_roles = [r.role for r in frappe.get_doc("User", frappe.session.user).get("roles")]
-    is_manager = "ArcPOS Manager" in user_roles
+    is_manager = "Restaurant Manager" in user_roles
 
     if flt(difference) == 0 or is_manager:
         doc.submit()
         frappe.db.commit()
     else:
-        # Save as draft — only ArcPOS Manager can submit from list view
+        # Save as draft — only Restaurant Manager can submit from list view
         doc.notify_managers()
         frappe.db.commit()
 
@@ -133,8 +133,8 @@ def approve_cash_audit():
         frappe.throw(_("Audit Name is required"))
 
     user_roles = [r.role for r in frappe.get_doc("User", frappe.session.user).get("roles")]
-    if "ArcPOS Manager" not in user_roles:
-        frappe.throw(_("Only ArcPOS Manager can submit cash audits"))
+    if "Restaurant Manager" not in user_roles:
+        frappe.throw(_("Only Restaurant Manager can submit cash audits"))
 
     doc = frappe.get_doc("Daily Cash Audit", audit_name)
     if doc.docstatus != 0:
