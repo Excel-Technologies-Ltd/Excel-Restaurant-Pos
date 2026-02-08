@@ -1,0 +1,180 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-07 15:20:27.380354",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "submission_type",
+  "counter_name",
+  "clock_in_reference",
+  "column_break_main",
+  "submitted_by",
+  "submitted_on",
+  "cash_section",
+  "expected_cash",
+  "submitted_total",
+  "column_break_cash",
+  "difference",
+  "reason",
+  "journal_entry_section",
+  "journal_entry",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "submission_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Submission Type",
+   "options": "\nClock In\nClock Out",
+   "reqd": 1
+  },
+  {
+   "fieldname": "counter_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Counter Name",
+   "options": "ArcPOS Counter",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.submission_type == 'Clock Out'",
+   "fieldname": "clock_in_reference",
+   "fieldtype": "Link",
+   "label": "Clock In Reference",
+   "options": "Daily Cash Audit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "__user",
+   "fieldname": "submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cash_section",
+   "fieldtype": "Section Break",
+   "label": "Cash Details"
+  },
+  {
+   "fieldname": "expected_cash",
+   "fieldtype": "Currency",
+   "label": "Expected Cash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_total",
+   "fieldtype": "Currency",
+   "label": "Submitted Total",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_cash",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "difference",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Difference",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.difference != 0",
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "mandatory_depends_on": "eval:doc.difference != 0"
+  },
+  {
+   "fieldname": "journal_entry_section",
+   "fieldtype": "Section Break",
+   "label": "Journal Entry",
+   "depends_on": "eval:doc.journal_entry"
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "options": "Journal Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Daily Cash Audit",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-02-07 15:23:51.309262",
+ "modified_by": "Administrator",
+ "module": "Excel Restaurant Pos",
+ "name": "Daily Cash Audit",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Restaurant Cashier",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "role": "ArcPOS Register User",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "ArcPOS Manager",
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
