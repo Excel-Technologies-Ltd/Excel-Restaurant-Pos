@@ -39,6 +39,7 @@ def prepare_item(item_code: str):
         "sale_price": price_map["Standard Selling"],
         "availability": "in stock",
         "condition": "new",
+        "brand": "BanCan",
         "link": f"https://order.bancankitchen.ca",
     }
 
