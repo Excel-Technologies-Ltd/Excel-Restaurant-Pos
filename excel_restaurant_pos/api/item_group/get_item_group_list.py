@@ -6,11 +6,20 @@ def get_item_group_list():
     """
     Get distinct item group list that have items
     """
+
+    combined_section = frappe.form_dict.get("custom_combined_section", None)
+
     item_filters = [
         ["variant_of", "is", "not set"],
         ["disabled", "=", 0],
         ["custom_is_website_item", "=", 1],
     ]
+
+    if combined_section is not None:
+        item_filters.append(
+            ["custom_combined_section", "like", f"%{combined_section}%"]
+        )
+        frappe.form_dict.pop("custom_combined_section")
 
     # Get all item groups (may contain duplicates)
     item_groups = frappe.get_all("Item", filters=item_filters, pluck="item_group")
