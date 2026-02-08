@@ -125,6 +125,7 @@ def on_update_sales_invoice(doc, method: str):
                         "if_order_status": rule.if_order_status,
                         "if_service_type": rule.if_service_type,
                         "if_order_type": rule.if_order_type,
+                        "if_order_schedule_type": rule.if_order_schedule_type,
                         "item_is_new_order_item": rule.item_is_new_order_item,
                     }
                 )
@@ -162,6 +163,7 @@ def should_send_notification(doc, rule):
     if_order_status = rule.get("if_order_status") if isinstance(rule, dict) else rule.if_order_status
     if_service_type = rule.get("if_service_type") if isinstance(rule, dict) else rule.if_service_type
     if_order_type = rule.get("if_order_type") if isinstance(rule, dict) else rule.if_order_type
+    if_order_schedule_type = rule.get("if_order_schedule_type") if isinstance(rule, dict) else rule.if_order_schedule_type
     item_is_new_order_item = rule.get("item_is_new_order_item") if isinstance(rule, dict) else rule.item_is_new_order_item
 
     # Check if role is specified
@@ -203,6 +205,15 @@ def should_send_notification(doc, rule):
         allowed_order_types = [x.strip() for x in if_order_type.split(",") if x.strip()]
         if doc_order_type not in allowed_order_types:
             print(f"Order Type mismatch: {doc_order_type} not in {allowed_order_types}")
+            return False
+
+    # Check Order Schedule Type condition
+    if if_order_schedule_type:
+        doc_order_schedule_type = doc.get("custom_order_schedule_type") or ""
+        # Support comma-separated values - all are valid
+        allowed_order_schedule_types = [x.strip() for x in if_order_schedule_type.split(",") if x.strip()]
+        if doc_order_schedule_type not in allowed_order_schedule_types:
+            print(f"Order Schedule Type mismatch: {doc_order_schedule_type} not in {allowed_order_schedule_types}")
             return False
 
     # Check if notification should only be sent for new order items

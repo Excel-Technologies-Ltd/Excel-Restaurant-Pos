@@ -11,6 +11,7 @@
   "if_order_status",
   "if_service_type",
   "if_order_type",
+  "if_order_schedule_type",
   "item_is_new_order_item"
  ],
  "fields": [
@@ -50,12 +51,17 @@
    "fieldtype": "Float",
    "label": "Item \"Is New Order Item\"",
    "precision": "0"
+  },
+  {
+   "fieldname": "if_order_schedule_type",
+   "fieldtype": "Data",
+   "label": "If \"Order Schedule Type\""
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-03 18:05:32.674834",
+ "modified": "2026-02-08 14:55:37.289874",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "ArcPOS Push Notification",
