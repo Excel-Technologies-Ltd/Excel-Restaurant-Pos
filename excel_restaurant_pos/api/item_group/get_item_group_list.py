@@ -12,11 +12,11 @@ def get_item_group_list():
 
     # Parse filters if it's a JSON string
     if isinstance(i_filters, str):
-        i_filters = frappe.parse_json(i_filters) if i_filters else []
+        i_filters = frappe.parse_json(i_filters) if i_filters else [["custom_is_website_item","=","1"]]
     
     # Ensure i_filters is a list
     if not isinstance(i_filters, list):
-        i_filters = []
+        i_filters = [["custom_is_website_item","=","1"]]
 
     # add the default filters
     item_filters = i_filters + [
