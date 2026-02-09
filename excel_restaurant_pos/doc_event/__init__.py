@@ -5,7 +5,6 @@ from .sales_invoice import (
     on_update_sales_invoice,
 )
 from .tax_and_charges import on_doctype_update
-from .item import on_trash_item, on_update_item
 
 __all__ = [
     "create_pos_invoice",
@@ -13,8 +12,6 @@ __all__ = [
     "submit_sales_invoice",
     "on_update_sales_invoice",
     "on_doctype_update",
-    "on_trash_item",
-    "on_update_item",
 ]
 
 
@@ -30,9 +27,5 @@ custom_doc_events = {
     },
     "Sales Taxes and Charges Template": {
         "on_update": "excel_restaurant_pos.doc_event.on_doctype_update",
-    },
-    "Item": {
-        "on_trash": "excel_restaurant_pos.doc_event.item.on_trash_item",
-        "on_update": "excel_restaurant_pos.doc_event.item.on_update_item",
     },
 }

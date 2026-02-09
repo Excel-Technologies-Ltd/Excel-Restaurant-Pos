@@ -16,6 +16,11 @@ from .catalog import (
     delete_catalog_item_api,
 )
 
+
+from .catalog_helpers.create_catalog_item import create_catalog_item
+from .catalog_helpers.update_catalog_item import update_catalog_item
+from .catalog_helpers.delete_catalog_item import delete_catalog_item
+
 __all__ = [
     "track_view_content",
     "track_add_to_cart",
@@ -26,6 +31,9 @@ __all__ = [
     "track_add_to_wishlist",
     "track_find_location",
     "track_custom_event",
+    "create_catalog_item",
+    "update_catalog_item",
+    "delete_catalog_item",
     "create_catalog_item_api",
     "update_catalog_item_api",
     "delete_catalog_item_api",
