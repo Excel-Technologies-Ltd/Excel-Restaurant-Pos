@@ -8,11 +8,20 @@ def get_item_group_list():
     """
 
     combined_section = frappe.form_dict.get("custom_combined_section", None)
+    i_filters = frappe.form_dict.get("item_filters", [])
 
-    item_filters = [
+    # Parse filters if it's a JSON string
+    if isinstance(i_filters, str):
+        i_filters = frappe.parse_json(i_filters) if i_filters else []
+    
+    # Ensure i_filters is a list
+    if not isinstance(i_filters, list):
+        i_filters = []
+
+    # add the default filters
+    item_filters = i_filters + [
         ["variant_of", "is", "not set"],
         ["disabled", "=", 0],
-        ["custom_is_website_item", "=", 1],
     ]
 
     if combined_section is not None:
