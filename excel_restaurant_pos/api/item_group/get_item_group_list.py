@@ -36,6 +36,8 @@ def get_item_group_list():
     # item groups
     if frappe.form_dict.get("cmd"):
         frappe.form_dict.pop("cmd")
+    if frappe.form_dict.get("item_filters"):
+        frappe.form_dict.pop("item_filters")
 
     # update filters
     filters = frappe.form_dict.get("filters")

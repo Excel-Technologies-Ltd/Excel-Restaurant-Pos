@@ -23,7 +23,8 @@ custom_doc_events = {
         "on_update": "excel_restaurant_pos.doc_event.sales_invoice.on_update_sales_invoice",
         "on_update_after_submit": "excel_restaurant_pos.doc_event.sales_invoice.on_update_sales_invoice",
         "after_insert": "excel_restaurant_pos.doc_event.sales_invoice.after_save_sales_invoice",
-        "before_insert": "excel_restaurant_pos.doc_event.sales_invoice.before_insert_sales_invoice",
+        # "before_insert": "excel_restaurant_pos.doc_event.sales_invoice.before_insert_sales_invoice",
+        "before_save": "excel_restaurant_pos.doc_event.sales_invoice.before_insert_sales_invoice",
     },
     "Sales Taxes and Charges Template": {
         "on_update": "excel_restaurant_pos.doc_event.on_doctype_update",
