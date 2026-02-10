@@ -2,6 +2,7 @@ import frappe
 
 from .prepare_item import prepare_item
 from .call_catalog_api import call_catalog_api
+from .catalog_products import get_catalog_product_by_retailer_id
 
 
 def delete_catalog_item(item_code: str):
@@ -10,17 +11,15 @@ def delete_catalog_item(item_code: str):
     """
     frappe.msgprint(f"Deleting catalog item for: {item_code}")
 
-    # prepare the item
-    item = prepare_item(item_code)
-
-    # make id to retailer_id and than pop id
-    item["retailer_id"] = item.pop("id")
+    # get the catalog product by retailer id
+    catalog_product = get_catalog_product_by_retailer_id(item_code)
+    frappe.logger().info(f"Catalog Product: {catalog_product}")
 
     # prepare the payload
-    payload = [{"method": "DELETE", "data": item}]
+    payload = [{"method": "DELETE", "data": {"id": catalog_product["id"]}}]
 
     # print the payload
-    frappe.logger.info(f"Payload: {payload}")
+    frappe.logger().info(f"Catalog API Payload: {payload}")
 
     # call the catalog API
     response = call_catalog_api(method="POST", data=payload)

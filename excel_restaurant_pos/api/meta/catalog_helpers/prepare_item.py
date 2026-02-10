@@ -30,13 +30,16 @@ def prepare_item(item_code: str):
     )
     img_url = frappe.utils.get_url(item.image) if item.image else ""
 
+    # Get standard selling price or default to 0 if not set
+    standard_price = price_map.get("Standard Selling", "0 CAD")
+    
     catalog_item = {
         "id": item_code,
         "title": item.item_name,
         "description": description,
         "image": [{"url": img_url}],
-        "price": price_map["Standard Selling"],
-        "sale_price": price_map["Standard Selling"],
+        "price": standard_price,
+        "sale_price": standard_price,
         "availability": "in stock",
         "condition": "new",
         "brand": "BanCan",

@@ -12,7 +12,8 @@ def before_insert_sales_invoice(doc, method: str):
     """
     # Bypass modified check for POS invoices created+submitted in one flow
     # (Frappe's internal logic can update the doc between insert and submit, causing conflict)
-    if doc.get("is_pos") and doc.get("docstatus") == 1:
+    # Also bypass for any POS invoice (is_pos=1) to prevent version conflicts during creation
+    if doc.get("is_pos") == 1:
         doc.flags.ignore_version = True
 
     order_from = None

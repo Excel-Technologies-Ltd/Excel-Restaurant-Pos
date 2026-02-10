@@ -2,6 +2,7 @@ import frappe
 
 from .prepare_item import prepare_item
 from .call_catalog_api import call_catalog_api
+from .catalog_products import get_catalog_product_by_retailer_id
 
 
 def update_catalog_item(item_code: str):
@@ -11,8 +12,13 @@ def update_catalog_item(item_code: str):
     # prepare the item
     item = prepare_item(item_code)
 
-    # make id to retailer_id and than pop id
-    item["retailer_id"] = item.pop("id")
+    # get the catalog product by retailer id
+    catalog_product = get_catalog_product_by_retailer_id(item_code)
+    frappe.logger().info(f"Catalog Product: {catalog_product}")
+
+    # update the item with the catalog product id
+    item["retailer_id"] = item.get("id")
+    item["id"] = catalog_product["id"]
 
     # prepare the payload
     payload = [{"method": "UPDATE", "data": item}]
