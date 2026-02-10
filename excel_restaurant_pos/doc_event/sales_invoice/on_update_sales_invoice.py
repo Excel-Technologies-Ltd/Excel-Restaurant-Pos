@@ -40,6 +40,7 @@ def on_update_sales_invoice(doc, method: str):
             if should_send:
                 if delay_minutes and delay_minutes > 0:
                     # Schedule notification with delay
+                    print("\n\n This Condition is Working delay \n\n")
                     frappe.enqueue(
                         send_delivery_pickup_notification,
                         queue="short",
@@ -55,6 +56,7 @@ def on_update_sales_invoice(doc, method: str):
                     print(f"Scheduled delivery/pickup notification for {doc.name} after {delay_minutes} minutes")
                 else:
                     # Send notification immediately
+                    print("\n\n This Condition is Working immediately \n\n")
                     frappe.enqueue(
                         send_delivery_pickup_notification,
                         queue="short",
@@ -658,11 +660,8 @@ def send_delivery_pickup_notification(sales_invoice_name, template_name, schedul
         doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
 
         # Get customer email
-        customer_email = None
-        if doc.contact_email:
-            customer_email = doc.contact_email
-        elif doc.customer:
-            customer_email = frappe.db.get_value("Customer", doc.customer, "email_id")
+        customer_email = frappe.db.get_value("Customer", doc.customer, "email_id")
+            
 
         if not customer_email:
             print(f"No customer email found for Sales Invoice {sales_invoice_name}")
@@ -672,18 +671,24 @@ def send_delivery_pickup_notification(sales_invoice_name, template_name, schedul
             )
             return
 
-        # Send notification using the template
+        # Get the Email Template from database and render it
+        email_template = frappe.get_doc("Email Template", template_name)
+        template_args = {
+            "doc": doc,
+            "customer_name": doc.customer_name or doc.customer,
+            "invoice_name": doc.name,
+            "order_status": doc.get("custom_order_status") or "",
+            "service_type": doc.get("custom_service_type") or "",
+            "grand_total": frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) if doc.grand_total else "",
+        }
+        subject = frappe.render_template(email_template.subject, template_args)
+        message = frappe.render_template(email_template.response_html or email_template.response, template_args)
+
+        # Send notification
         frappe.sendmail(
             recipients=[customer_email],
-            template=template_name,
-            args={
-                "doc": doc,
-                "customer_name": doc.customer_name or doc.customer,
-                "invoice_name": doc.name,
-                "order_status": doc.get("custom_order_status") or "",
-                "service_type": doc.get("custom_service_type") or "",
-                "grand_total": frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) if doc.grand_total else "",
-            },
+            subject=subject,
+            message=message,
             now=True
         )
 
