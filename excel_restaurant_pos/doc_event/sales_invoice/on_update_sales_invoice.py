@@ -684,11 +684,12 @@ def send_delivery_pickup_notification(sales_invoice_name, template_name, schedul
         subject = frappe.render_template(email_template.subject, template_args)
         message = frappe.render_template(email_template.response_html or email_template.response, template_args)
 
-        # Send notification
+        # Send notification (header=None prevents Frappe from wrapping in its own email template)
         frappe.sendmail(
             recipients=[customer_email],
             subject=subject,
             message=message,
+            header=None,
             now=True
         )
 
