@@ -38,29 +38,33 @@ def get_payment_overview(start_date=None, end_date=None, mode_of_payment=None):
     validate_start_end_date(start_date, end_date)
 
     try:
-        # Get all payment methods from Payment Entry (docstatus = 1)
+        # Get Mode of Payment → Account mapping from Payment Entry (docstatus = 1)
         payment_methods = get_payment_methods(mode_of_payment)
 
         report_data = []
         total_closing_balance = 0
+        total_earned = 0
 
         for method in payment_methods:
             method_name = method.get("mode_of_payment")
+            account = method.get("paid_to")
 
             # Calculate Opening Balance (from ERP start to before start_date)
-            opening_balance = get_opening_balance(method_name, start_date)
+            opening_balance = get_opening_balance(account, start_date)
 
             # Calculate Debit and Credit for the date range
-            period_totals = get_period_totals(method_name, start_date, end_date)
+            period_totals = get_period_totals(account, start_date, end_date)
             debit = flt(period_totals.get("debit", 0), 2)
             credit = flt(period_totals.get("credit", 0), 2)
 
             # Current Balance = Opening Balance + Debit - Credit
             current_balance = flt(opening_balance + debit - credit, 2)
             total_closing_balance += current_balance
+            total_earned += debit
 
             report_data.append({
                 "method_name": method_name,
+                "account": account,
                 "opening_balance": flt(opening_balance, 2),
                 "debit": debit,
                 "credit": credit,
@@ -78,6 +82,7 @@ def get_payment_overview(start_date=None, end_date=None, mode_of_payment=None):
             "end_date": end_date,
             "data": report_data,
             "closing_balance": flt(total_closing_balance, 2),
+            "total_earned": flt(total_earned, 2),
         }
 
     except Exception:
@@ -95,11 +100,12 @@ def get_payment_overview(start_date=None, end_date=None, mode_of_payment=None):
 
 def get_payment_methods(mode_of_payment=None):
     """
-    Get distinct payment methods from Payment Entry (docstatus = 1).
+    Get distinct Mode of Payment → Account (paid_to) mapping
+    from Payment Entry (docstatus = 1).
     """
     return frappe.db.sql(
         """
-        SELECT DISTINCT pe.mode_of_payment
+        SELECT DISTINCT pe.mode_of_payment, pe.paid_to
         FROM `tabPayment Entry` pe
         WHERE pe.docstatus = 1
         AND pe.mode_of_payment IS NOT NULL
@@ -116,43 +122,38 @@ def get_payment_methods(mode_of_payment=None):
     )
 
 
-def get_opening_balance(mode_of_payment: str, start_date: str) -> float:
+def get_opening_balance(account: str, start_date: str) -> float:
     """
-    Calculate opening balance for a payment method.
+    Calculate opening balance for an account.
     Opening Balance = SUM(debit) - SUM(credit) from ERP start to before start_date.
     Filters GL Entry by:
     - is_cancelled = 0
-    - voucher_type = 'Payment Entry'
-    - Linked Payment Entry's mode_of_payment
-    - GL account = Payment Entry's paid_to account
+    - account (derived from Payment Entry's paid_to)
+    No voucher_type filter — captures all transactions (Payment Entry, Journal Entry, etc.)
     """
     result = frappe.db.sql(
         """
         SELECT
             COALESCE(SUM(gl.debit), 0) - COALESCE(SUM(gl.credit), 0) AS balance
         FROM `tabGL Entry` gl
-        INNER JOIN `tabPayment Entry` pe ON gl.voucher_no = pe.name
         WHERE gl.is_cancelled = 0
-        AND gl.voucher_type = 'Payment Entry'
-        AND pe.mode_of_payment = %(mode_of_payment)s
-        AND gl.account = pe.paid_to
+        AND gl.account = %(account)s
         AND gl.posting_date < %(start_date)s
         """,
-        {"mode_of_payment": mode_of_payment, "start_date": start_date},
+        {"account": account, "start_date": start_date},
         as_dict=True,
     )
 
     return flt(result[0].get("balance", 0) if result else 0)
 
 
-def get_period_totals(mode_of_payment: str, start_date: str, end_date: str) -> dict:
+def get_period_totals(account: str, start_date: str, end_date: str) -> dict:
     """
-    Calculate debit and credit totals for a payment method within date range.
+    Calculate debit and credit totals for an account within date range.
     Filters GL Entry by:
     - is_cancelled = 0
-    - voucher_type = 'Payment Entry'
-    - Linked Payment Entry's mode_of_payment
-    - GL account = Payment Entry's paid_to account
+    - account (derived from Payment Entry's paid_to)
+    No voucher_type filter — captures all transactions (Payment Entry, Journal Entry, etc.)
     """
     result = frappe.db.sql(
         """
@@ -160,16 +161,13 @@ def get_period_totals(mode_of_payment: str, start_date: str, end_date: str) -> d
             COALESCE(SUM(gl.debit), 0) AS debit,
             COALESCE(SUM(gl.credit), 0) AS credit
         FROM `tabGL Entry` gl
-        INNER JOIN `tabPayment Entry` pe ON gl.voucher_no = pe.name
         WHERE gl.is_cancelled = 0
-        AND gl.voucher_type = 'Payment Entry'
-        AND pe.mode_of_payment = %(mode_of_payment)s
-        AND gl.account = pe.paid_to
+        AND gl.account = %(account)s
         AND gl.posting_date >= %(start_date)s
         AND gl.posting_date <= %(end_date)s
         """,
         {
-            "mode_of_payment": mode_of_payment,
+            "account": account,
             "start_date": start_date,
             "end_date": end_date,
         },
