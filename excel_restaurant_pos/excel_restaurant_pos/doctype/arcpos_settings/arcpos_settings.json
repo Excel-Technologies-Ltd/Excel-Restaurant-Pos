@@ -100,7 +100,8 @@
   "catalog_id",
   "catalog_access_token",
   "notification_tab",
-  "delivery_or_pickup_template"
+  "delivery_or_pickup_template",
+  "scheduled_order_reminder_template"
  ],
  "fields": [
   {
@@ -629,6 +630,12 @@
    "fieldname": "delivery_or_pickup_template",
    "fieldtype": "Link",
    "label": "Delivery or Pickup Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "scheduled_order_reminder_template",
+   "fieldtype": "Link",
+   "label": "Scheduled Order Reminder Template",
    "options": "Email Template"
   }
  ],
