@@ -101,7 +101,13 @@
   "catalog_access_token",
   "notification_tab",
   "delivery_or_pickup_template",
-  "scheduled_order_reminder_template"
+  "scheduled_order_reminder_template",
+  "reservation_templates_section",
+  "reservation_confirmation_template",
+  "reservation_reminder_template",
+  "column_break_reservation",
+  "reservation_rejection_template",
+  "reservation_reschedule_template"
  ],
  "fields": [
   {
@@ -636,6 +642,39 @@
    "fieldname": "scheduled_order_reminder_template",
    "fieldtype": "Link",
    "label": "Scheduled Order Reminder Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "reservation_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Table Reservation Email Templates"
+  },
+  {
+   "fieldname": "reservation_confirmation_template",
+   "fieldtype": "Link",
+   "label": "Reservation Confirmation Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "reservation_reminder_template",
+   "fieldtype": "Link",
+   "label": "Reservation 24h Reminder Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_reservation",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reservation_rejection_template",
+   "fieldtype": "Link",
+   "label": "Reservation Rejection Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "reservation_reschedule_template",
+   "fieldtype": "Link",
+   "label": "Reservation Reschedule Template",
    "options": "Email Template"
   }
  ],

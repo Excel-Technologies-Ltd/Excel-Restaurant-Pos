@@ -163,3 +163,82 @@ def delete_stale_website_orders():
         frappe.logger().info(
             f"Deleted {len(invoices)} stale website orders older than 20 minutes"
         )
+
+
+def send_reservation_reminders():
+    """
+    Send 24-hour reminder emails for table reservations.
+    Runs every hour.
+
+    Conditions:
+    - Reservation Status: Confirmed
+    - Reservation Date + Time: Exactly 24 hours from now (±1 hour window)
+    - Reminder Email not already sent
+    """
+    from frappe.utils import now_datetime, add_to_date, get_datetime
+
+    # Get current datetime
+    current_datetime = now_datetime()
+
+    # Calculate target time (24 hours from now, with 1-hour window on either side)
+    target_time_start = add_to_date(current_datetime, hours=23)
+    target_time_end = add_to_date(current_datetime, hours=25)
+
+    # Query confirmed reservations scheduled 24 hours from now
+    reservations = frappe.get_all(
+        "Table Reservation",
+        filters={
+            "status": "Confirmed",
+            "reminder_email_sent": 0
+        },
+        fields=[
+            "name",
+            "reservation_date",
+            "reservation_time",
+            "guest_name",
+            "email"
+        ]
+    )
+
+    if not reservations:
+        frappe.logger().debug("No confirmed reservations found for 24h reminder")
+        return
+
+    # Filter reservations within the 24-hour window
+    reminders_sent = 0
+    for reservation in reservations:
+        try:
+            # Check if reservation date and time exist
+            if not reservation.reservation_date or not reservation.reservation_time:
+                continue
+
+            # Combine reservation date and time
+            reservation_datetime = get_datetime(
+                f"{reservation.reservation_date} {reservation.reservation_time}"
+            )
+
+            # Check if reservation falls within the 24-hour reminder window
+            if target_time_start <= reservation_datetime <= target_time_end:
+                # Import the send function from the doctype
+                from excel_restaurant_pos.excel_restaurant_pos.doctype.table_reservation.table_reservation import send_24h_reminder_email
+
+                # Send reminder email
+                send_24h_reminder_email(reservation.name)
+                reminders_sent += 1
+
+                frappe.logger().info(
+                    f"Sent 24h reminder for reservation: {reservation.name} "
+                    f"(Guest: {reservation.guest_name}, Time: {reservation.reservation_time})"
+                )
+
+        except Exception as e:
+            frappe.log_error(
+                message=f"Error processing 24h reminder for reservation {reservation.name}: {str(e)}",
+                title="Reservation 24h Reminder Error"
+            )
+            continue
+
+    if reminders_sent > 0:
+        frappe.logger().info(
+            f"Sent {reminders_sent} reservation 24-hour reminder emails"
+        )
