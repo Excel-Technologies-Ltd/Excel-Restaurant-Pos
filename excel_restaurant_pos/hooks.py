@@ -181,6 +181,10 @@ scheduler_events = {
         "*/20 * * * *": [
             "excel_restaurant_pos.utils.scheduled_tasks.delete_stale_website_orders"
         ],
+        # Check scheduled orders and send 30-min notifications every 5 minutes
+        "*/5 * * * *": [
+            "excel_restaurant_pos.utils.scheduled_tasks.check_scheduled_order_notifications"
+        ],
         # Send 24-hour reminder emails for table reservations every hour
         "0 * * * *": [
             "excel_restaurant_pos.utils.scheduled_tasks.send_reservation_reminders"
