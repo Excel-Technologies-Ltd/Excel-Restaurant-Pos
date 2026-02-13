@@ -313,52 +313,6 @@ def send_scheduled_order_notification_to_staff(invoice):
     # Get ArcPOS Settings for email template
     settings = frappe.get_single("ArcPOS Settings")
 
-    # Send email notification to customer if template is configured
-    if settings.scheduled_order_reminder_template:
-        try:
-            # Get customer email
-            customer_email = frappe.db.get_value("Customer", doc.customer, "email_id")
-
-            if customer_email:
-                # Get the Email Template and render it
-                email_template = frappe.get_doc("Email Template", settings.scheduled_order_reminder_template)
-
-                # Prepare template arguments
-                service_type = doc.custom_service_type or "Delivery/Pickup"
-                delivery_time = doc.custom_delivery_time
-                delivery_date = doc.custom_delivery_date
-
-                template_args = {
-                    "doc": doc,
-                    "customer_name": doc.customer_name or doc.customer,
-                    "invoice_name": doc.name,
-                    "order_status": doc.custom_order_status or "",
-                    "service_type": service_type,
-                    "delivery_date": delivery_date,
-                    "delivery_time": delivery_time,
-                    "grand_total": frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) if doc.grand_total else "",
-                }
-
-                # Render subject and message
-                subject = frappe.render_template(email_template.subject, template_args)
-                message = frappe.render_template(email_template.response_html or email_template.response, template_args)
-
-                # Send email
-                frappe.sendmail(
-                    recipients=[customer_email],
-                    subject=subject,
-                    message=message,
-                    header=None,
-                    now=True
-                )
-
-                frappe.logger().info(f"Sent scheduled reminder email to customer: {customer_email}")
-        except Exception as e:
-            frappe.log_error(
-                f"Error sending scheduled reminder email: {str(e)}\nDocument: {doc.name}",
-                "Scheduled Reminder Email Error"
-            )
-
     # Define target roles for staff notifications
     target_roles = ["Restaurant Chef", "Restaurant Manager"]
 
@@ -396,6 +350,62 @@ def send_scheduled_order_notification_to_staff(invoice):
 
             user_emails = [user.user for user in users]
             frappe.logger().info(f"Sending 30-min reminder to {len(user_emails)} users with role {role}")
+
+            # Send email notifications to all users
+            if settings.scheduled_order_reminder_template:
+                try:
+                    email_template = frappe.get_doc("Email Template", settings.scheduled_order_reminder_template)
+
+                    for user_email in user_emails:
+                        try:
+                            # Get user full name
+                            user_doc = frappe.get_doc("User", user_email)
+                            user_full_name = user_doc.full_name or user_email
+
+                            # Prepare template context
+                            template_args = {
+                                "user_name": user_full_name,
+                                "order_name": doc.name,
+                                "customer_name": customer_name,
+                                "service_type": service_type,
+                                "delivery_date": frappe.utils.format_date(doc.custom_delivery_date, "dd MMM yyyy"),
+                                "delivery_time": frappe.utils.format_time(delivery_time),
+                                "order_status": doc.custom_order_status or "Scheduled",
+                                "grand_total": frappe.utils.fmt_money(doc.grand_total, currency=doc.currency),
+                                "items": doc.items,
+                                "doc": doc
+                            }
+
+                            # Render email template
+                            subject = frappe.render_template(email_template.subject, template_args)
+                            message = frappe.render_template(email_template.response, template_args)
+
+                            # Send email
+                            frappe.sendmail(
+                                recipients=[user_email],
+                                subject=subject,
+                                message=message,
+                                now=True
+                            )
+
+                            frappe.logger().info(f"Email notification sent to: {user_email}")
+                            notifications_sent = True
+
+                        except Exception as e:
+                            frappe.log_error(
+                                f"Error sending email to {user_email}: {str(e)}",
+                                "Scheduled Order Notification - Email Error"
+                            )
+
+                except Exception as e:
+                    frappe.log_error(
+                        f"Error processing email template for role {role}: {str(e)}",
+                        "Scheduled Order Notification - Email Template Error"
+                    )
+            else:
+                frappe.logger().warning(
+                    f"No email template configured in ArcPOS Settings (scheduled_order_reminder_template)"
+                )
 
             # Send system notifications to all users
             for user_email in user_emails:
