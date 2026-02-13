@@ -378,7 +378,7 @@ def send_scheduled_order_notification_to_staff(invoice):
 
                             # Render email template
                             subject = frappe.render_template(email_template.subject, template_args)
-                            message = frappe.render_template(email_template.response, template_args)
+                            message = frappe.render_template(email_template.response_html or email_template.response, template_args)
 
                             # Send email
                             frappe.sendmail(
