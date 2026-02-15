@@ -28,32 +28,34 @@ def on_update_sales_invoice(doc, method: str):
 
             # Check if conditions match for sending notification
             should_send = False
-            delay_minutes = 0
+            delay_seconds = 0
 
             if order_status == "Delivered" and service_type == "Delivery":
                 should_send = True
-                delay_minutes = settings.send_email_after_delivery or 0
+                # Duration field stores value in seconds
+                delay_seconds = int(settings.send_email_after_delivery or 0)
             elif order_status == "Picked Up" and service_type == "Pickup":
                 should_send = True
-                delay_minutes = settings.send_email_after_pickup or 0
+                # Duration field stores value in seconds
+                delay_seconds = int(settings.send_email_after_pickup or 0)
 
+            print("Order Status ",order_status,"Delay (seconds): ", delay_seconds)
             if should_send:
-                if delay_minutes and delay_minutes > 0:
-                    # Schedule notification with delay
-                    print("\n\n This Condition is Working delay \n\n")
+                if delay_seconds and delay_seconds > 0:
+                    # Schedule notification with delay (sleep in background worker)
+                    print(f"\n\n Scheduling delayed notification ({delay_seconds}s) \n\n")
                     frappe.enqueue(
                         send_delivery_pickup_notification,
                         queue="short",
-                        timeout=300,
+                        timeout=max(300, delay_seconds + 120),
                         enqueue_after_commit=True,
                         at_front=False,
                         job_id=f"delivery_pickup_notification_{doc.name}",
-                        deduplicate=True,
                         sales_invoice_name=doc.name,
                         template_name=template,
-                        scheduled_time=add_to_date(now_datetime(), minutes=delay_minutes)
+                        delay_seconds=delay_seconds
                     )
-                    print(f"Scheduled delivery/pickup notification for {doc.name} after {delay_minutes} minutes")
+                    print(f"Scheduled delivery/pickup notification for {doc.name} after {delay_seconds} seconds")
                 else:
                     # Send notification immediately
                     print("\n\n This Condition is Working immediately \n\n")
@@ -628,33 +630,22 @@ def get_notification_body(doc, rule):
     return " | ".join(parts) if parts else f"Sales Invoice {doc.name} has been updated."
 
 
-def send_delivery_pickup_notification(sales_invoice_name, template_name, scheduled_time=None):
+def send_delivery_pickup_notification(sales_invoice_name, template_name, delay_seconds=0):
     """
     Send delivery or pickup notification to customer using the specified template.
 
     Args:
         sales_invoice_name: Name of the Sales Invoice document
         template_name: Name of the Notification Template to use
-        scheduled_time: Optional scheduled time (used for delayed notifications)
+        delay_seconds: Number of seconds to wait before sending (Duration field value)
     """
     try:
-        # If scheduled_time is set, check if it's time to send
-        if scheduled_time and now_datetime() < scheduled_time:
-            # Re-enqueue for later
-            remaining_seconds = (scheduled_time - now_datetime()).total_seconds()
-            if remaining_seconds > 0:
-                frappe.enqueue(
-                    send_delivery_pickup_notification,
-                    queue="short",
-                    timeout=300,
-                    enqueue_after_commit=True,
-                    job_id=f"delivery_pickup_notification_{sales_invoice_name}",
-                    deduplicate=True,
-                    sales_invoice_name=sales_invoice_name,
-                    template_name=template_name,
-                    scheduled_time=scheduled_time
-                )
-                return
+        # Wait for the specified delay before sending
+        if delay_seconds and delay_seconds > 0:
+            import time
+            print(f"Waiting {delay_seconds} seconds before sending notification for {sales_invoice_name}")
+            time.sleep(delay_seconds)
+            print(f"Delay complete, sending notification for {sales_invoice_name}")
 
         # Get the Sales Invoice document
         doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
