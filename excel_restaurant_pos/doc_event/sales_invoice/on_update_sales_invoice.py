@@ -2,7 +2,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, add_to_date
+from frappe.utils import now_datetime, add_to_date, getdate, get_datetime
 
 
 def on_update_sales_invoice(doc, method: str):
@@ -40,6 +40,7 @@ def on_update_sales_invoice(doc, method: str):
             if should_send:
                 if delay_minutes and delay_minutes > 0:
                     # Schedule notification with delay
+                    print("\n\n This Condition is Working delay \n\n")
                     frappe.enqueue(
                         send_delivery_pickup_notification,
                         queue="short",
@@ -55,6 +56,7 @@ def on_update_sales_invoice(doc, method: str):
                     print(f"Scheduled delivery/pickup notification for {doc.name} after {delay_minutes} minutes")
                 else:
                     # Send notification immediately
+                    print("\n\n This Condition is Working immediately \n\n")
                     frappe.enqueue(
                         send_delivery_pickup_notification,
                         queue="short",
@@ -67,8 +69,8 @@ def on_update_sales_invoice(doc, method: str):
         else:
             print("Delivery and Pickup Template is missing in ArcPOS Settings")
 
-
-
+        # Check for scheduled delivery/pickup 30 minutes before notification
+        check_scheduled_notification_30min_before(doc, settings)
 
         # Prevent duplicate notifications using Redis cache
         # Key is based on doc name only (modified timestamp can differ between on_update and on_change)
@@ -658,11 +660,8 @@ def send_delivery_pickup_notification(sales_invoice_name, template_name, schedul
         doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
 
         # Get customer email
-        customer_email = None
-        if doc.contact_email:
-            customer_email = doc.contact_email
-        elif doc.customer:
-            customer_email = frappe.db.get_value("Customer", doc.customer, "email_id")
+        customer_email = frappe.db.get_value("Customer", doc.customer, "email_id")
+            
 
         if not customer_email:
             print(f"No customer email found for Sales Invoice {sales_invoice_name}")
@@ -672,18 +671,25 @@ def send_delivery_pickup_notification(sales_invoice_name, template_name, schedul
             )
             return
 
-        # Send notification using the template
+        # Get the Email Template from database and render it
+        email_template = frappe.get_doc("Email Template", template_name)
+        template_args = {
+            "doc": doc,
+            "customer_name": doc.customer_name or doc.customer,
+            "invoice_name": doc.name,
+            "order_status": doc.get("custom_order_status") or "",
+            "service_type": doc.get("custom_service_type") or "",
+            "grand_total": frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) if doc.grand_total else "",
+        }
+        subject = frappe.render_template(email_template.subject, template_args)
+        message = frappe.render_template(email_template.response_html or email_template.response, template_args)
+
+        # Send notification (header=None prevents Frappe from wrapping in its own email template)
         frappe.sendmail(
             recipients=[customer_email],
-            template=template_name,
-            args={
-                "doc": doc,
-                "customer_name": doc.customer_name or doc.customer,
-                "invoice_name": doc.name,
-                "order_status": doc.get("custom_order_status") or "",
-                "service_type": doc.get("custom_service_type") or "",
-                "grand_total": frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) if doc.grand_total else "",
-            },
+            subject=subject,
+            message=message,
+            header=None,
             now=True
         )
 
@@ -697,4 +703,391 @@ def send_delivery_pickup_notification(sales_invoice_name, template_name, schedul
         frappe.log_error(
             f"Error sending delivery/pickup notification: {str(e)}\nSales Invoice: {sales_invoice_name}",
             "Delivery/Pickup Notification Error"
+        )
+
+
+def check_scheduled_notification_30min_before(doc, settings):
+    """
+    Check if current order needs 30-minute reminder notification for scheduled delivery/pickup.
+
+    Conditions:
+    - Service Type: Pickup OR Delivery
+    - Order Status: Open, Accepted, Waiting, In kitchen, Preparing, Scheduled,
+                    Ready to Deliver, Ready to Pickup, Handover to Delivery
+    - Order Schedule Type: Scheduled Later
+    - DeliveryDate: Current Date
+    - Current Time: 30 minutes before DeliveryTime
+
+    Args:
+        doc: Sales Invoice document
+        settings: ArcPOS Settings document
+    """
+    try:
+        # Check basic conditions
+        service_type = doc.get("custom_service_type") or ""
+        order_status = doc.get("custom_order_status") or ""
+        order_schedule_type = doc.get("custom_order_schedule_type") or ""
+        delivery_date = doc.get("custom_delivery_date")
+        delivery_time = doc.get("custom_delivery_time")
+
+        # Check if this is a scheduled pickup/delivery order
+        if service_type not in ["Pickup", "Delivery"]:
+            return
+
+        if order_schedule_type != "Scheduled Later":
+            return
+
+        # Check order status
+        allowed_statuses = [
+            "Open", "Accepted", "Waiting", "In kitchen", "Preparing", "Scheduled",
+            "Ready to Deliver", "Ready to Pickup", "Handover to Delivery"
+        ]
+        if order_status not in allowed_statuses:
+            return
+
+        # Check if delivery date and time are set
+        if not delivery_date or not delivery_time:
+            return
+
+        # Check if delivery date is today
+        current_date = getdate(now_datetime())
+        if delivery_date != current_date:
+            return
+
+        # Compare current time with delivery time
+        # delivery_datetime = The scheduled delivery/pickup time from the invoice
+        # current_datetime = Current system time
+        delivery_datetime = get_datetime(f"{delivery_date} {delivery_time}")
+        current_datetime = now_datetime()
+
+        # Calculate how many minutes remain until delivery
+        # Example: If delivery is at 9:30 PM and current time is 9:00 PM, time_diff_minutes = 30
+        time_diff_minutes = (delivery_datetime - current_datetime).total_seconds() / 60
+
+        # Send notification if we're exactly 30 minutes before delivery (±2 minute window)
+        # This allows for slight timing variations in the update trigger
+        if not (28 <= time_diff_minutes <= 32):
+            return
+
+        # Check cache to prevent duplicate notifications
+        cache_key = f"scheduled_30min_notification_{doc.name}"
+        if frappe.cache().get_value(cache_key):
+            print(f"30-minute notification already sent for {doc.name}, skipping")
+            return
+
+        # Mark as notified (1-hour cache to prevent duplicates)
+        frappe.cache().set_value(cache_key, True, expires_in_sec=3600)
+
+        # Send notifications to matching roles
+        send_scheduled_30min_notification(doc, settings)
+
+        print(f"Sent 30-minute reminder notification for scheduled order: {doc.name} (Delivery time: {delivery_time})")
+
+    except Exception as e:
+        frappe.log_error(
+            f"Error checking 30-minute notification: {str(e)}\nDocument: {doc.name}",
+            "Scheduled 30-Min Notification Check Error"
+        )
+
+
+def send_scheduled_30min_notification(doc, settings):
+    """
+    Send system and push notifications for a scheduled delivery/pickup order 30 minutes before.
+
+    Args:
+        doc: Sales Invoice document
+        settings: ArcPOS Settings document
+    """
+    try:
+        from exponent_server_sdk import (
+            DeviceNotRegisteredError,
+            PushClient,
+            PushMessage,
+            PushServerError,
+            PushTicketError,
+        )
+        has_expo = True
+    except ImportError:
+        has_expo = False
+        print("Expo Server SDK not installed for 30-min notification")
+
+    # Send email notification to customer if template is configured
+    if settings.scheduled_order_reminder_template:
+        try:
+            send_scheduled_reminder_email(doc, settings.scheduled_order_reminder_template)
+        except Exception as e:
+            frappe.log_error(
+                f"Error sending scheduled reminder email: {str(e)}\nDocument: {doc.name}",
+                "Scheduled Reminder Email Error"
+            )
+
+    # Find matching notification rules for scheduled orders
+    matching_roles = set()
+    for rule in settings.role_wise_permission:
+        if not rule.if_role:
+            continue
+
+        # Check Service Type
+        if rule.if_service_type:
+            allowed_service_types = [x.strip() for x in rule.if_service_type.split(",") if x.strip()]
+            if doc.custom_service_type not in allowed_service_types:
+                continue
+
+        # Check Order Schedule Type - must include "Scheduled Later"
+        if rule.if_order_schedule_type:
+            allowed_schedule_types = [x.strip() for x in rule.if_order_schedule_type.split(",") if x.strip()]
+            if "Scheduled Later" not in allowed_schedule_types:
+                continue
+        else:
+            # Skip rules that don't specify schedule type
+            continue
+
+        # Check Order Status (if specified)
+        if rule.if_order_status:
+            allowed_statuses = [x.strip() for x in rule.if_order_status.split(",") if x.strip()]
+            if doc.custom_order_status not in allowed_statuses:
+                continue
+
+        # Check Order From (if specified)
+        if rule.if_order_from:
+            allowed_order_from = [x.strip() for x in rule.if_order_from.split(",") if x.strip()]
+            if doc.custom_order_from not in allowed_order_from:
+                continue
+
+        # Check Order Type (if specified)
+        if rule.if_order_type:
+            allowed_order_types = [x.strip() for x in rule.if_order_type.split(",") if x.strip()]
+            if doc.custom_order_type not in allowed_order_types:
+                continue
+
+        # Rule matches - add role
+        matching_roles.add(rule.if_role)
+
+    if not matching_roles:
+        print(f"No matching notification rules for 30-min reminder: {doc.name}")
+        return
+
+    # Prepare notification content
+    service_type = doc.custom_service_type or "Delivery/Pickup"
+    delivery_time = doc.custom_delivery_time
+    customer_name = doc.customer_name or doc.customer
+
+    title = f"Scheduled {service_type} - 30 Minutes Reminder"
+    body = (
+        f"Order {doc.name} for {customer_name} is scheduled for "
+        f"{service_type.lower()} at {delivery_time}. "
+        f"Please prepare the order."
+    )
+
+    # Send notifications to each matching role
+    for role in matching_roles:
+        try:
+            # Find all users with the specified role
+            users = frappe.db.sql(
+                """
+                SELECT DISTINCT parent as user
+                FROM `tabHas Role`
+                WHERE role = %(role)s
+                AND parent NOT IN ('Administrator', 'Guest')
+                """,
+                {"role": role},
+                as_dict=True
+            )
+
+            if not users:
+                print(f"No users found with role: {role}")
+                continue
+
+            user_emails = [user.user for user in users]
+            print(f"Sending 30-min reminder to {len(user_emails)} users with role {role}")
+
+            # Send system notifications to all users
+            for user_email in user_emails:
+                try:
+                    # Check if notification already exists to prevent duplicates
+                    thirty_seconds_ago = add_to_date(now_datetime(), seconds=-30)
+                    existing_notification = frappe.db.exists(
+                        "Notification Log",
+                        {
+                            "for_user": user_email,
+                            "document_type": "Sales Invoice",
+                            "document_name": doc.name,
+                            "subject": title,
+                            "creation": [">=", thirty_seconds_ago]
+                        }
+                    )
+
+                    if existing_notification:
+                        continue
+
+                    notification = frappe.get_doc({
+                        "doctype": "Notification Log",
+                        "for_user": user_email,
+                        "from_user": frappe.session.user or "Administrator",
+                        "subject": title,
+                        "email_content": body,
+                        "document_type": "Sales Invoice",
+                        "document_name": doc.name,
+                        "type": "Alert",
+                        "read": 0
+                    })
+                    notification.insert(ignore_permissions=True)
+
+                    # Publish realtime event
+                    frappe.publish_realtime(
+                        'sales_invoice_notification_' + user_email,
+                        data={
+                            'title': title,
+                            'body': body,
+                            'document_type': 'Sales Invoice',
+                            'document_name': doc.name
+                        }
+                    )
+                    print(f"  ✓ System notification sent to: {user_email}")
+
+                except Exception as e:
+                    frappe.log_error(
+                        f"Error sending 30-min system notification to {user_email}: {str(e)}",
+                        "Scheduled 30-Min Notification Error"
+                    )
+
+            # Send push notifications if Expo is available
+            if has_expo:
+                try:
+                    # Get Expo tokens for users
+                    token_docs = frappe.get_all(
+                        "ArcPOS Notification Token",
+                        filters={"user": ["in", user_emails]},
+                        fields=["name", "user"]
+                    )
+
+                    if token_docs:
+                        push_messages = []
+                        for token_doc_name in [t.name for t in token_docs]:
+                            token_doc = frappe.get_doc("ArcPOS Notification Token", token_doc_name)
+
+                            # Get tokens from child table
+                            if token_doc.token_list:
+                                for token_row in token_doc.token_list:
+                                    if token_row.token and PushClient.is_exponent_push_token(token_row.token):
+                                        push_messages.append(
+                                            PushMessage(
+                                                to=token_row.token,
+                                                title=title,
+                                                body=body,
+                                                data={
+                                                    "document_type": "Sales Invoice",
+                                                    "document_name": doc.name,
+                                                    "notification_type": "scheduled_30min_reminder",
+                                                    "order_status": doc.custom_order_status or "",
+                                                    "service_type": doc.custom_service_type or "",
+                                                    "delivery_time": str(doc.custom_delivery_time)
+                                                },
+                                                sound="default",
+                                                priority="high"
+                                            )
+                                        )
+
+                        # Send push notifications in chunks
+                        if push_messages:
+                            push_client = PushClient()
+                            chunk_size = 100
+                            for i in range(0, len(push_messages), chunk_size):
+                                chunk = push_messages[i:i + chunk_size]
+                                try:
+                                    responses = push_client.publish_multiple(chunk)
+                                    for response in responses:
+                                        try:
+                                            response.validate_response()
+                                        except DeviceNotRegisteredError:
+                                            pass  # Token expired, ignore
+                                        except (PushTicketError, PushServerError) as exc:
+                                            print(f"Push notification error: {exc.message}")
+                                except Exception as e:
+                                    frappe.log_error(
+                                        f"Error sending 30-min push notification chunk: {str(e)}",
+                                        "Scheduled 30-Min Push Error"
+                                    )
+
+                            print(f"  ✓ Push notifications sent to role: {role}")
+
+                except Exception as e:
+                    frappe.log_error(
+                        f"Error processing 30-min push notifications for role {role}: {str(e)}",
+                        "Scheduled 30-Min Push Error"
+                    )
+
+        except Exception as e:
+            frappe.log_error(
+                f"Error sending 30-min notification to role {role}: {str(e)}",
+                "Scheduled 30-Min Notification Error"
+            )
+
+    # Commit the transaction
+    frappe.db.commit()
+    print(f"30-minute reminder notification completed for {doc.name}")
+
+
+def send_scheduled_reminder_email(doc, template_name):
+    """
+    Send scheduled order reminder email to customer 30 minutes before delivery/pickup.
+
+    Args:
+        doc: Sales Invoice document
+        template_name: Name of the Email Template to use
+    """
+    try:
+        # Get customer email
+        customer_email = frappe.db.get_value("Customer", doc.customer, "email_id")
+
+        if not customer_email:
+            print(f"No customer email found for scheduled reminder: {doc.name}")
+            frappe.log_error(
+                f"No customer email found for Sales Invoice {doc.name}",
+                "Scheduled Reminder Email - No Email"
+            )
+            return
+
+        # Get the Email Template and render it
+        email_template = frappe.get_doc("Email Template", template_name)
+
+        # Prepare template arguments
+        service_type = doc.custom_service_type or "Delivery/Pickup"
+        delivery_time = doc.custom_delivery_time
+        delivery_date = doc.custom_delivery_date
+
+        template_args = {
+            "doc": doc,
+            "customer_name": doc.customer_name or doc.customer,
+            "invoice_name": doc.name,
+            "order_status": doc.custom_order_status or "",
+            "service_type": service_type,
+            "delivery_date": delivery_date,
+            "delivery_time": delivery_time,
+            "grand_total": frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) if doc.grand_total else "",
+        }
+
+        # Render subject and message
+        subject = frappe.render_template(email_template.subject, template_args)
+        message = frappe.render_template(email_template.response_html or email_template.response, template_args)
+
+        # Send email
+        frappe.sendmail(
+            recipients=[customer_email],
+            subject=subject,
+            message=message,
+            header=None,
+            now=True
+        )
+
+        print(f"Scheduled reminder email sent to {customer_email} for {doc.name}")
+        frappe.log_error(
+            f"Scheduled reminder email sent to {customer_email} for Sales Invoice {doc.name}",
+            "Scheduled Reminder Email - Success"
+        )
+
+    except Exception as e:
+        frappe.log_error(
+            f"Error sending scheduled reminder email: {str(e)}\nSales Invoice: {doc.name}",
+            "Scheduled Reminder Email Error"
         )

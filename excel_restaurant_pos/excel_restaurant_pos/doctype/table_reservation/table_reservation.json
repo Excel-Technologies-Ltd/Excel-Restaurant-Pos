@@ -1,0 +1,232 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:RES-{YYYY}-{#####}",
+ "creation": "2026-02-13 00:00:00.000000",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "guest_details_section",
+  "guest_name",
+  "email",
+  "phone_number",
+  "column_break_details",
+  "reservation_date",
+  "reservation_time",
+  "number_of_guests",
+  "reservation_status_section",
+  "status",
+  "column_break_status",
+  "confirmed_by",
+  "confirmed_on",
+  "section_break_notes",
+  "special_requests",
+  "internal_notes",
+  "notification_section",
+  "confirmation_email_sent",
+  "reminder_email_sent",
+  "column_break_notif",
+  "confirmation_sent_on",
+  "reminder_sent_on",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "guest_details_section",
+   "fieldtype": "Section Break",
+   "label": "Guest Details"
+  },
+  {
+   "fieldname": "guest_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Guest Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Email",
+   "options": "Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "phone_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone Number",
+   "options": "Phone",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_details",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reservation_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Reservation Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reservation_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Reservation Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "number_of_guests",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Number of Guests",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reservation_status_section",
+   "fieldtype": "Section Break",
+   "label": "Reservation Status"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending\nConfirmed\nRejected\nRescheduled\nCompleted\nCancelled",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "confirmed_by",
+   "fieldtype": "Link",
+   "label": "Confirmed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "confirmed_on",
+   "fieldtype": "Datetime",
+   "label": "Confirmed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "special_requests",
+   "fieldtype": "Text",
+   "label": "Special Requests"
+  },
+  {
+   "fieldname": "internal_notes",
+   "fieldtype": "Text",
+   "label": "Internal Notes (Staff Only)"
+  },
+  {
+   "fieldname": "notification_section",
+   "fieldtype": "Section Break",
+   "label": "Notification Tracking"
+  },
+  {
+   "default": "0",
+   "fieldname": "confirmation_email_sent",
+   "fieldtype": "Check",
+   "label": "Confirmation Email Sent",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_email_sent",
+   "fieldtype": "Check",
+   "label": "24h Reminder Email Sent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_notif",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "confirmation_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Confirmation Sent On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reminder_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Reminder Sent On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Table Reservation",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-13 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Excel Restaurant Pos",
+ "name": "Table Reservation",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Restaurant Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
