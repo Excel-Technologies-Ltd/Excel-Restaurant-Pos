@@ -15,6 +15,12 @@ def after_save_sales_invoice(doc, method: str):
         order_from = doc.custom_order_from.lower()
 
     # if the sales invoice is linked to a table and the order is from a table, enqueue the table occupy
+    # enqueue_after_commit=True so the job runs only after the Sales Invoice is committed (avoids "Could not find Running Order")
     if table_name and order_from == "table":
         args = {"table_name": table_name, "sales_invoice": doc.name}
-        frappe.enqueue(handle_table_occupy, queue="short", **args)
+        frappe.enqueue(
+            handle_table_occupy,
+            queue="short",
+            enqueue_after_commit=True,
+            **args,
+        )
