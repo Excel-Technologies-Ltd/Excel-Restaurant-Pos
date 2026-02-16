@@ -21,7 +21,7 @@ def execute():
 
         /* Invoice-level aggregation */
         SELECT 
-            SUM(COALESCE(total, 0)), 
+            SUM(COALESCE(net_total, 0)), 
             SUM(COALESCE(discount_amount, 0)), 
             COUNT(DISTINCT CASE WHEN discount_amount > 0 THEN name END)
         INTO 

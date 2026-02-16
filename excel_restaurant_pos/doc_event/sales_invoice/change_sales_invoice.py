@@ -12,6 +12,7 @@ from .handlers.order_cancel_handler import order_cancel_handler
 from .handlers.customer_change_handler import customer_change_handler
 from .handlers.change_delete_handler import change_delete_handler
 from .handlers.delayed_order_status_handler import delayed_order_status_handler
+from .handlers.create_promotion_journal import create_promotion_journal
 
 
 def change_sales_invoice(doc, method: str):
@@ -26,6 +27,7 @@ def change_sales_invoice(doc, method: str):
     # payment change logic
     if doc.has_value_changed("status") and doc_status == "paid":
         frappe.log_error("Status changed", f"Status changed to {doc_status}")
+        frappe.enqueue(create_promotion_journal, queue="short", invoice_name=doc.name)
         frappe.enqueue(payment_change_handler, queue="default", invoice_name=doc.name)
 
     # cancelled status logic
