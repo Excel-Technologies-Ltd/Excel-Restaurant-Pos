@@ -68,6 +68,7 @@ def create_promotion_journal(invoice_name: str) -> str:
     je.voucher_type = "Journal Entry"
     je.company = company
     je.posting_date = nowdate()
+    je.bill_no = invoice.name
     je.user_remark = "Promotional expense for delivery charge"
 
     # promotional expense amount
