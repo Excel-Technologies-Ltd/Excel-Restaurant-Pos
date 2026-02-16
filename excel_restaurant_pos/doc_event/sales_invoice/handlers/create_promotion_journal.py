@@ -23,9 +23,11 @@ def create_promotion_journal(invoice_name: str) -> str:
     actual_delivery_amount = round(delivery_quote.get("fee", 0) / 100.0, 2)
 
     # charge amount
-    delivery_charge = invoice.get("taxes", []).filter(
-        lambda x: x.get("custom_is_delivery_charge") == 1
-    )[0]
+    taxes = invoice.get("taxes", [])
+    delivery_charge = next(
+        (t for t in taxes if t.get("custom_is_delivery_charge") == 1),
+        None,
+    )
     if not delivery_charge:
         msg = f"Delivery charge not found for invoice: {invoice_name}"
         frappe.log_error("Delivery charge not found", msg)
