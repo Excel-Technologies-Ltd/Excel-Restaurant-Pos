@@ -75,10 +75,11 @@ def on_update_sales_invoice(doc, method: str):
         check_scheduled_notification_30min_before(doc, settings)
 
         # Prevent duplicate notifications using Redis cache
-        # Key is based on doc name only (modified timestamp can differ between on_update and on_change)
-        cache_key = f"arcpos_notification_processing_{doc.name}"
+        # Key includes doc name and modified timestamp so different saves are processed independently
+        # while duplicate hook triggers within the same save (same modified) are still deduplicated
+        cache_key = f"arcpos_notification_processing_{doc.name}_{doc.modified}"
         if frappe.cache().get_value(cache_key):
-            print(f"Notification already being processed for {doc.name}, skipping duplicate trigger")
+            print(f"Notification already being processed for {doc.name} (modified={doc.modified}), skipping duplicate trigger")
             return
 
         # Mark as processing with 5 second TTL (short window to catch duplicate hook triggers)
@@ -261,21 +262,23 @@ def send_notification_to_role_async(sales_invoice_name, rule_data):
     )
 
     try:
+        # Get the document
+        doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
+
         # Deduplication check at async level using cache
-        async_cache_key = f"arcpos_async_notification_{sales_invoice_name}_{role}"
+        # Include order status so notifications for different status transitions aren't blocked
+        order_status_for_key = doc.get("custom_order_status") or ""
+        async_cache_key = f"arcpos_async_notification_{sales_invoice_name}_{role}_{order_status_for_key}"
         if frappe.cache().get_value(async_cache_key):
-            print(f"Async notification already processed for {sales_invoice_name} role {role}, skipping")
+            print(f"Async notification already processed for {sales_invoice_name} role {role} status {order_status_for_key}, skipping")
             frappe.log_error(
-                message=f"Document: {sales_invoice_name}\nRole: {role}",
+                message=f"Document: {sales_invoice_name}\nRole: {role}\nStatus: {order_status_for_key}",
                 title="PN - Duplicate Skipped"
             )
             return
 
         # Mark as processed with 30 second TTL
         frappe.cache().set_value(async_cache_key, True, expires_in_sec=30)
-
-        # Get the document
-        doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
         print(f"Document loaded successfully: {doc.name}")
 
         # Send notifications
