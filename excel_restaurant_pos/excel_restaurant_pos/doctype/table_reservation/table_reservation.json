@@ -185,10 +185,8 @@
   },
   {
    "fieldname": "requested_from",
-   "fieldtype": "Select",
-   "label": "Requested From",
-   "options": "In Store\nWebsite",
-   "read_only": 1
+   "fieldtype": "Data",
+   "label": "Requested From"
   },
   {
    "fieldname": "rescheduled_of",
@@ -200,7 +198,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 16:09:59.496633",
+ "modified": "2026-02-17 10:54:34.857201",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Table Reservation",
