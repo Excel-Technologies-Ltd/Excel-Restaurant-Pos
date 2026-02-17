@@ -13,6 +13,7 @@ from .handlers.customer_change_handler import customer_change_handler
 from .handlers.change_delete_handler import change_delete_handler
 from .handlers.delayed_order_status_handler import delayed_order_status_handler
 from .handlers.create_promotion_journal import create_promotion_journal
+from .handlers.uber_eats_status_handler import uber_eats_status_handler
 
 
 def change_sales_invoice(doc, method: str):
@@ -54,6 +55,13 @@ def change_sales_invoice(doc, method: str):
     # is deleted change logic
     if doc.has_value_changed("custom_is_deleted") and is_deleted:
         frappe.enqueue(change_delete_handler, queue="short", invoice_name=doc.name)
+
+    # Uber Eats status sync
+    order_from = (doc.get("custom_order_from") or "").lower()
+    if doc.has_value_changed("custom_order_status") and order_from == "ubereats":
+        frappe.enqueue(
+            uber_eats_status_handler, queue="default", invoice_name=doc.name
+        )
 
     # table realease logic here
     # table_name = doc.custom_linked_table

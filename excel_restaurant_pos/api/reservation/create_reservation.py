@@ -34,6 +34,7 @@ def create_reservation():
         reservation_date = frappe.form_dict.get("reservation_date")
         reservation_time = frappe.form_dict.get("reservation_time")
         number_of_guests = frappe.form_dict.get("number_of_guests")
+        requested_from = frappe.form_dict.get("requested_from")
 
         # Validate required fields
         if not guest_name:
@@ -53,6 +54,9 @@ def create_reservation():
 
         if not number_of_guests:
             frappe.throw(_("Number of guests is required"))
+        
+        if not requested_from:
+            frappe.throw(_("Requested from is required"))
 
         # Validate email format
         from frappe.utils import validate_email_address
@@ -85,7 +89,8 @@ def create_reservation():
             "reservation_time": reservation_time,
             "number_of_guests": number_of_guests,
             "special_requests": special_requests,
-            "status": "Pending"
+            "status": "Pending",
+            "requested_from": requested_from
         })
 
         # Save the reservation (ignore permissions for guest users)
@@ -106,6 +111,7 @@ def create_reservation():
                 "reservation_date": frappe.utils.format_date(reservation.reservation_date, "dd MMM yyyy"),
                 "reservation_time": frappe.utils.format_time(reservation.reservation_time),
                 "number_of_guests": reservation.number_of_guests,
+                "requested_from": reservation.requested_from,
                 "status": reservation.status
             }
         }
