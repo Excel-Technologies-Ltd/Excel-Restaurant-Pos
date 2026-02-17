@@ -12,12 +12,15 @@ def create_promotion_journal(invoice_name: str) -> str:
         frappe.log_error("Invoice not found", msg)
         return
 
-    # get
-    delivery_quote = invoice.get("custom_quotes", [])[0]
-    if not delivery_quote:
+    # get first delivery quote
+    custom_quotes = invoice.get("custom_quotes", []) or []
+    if len(custom_quotes) == 0:
         msg = f"Delivery quote not found for invoice: {invoice_name}"
         frappe.log_error("Delivery quote not found", msg)
         return
+
+    # get first delivery quote
+    delivery_quote = custom_quotes[0]
 
     # actual delivery amount
     actual_delivery_amount = round(delivery_quote.get("fee", 0) / 100.0, 2)
