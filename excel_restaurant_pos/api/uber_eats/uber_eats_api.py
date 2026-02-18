@@ -37,6 +37,11 @@ def get_settings():
     return settings
 
 
+def clear_token_cache():
+    """Clear the cached OAuth access token, forcing a fresh token on next request."""
+    cache().delete_value(CACHE_KEY)
+
+
 def get_access_token():
     """Get cached or fresh OAuth access token."""
     cached = cache().get_value(CACHE_KEY)
@@ -53,7 +58,7 @@ def get_access_token():
             "client_id": settings.uber_eats_client_id,
             "client_secret": settings.get_password("uber_eats_client_secret"),
             "grant_type": "client_credentials",
-            "scope": "eats.order eats.store eats.store.orders.read eats.store.status.write eats.store.status.read",
+            "scope": "eats.store eats.order eats.store.orders.read eats.store.orders.cancel eats.store.status.write eats.report eats.store.orders.restaurantdelivery.status",
         },
         timeout=30,
     )
@@ -63,7 +68,7 @@ def get_access_token():
             "Uber Eats Auth Error",
             f"Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw("Failed to get Uber Eats access token")
+        frappe.throw(f"Failed to get Uber Eats access token: {response.status_code} - {response.text}")
 
     data = response.json()
     token = data["access_token"]
@@ -129,7 +134,7 @@ def get_order_details(order_id):
             "Uber Eats Get Order Error",
             f"Order: {order_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to fetch Uber Eats order {order_id}")
+        frappe.throw(f"Failed to fetch Uber Eats order {order_id}: {response.status_code} - {response.text}")
 
     return response.json()
 
@@ -159,7 +164,7 @@ def accept_order(order_id, external_reference_id=None):
             "Uber Eats Accept Order Error",
             f"Order: {order_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to accept Uber Eats order {order_id}")
+        frappe.throw(f"Failed to accept Uber Eats order {order_id}: {response.status_code} - {response.text}")
 
     frappe.logger().info(f"Uber Eats order {order_id} accepted successfully")
 
@@ -193,7 +198,7 @@ def deny_order(order_id, reason_code="OTHER", explanation="Order denied by resta
             "Uber Eats Deny Order Error",
             f"Order: {order_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to deny Uber Eats order {order_id}")
+        frappe.throw(f"Failed to deny Uber Eats order {order_id}: {response.status_code} - {response.text}")
 
     frappe.logger().info(f"Uber Eats order {order_id} denied: {reason_code}")
 
@@ -233,12 +238,37 @@ def get_active_orders(store_id=None):
             "Uber Eats Get Active Orders Error",
             f"Store: {store_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw("Failed to fetch active orders from Uber Eats")
+        frappe.throw(f"Failed to fetch active orders from Uber Eats: {response.status_code} - {response.text}")
 
     return response.json()
 
 
-def cancel_order(order_id, reason="CANNOT_COMPLETE", details=""):
+def get_canceled_orders(store_id=None):
+    """Get canceled orders for a store from Uber Eats.
+
+    Args:
+        store_id: Uber Eats store UUID (defaults to settings)
+
+    Returns:
+        List of canceled order summaries
+    """
+    store_id = _default_store_id(store_id)
+    base = _get_api_base()
+    url = f"{base}/v1/eats/stores/{store_id}/canceled-orders"
+
+    response = requests.get(url, headers=_api_headers(), timeout=30)
+
+    if response.status_code != 200:
+        frappe.log_error(
+            "Uber Eats Get Canceled Orders Error",
+            f"Store: {store_id}, Status: {response.status_code}, Body: {response.text}",
+        )
+        frappe.throw(f"Failed to fetch canceled orders from Uber Eats: {response.status_code} - {response.text}")
+
+    return response.json()
+
+
+def cancel_order(order_id, reason="OTHER", details=""):
     """Cancel an already-accepted order on Uber Eats.
 
     Args:
@@ -262,7 +292,7 @@ def cancel_order(order_id, reason="CANNOT_COMPLETE", details=""):
             "Uber Eats Cancel Order Error",
             f"Order: {order_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to cancel Uber Eats order {order_id}")
+        frappe.throw(f"Failed to cancel Uber Eats order {order_id}: {response.status_code} - {response.text}")
 
     frappe.logger().info(f"Uber Eats order {order_id} cancelled: {reason}")
 
@@ -288,7 +318,7 @@ def update_delivery_status(order_id, status="READY_FOR_PICKUP"):
             "Uber Eats Update Delivery Status Error",
             f"Order: {order_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to update delivery status for order {order_id}")
+        frappe.throw(f"Failed to update delivery status for order {order_id}: {response.status_code} - {response.text}")
 
     frappe.logger().info(f"Uber Eats order {order_id} delivery status set to {status}")
 
@@ -317,7 +347,7 @@ def get_menu(store_id=None):
             "Uber Eats Get Menu Error",
             f"Store: {store_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw("Failed to fetch menu from Uber Eats")
+        frappe.throw(f"Failed to fetch menu from Uber Eats: {response.status_code} - {response.text}")
 
     return response.json()
 
@@ -345,7 +375,7 @@ def upsert_menu(menu_data, store_id=None):
             "Uber Eats Upsert Menu Error",
             f"Store: {store_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw("Failed to upsert menu on Uber Eats")
+        frappe.throw(f"Failed to upsert menu on Uber Eats: {response.status_code} - {response.text}")
 
     frappe.logger().info(f"Uber Eats menu upserted for store {store_id}")
     return response.json() if response.content else {"status": "ok"}
@@ -375,7 +405,7 @@ def update_menu_item(item_id, item_data, store_id=None):
             "Uber Eats Update Menu Item Error",
             f"Store: {store_id}, Item: {item_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to update menu item {item_id} on Uber Eats")
+        frappe.throw(f"Failed to update menu item {item_id} on Uber Eats: {response.status_code} - {response.text}")
 
     frappe.logger().info(f"Uber Eats menu item {item_id} updated for store {store_id}")
     return response.json() if response.content else {"status": "ok"}
@@ -401,7 +431,7 @@ def get_stores():
             "Uber Eats Get Stores Error",
             f"Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw("Failed to fetch stores from Uber Eats")
+        frappe.throw(f"Failed to fetch stores from Uber Eats: {response.status_code} - {response.text}")
 
     return response.json()
 
@@ -426,7 +456,7 @@ def get_store_details(store_id=None):
             "Uber Eats Get Store Details Error",
             f"Store: {store_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to fetch store details for {store_id}")
+        frappe.throw(f"Failed to fetch store details for {store_id}: {response.status_code} - {response.text}")
 
     return response.json()
 
@@ -451,7 +481,7 @@ def get_store_status(store_id=None):
             "Uber Eats Get Store Status Error",
             f"Store: {store_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to fetch store status for {store_id}")
+        frappe.throw(f"Failed to fetch store status for {store_id}: {response.status_code} - {response.text}")
 
     return response.json()
 
@@ -478,7 +508,7 @@ def set_store_status(status, store_id=None):
             "Uber Eats Set Store Status Error",
             f"Store: {store_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to set store status for {store_id}")
+        frappe.throw(f"Failed to set store status for {store_id}: {response.status_code} - {response.text}")
 
     frappe.logger().info(f"Uber Eats store {store_id} status set to {status}")
 
@@ -503,7 +533,7 @@ def get_holiday_hours(store_id=None):
             "Uber Eats Get Holiday Hours Error",
             f"Store: {store_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to fetch holiday hours for {store_id}")
+        frappe.throw(f"Failed to fetch holiday hours for {store_id}: {response.status_code} - {response.text}")
 
     return response.json()
 
@@ -528,6 +558,6 @@ def set_holiday_hours(holiday_hours, store_id=None):
             "Uber Eats Set Holiday Hours Error",
             f"Store: {store_id}, Status: {response.status_code}, Body: {response.text}",
         )
-        frappe.throw(f"Failed to set holiday hours for {store_id}")
+        frappe.throw(f"Failed to set holiday hours for {store_id}: {response.status_code} - {response.text}")
 
     frappe.logger().info(f"Uber Eats holiday hours updated for store {store_id}")
