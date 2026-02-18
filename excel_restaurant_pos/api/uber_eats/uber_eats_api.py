@@ -4,6 +4,7 @@ Handles OAuth token management and API calls for:
 - Order management (get, list, accept, deny, cancel)
 - Menu management (get, upsert, update item)
 - Store management (list, details, status, holiday hours)
+- Reporting (create report jobs, check status)
 """
 
 import hmac
@@ -561,3 +562,58 @@ def set_holiday_hours(holiday_hours, store_id=None):
         frappe.throw(f"Failed to set holiday hours for {store_id}: {response.status_code} - {response.text}")
 
     frappe.logger().info(f"Uber Eats holiday hours updated for store {store_id}")
+
+
+# ---------------------------------------------------------------------------
+# Reporting
+# ---------------------------------------------------------------------------
+
+# Valid report types for POST /v1/eats/report
+REPORT_TYPES = (
+    "ORDERS_AND_ITEMS_REPORT",
+    "PAYMENT_DETAILS_REPORT",
+    "ORDER_LEVEL_ADJUSTMENTS_REPORT",
+    "FINANCE_SUMMARY_REPORT",
+    "CUSTOMER_FEEDBACK_REPORT",
+    "DOWNTIME_REPORT",
+)
+
+
+def create_report(report_type, store_ids, start_date, end_date):
+    """Create an async report job on Uber Eats.
+
+    Reports are generated asynchronously. Once ready, Uber sends an
+    eats.report.success webhook with download URLs.
+
+    Args:
+        report_type: One of REPORT_TYPES
+        store_ids: List of store UUIDs to include
+        start_date: Start date string (YYYY-MM-DD)
+        end_date: End date string (YYYY-MM-DD)
+
+    Returns:
+        Job info dict with job_id and status
+    """
+    base = _get_api_base()
+    url = f"{base}/v1/eats/report"
+
+    payload = {
+        "report_type": report_type,
+        "store_uuids": store_ids if isinstance(store_ids, list) else [store_ids],
+        "start_date": start_date,
+        "end_date": end_date,
+    }
+
+    response = requests.post(
+        url, json=payload, headers=_api_headers(), timeout=30
+    )
+
+    if response.status_code not in (200, 201, 204):
+        frappe.log_error(
+            "Uber Eats Create Report Error",
+            f"Type: {report_type}, Status: {response.status_code}, Body: {response.text}",
+        )
+        frappe.throw(f"Failed to create Uber Eats report: {response.status_code} - {response.text}")
+
+    frappe.logger().info(f"Uber Eats report job created: {report_type}")
+    return response.json() if response.content else {"status": "accepted"}
