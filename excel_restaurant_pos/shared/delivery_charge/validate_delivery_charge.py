@@ -27,11 +27,12 @@ def get_delivery_charge(sales_amount, quote_amount):
 
 def _get_dynamic_charge(sales_amount):
     """Resolve charge from dynamic_dc_criteria_web (from_amount <= amount <= to_amount)."""
+    amount = float(sales_amount or 0)
     settings = frappe.get_cached_doc("ArcPOS Settings")
     for row in settings.get("dynamic_dc_criteria_web") or []:
-        from_amt = row.from_amount if row.from_amount is not None else 0
-        to_amt = row.to_amount if row.to_amount is not None else float("inf")
-        if from_amt <= sales_amount <= to_amt:
+        from_amt = float(row.from_amount) if row.from_amount is not None else 0
+        to_amt = float(row.to_amount) if row.to_amount is not None else float("inf")
+        if from_amt <= amount and amount <= to_amt:
             return float(row.fees_amount or 0)
     return 0
 
@@ -40,5 +41,6 @@ def _get_fixed_charge():
     """Return fixed delivery charge from settings (fixed_dc_amount_pos used for web)."""
     val = frappe.db.get_single_value("ArcPOS Settings", "dca")
     return float(val or 0)
+
 
 # def validate_delivery_charge(invoice_num, quote_amount):
