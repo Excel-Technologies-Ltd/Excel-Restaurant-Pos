@@ -29,11 +29,19 @@ def get_item_details():
         "Item", filters={"variant_of": item_code}, fields=variant_fields
     )
 
+    # list of variant item codes
+    regular_item_codes = [item.item_code for item in variants_items]
+
     # prepare attributes
-    attributes_fields = ["attribute", "attribute_value", "parent", "variant_of"]
+    attributes_fields = [
+        "attribute",
+        "custom_choice_type",
+        "parent",
+        "custom_max_choice_count",
+    ]
     attributes = frappe.get_all(
         "Item Variant Attribute",
-        filters={"variant_of": item_code},
+        filters={"parent": ["in", regular_item_codes]},
         fields=attributes_fields,
         order_by="creation",
     )
@@ -48,10 +56,8 @@ def get_item_details():
     addons_items = item_details.get("custom_addons_items", [])
     addon_item_codes = [item.item_code for item in addons_items]
 
-    regular_item_codes = [item.item_code for item in variants_items]
-
+    # attach attributes to variants
     for variant in variants_items:
-        regular_item_codes.append(variant.item_code)
         variant.attributes = attributes_map.get(variant.item_code, [])
 
     # add docs item code
