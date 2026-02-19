@@ -207,18 +207,17 @@ def _handle_report_success(data):
 # ---------------------------------------------------------------------------
 
 def _notify_staff_new_order(order_id, is_scheduled=False):
-    """Background job: Send email, push, and Notification Log to restaurant staff.
+    """Background job: Send push and Notification Log to restaurant staff immediately.
 
     Called immediately when the webhook is received, before fetching full
-    order details. Notifies users with roles 'Restaurant Chef' and
-    'Restaurant Manager'.
+    order details. Template email (which needs doc.name / doc.store_name) is
+    sent separately in process_uber_eats_order once the Channel Order exists.
 
     Args:
         order_id: Uber Eats order UUID
         is_scheduled: True if this is a scheduled order
     """
     try:
-        settings = frappe.get_single("ArcPOS Settings")
         roles = ["Restaurant Chef", "Restaurant Manager"]
 
         # Use get_all to safely query Has Role child table (column is 'parent', not 'user')
@@ -242,43 +241,7 @@ def _notify_staff_new_order(order_id, is_scheduled=False):
         title = f"{order_label} Received"
         body = f"A new order has been received via Uber Eats.\nOrder ID: {order_id}"
 
-        # 1. Send email (use template if configured, otherwise plain fallback)
-        try:
-            if settings.online_order_email_template:
-                template = frappe.get_doc("Email Template", settings.online_order_email_template)
-                template_args = {
-                    "order_id": order_id,
-                    "is_scheduled": is_scheduled,
-                    "order_label": order_label,
-                }
-                email_subject = frappe.render_template(template.subject, template_args)
-                email_message = frappe.render_template(
-                    template.response_html or template.response, template_args
-                )
-            else:
-                email_subject = title
-                email_message = (
-                    f"<p>{order_label} has been received via Uber Eats.</p>"
-                    f"<p><strong>Order ID:</strong> {order_id}</p>"
-                )
-
-            frappe.sendmail(
-                recipients=user_emails,
-                subject=email_subject,
-                message=email_message,
-                header=None,
-                now=True,
-            )
-            frappe.logger().info(
-                f"New order email sent for {order_id} to {len(user_emails)} user(s)"
-            )
-        except Exception as e:
-            frappe.log_error(
-                f"Error sending new order email for {order_id}: {e}",
-                "Uber Eats - New Order Email Error",
-            )
-
-        # 2. Create Notification Log for each user
+        # 1. Create Notification Log for each user
         for user_email in user_emails:
             try:
                 frappe.get_doc({
@@ -387,6 +350,80 @@ def _notify_staff_new_order(order_id, is_scheduled=False):
 
 
 # ---------------------------------------------------------------------------
+# Step 1b — Send template email once the Channel Order doc exists
+# ---------------------------------------------------------------------------
+
+def _send_new_order_email(channel_order, order_id, is_scheduled=False):
+    """Send the configured email template to restaurant staff.
+
+    Called from process_uber_eats_order after the Channel Order is saved so
+    that template variables like {{doc.name}} and {{doc.store_name}} resolve.
+
+    Args:
+        channel_order: Saved Channel Order document
+        order_id: Uber Eats order UUID (for logging)
+        is_scheduled: True if this is a scheduled order
+    """
+    try:
+        settings = frappe.get_single("ArcPOS Settings")
+        roles = ["Restaurant Chef", "Restaurant Manager"]
+
+        user_emails = list(set(frappe.get_all(
+            "Has Role",
+            filters={
+                "role": ["in", roles],
+                "parenttype": "User",
+                "parent": ["not in", ["Administrator", "Guest"]],
+            },
+            pluck="parent",
+        )))
+
+        if not user_emails:
+            return
+
+        order_label = "Scheduled Uber Eats Order" if is_scheduled else "New Uber Eats Order"
+        title = f"{order_label} Received"
+
+        if settings.online_order_email_template:
+            template = frappe.get_doc("Email Template", settings.online_order_email_template)
+            template_args = {
+                "doc": channel_order,
+                "order_id": order_id,
+                "is_scheduled": is_scheduled,
+                "order_label": order_label,
+            }
+            email_subject = frappe.render_template(template.subject, template_args)
+            email_message = frappe.render_template(
+                template.response_html or template.response, template_args
+            )
+        else:
+            email_subject = title
+            email_message = (
+                f"<p>{order_label} has been received via Uber Eats.</p>"
+                f"<p><strong>Order:</strong> {channel_order.name}</p>"
+                f"<p><strong>Store:</strong> {channel_order.store_name}</p>"
+                f"<p><strong>Order ID:</strong> {order_id}</p>"
+            )
+
+        frappe.sendmail(
+            recipients=user_emails,
+            subject=email_subject,
+            message=email_message,
+            header=None,
+            now=True,
+        )
+        frappe.logger().info(
+            f"New order email sent for {order_id} (Channel Order {channel_order.name}) "
+            f"to {len(user_emails)} user(s)"
+        )
+    except Exception as e:
+        frappe.log_error(
+            f"Error sending new order email for {order_id}: {e}",
+            "Uber Eats - New Order Email Error",
+        )
+
+
+# ---------------------------------------------------------------------------
 # Step 2 — Fetch order details and create Channel Order
 # ---------------------------------------------------------------------------
 
@@ -414,6 +451,9 @@ def process_uber_eats_order(resource_href, order_id, event_id, is_scheduled=Fals
 
         # Create Channel Order record (state stays CREATED until staff acts)
         channel_order = _create_channel_order(order, event_id, is_scheduled=is_scheduled)
+
+        # Send template email now that the Channel Order doc exists (doc.name, doc.store_name etc.)
+        _send_new_order_email(channel_order, order_id, is_scheduled)
 
         frappe.logger().info(
             f"Uber Eats order {order_id} -> Channel Order {channel_order.name}"

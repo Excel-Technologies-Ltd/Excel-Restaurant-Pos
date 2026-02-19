@@ -4,5 +4,7 @@
 from frappe.model.document import Document
 
 
+
 class ChannelOrder(Document):
-    pass
+    def create_channel_order(self):
+        self.ass
