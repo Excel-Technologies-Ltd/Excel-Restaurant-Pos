@@ -6,6 +6,7 @@ import frappe
 from frappe.utils import flt, now_datetime, get_time
 from .handlers.update_sales_invoice import update_sales_invoice
 from excel_restaurant_pos.utils import iso_to_frappe_datetime
+from excel_restaurant_pos.shared.delivery_charge import get_delivery_charge
 
 
 # parse json fields if present
@@ -140,7 +141,26 @@ def _add_taxes(sales_invoice, taxes):
     if not taxes:
         return
 
+    has_delivery_charge = False
+    s_type = sales_invoice.get("custom_service_type", "")
+    allow_delivery_charge = frappe.db.get_single_value(
+        "ArcPOS Settings", "allow_delivery_charge"
+    )
+
     for tax_data in taxes:
+        is_delivery_charge = tax_data.get("custom_is_delivery_charge", 0)
+
+        if is_delivery_charge and s_type == "Delivery":
+            quotes = sales_invoice.get("custom_quotes") or []
+            first_quote = quotes[0] if quotes else {}
+            quote_amount = first_quote.get("fee", 0) / 100
+            d_charge = get_delivery_charge(sales_invoice.total, quote_amount)
+            if d_charge != tax_data.get("tax_amount", 0):
+                frappe.throw(
+                    f"Delivery charge mismatch: {d_charge} != {tax_data.get('tax_amount', 0)}"
+                )
+            has_delivery_charge = True
+
         sales_invoice.append(
             "taxes",
             {
@@ -157,6 +177,10 @@ def _add_taxes(sales_invoice, taxes):
                 "custom_is_service_charge": tax_data.get("custom_is_service_charge", 0),
             },
         )
+
+    # if delivery charge is not present and allowed, throw an error
+    if s_type == "Delivery" and not has_delivery_charge and allow_delivery_charge:
+        frappe.throw("Delivery charge is required for delivery orders")
 
 
 # add custom quotes
@@ -225,8 +249,8 @@ def add_or_update_invoice():
     _set_main_fields(sales_invoice, data)
     _set_optional_fields(sales_invoice, data)
     _add_items(sales_invoice, items)
-    _add_taxes(sales_invoice, data.get("taxes"))
     _add_custom_quotes(sales_invoice, data.get("custom_quotes"))
+    _add_taxes(sales_invoice, data.get("taxes"))
     # _add_payments(sales_invoice, data.get("payments"))
 
     # sales_invoice.is_pos = 1
