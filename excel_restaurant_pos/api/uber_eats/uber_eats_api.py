@@ -125,6 +125,8 @@ def get_order_details(order_id):
     Returns:
         Order details dict
     """
+    import json as _json
+
     base = _get_api_base()
     url = f"{base}/v2/eats/order/{order_id}"
 
@@ -137,7 +139,17 @@ def get_order_details(order_id):
         )
         frappe.throw(f"Failed to fetch Uber Eats order {order_id}: {response.status_code} - {response.text}")
 
-    return response.json()
+    data = response.json()
+
+    # If the API returned a JSON-encoded string, decode it once more
+    if isinstance(data, str):
+        frappe.log_error(
+            "Uber Eats Order Details - String Response (Debug)",
+            f"Order: {order_id}\nContent-Type: {response.headers.get('Content-Type', '')}\nRaw: {response.text[:500]}",
+        )
+        data = _json.loads(data)
+
+    return data
 
 
 def accept_order(order_id, external_reference_id=None):
@@ -160,7 +172,10 @@ def accept_order(order_id, external_reference_id=None):
         url, json=payload, headers=_api_headers(), timeout=30
     )
 
+    print("\n\nAccept Order Response : ", str(response))
+
     if response.status_code not in (200, 204):
+        print(f"Order: {order_id}, Status: {response.status_code}, Body: {response.text}")
         frappe.log_error(
             "Uber Eats Accept Order Error",
             f"Order: {order_id}, Status: {response.status_code}, Body: {response.text}",
@@ -193,6 +208,8 @@ def deny_order(order_id, reason_code="OTHER", explanation="Order denied by resta
     response = requests.post(
         url, json=payload, headers=_api_headers(), timeout=30
     )
+
+    print("\n\n Rejected Order : ", str(response))
 
     if response.status_code not in (200, 204):
         frappe.log_error(
