@@ -50,8 +50,11 @@ def get_item_details():
     attributes_map: dict[str, list[dict]] = {}
     for attribute in attributes:
         parent = attribute.parent
-        attribute_value = attribute.attribute_value
-        if parent not in attributes_map and attribute_value is not None:
+        # if attribute value is None, skip it
+        if attribute.attribute_value is None:
+            continue
+        # if parent not in attributes_map, create a new list
+        if parent not in attributes_map:
             attributes_map[parent] = []
         attributes_map[parent].append(attribute)
 
