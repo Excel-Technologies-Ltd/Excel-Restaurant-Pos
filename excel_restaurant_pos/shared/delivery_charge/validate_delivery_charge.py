@@ -29,7 +29,9 @@ def _get_dynamic_charge(sales_amount):
     """Resolve charge from dynamic_dc_criteria_web (from_amount <= amount <= to_amount)."""
     settings = frappe.get_cached_doc("ArcPOS Settings")
     for row in settings.get("dynamic_dc_criteria_web") or []:
-        if row.from_amount <= sales_amount <= row.to_amount:
+        from_amt = row.from_amount if row.from_amount is not None else 0
+        to_amt = row.to_amount if row.to_amount is not None else float("inf")
+        if from_amt <= sales_amount <= to_amt:
             return float(row.fees_amount or 0)
     return 0
 
