@@ -1,19 +1,21 @@
 """Uber Eats webhook endpoint and order processing.
 
-Receives webhook events from Uber Eats, creates Sales Invoices,
+Receives webhook events from Uber Eats, creates Channel Orders,
 auto-accepts orders, and handles cancellation / store events.
 """
 
 import json
 from html import unescape
 
+import requests
+
 import frappe
-from frappe.utils import now_datetime, get_time
+from frappe.utils import now_datetime
+from datetime import datetime as _dt, timezone as _tz
 
 from .uber_eats_api import (
     verify_webhook_signature,
-    get_order_details,
-    accept_order,
+    _api_headers,
 )
 
 
@@ -30,7 +32,7 @@ def webhook():
     """
     raw_body = frappe.request.get_data()
 
-    print("\n\n order_payload: ",raw_body,"\n\n")
+    print("\n\n order_payload: ", raw_body, "\n\n")
 
     # Verify signature
     signature = frappe.request.headers.get("X-Uber-Signature", "")
@@ -51,6 +53,8 @@ def webhook():
 
     event_type = data.get("event_type")
     event_id = data.get("event_id")
+    resource_href = data.get("resource_href", "")
+    print("\n\n resource_href :",resource_href, "\n\n")
 
     frappe.logger().info(f"Uber Eats webhook received: {event_type} ({event_id})")
 
@@ -59,7 +63,8 @@ def webhook():
     store_id = meta.get("user_id")
 
     if event_type in ("orders.notification", "orders.scheduled.notification"):
-        _handle_order_notification(event_type, event_id, order_id, store_id)
+        print("\n\n Order is Created \n\n")
+        _handle_order_notification(event_type, event_id, order_id, resource_href)
 
     elif event_type == "orders.cancel":
         _handle_order_cancel(order_id)
@@ -84,28 +89,38 @@ def webhook():
     return {"status": "received"}
 
 
-def _handle_order_notification(event_type, event_id, order_id, store_id):
-    """Handle orders.notification and orders.scheduled.notification."""
+def _handle_order_notification(event_type, event_id, order_id, resource_href):
+    """Handle orders.notification and orders.scheduled.notification.
+
+    Workflow:
+    1. Enqueue staff notifications immediately (email + push + notification log)
+    2. Enqueue order detail fetch (via resource_href) and Channel Order creation
+    """
     if not order_id:
         frappe.log_error("Uber Eats Webhook", "Missing resource_id in webhook")
         return
 
-    # Check for duplicate (idempotency using event_id)
-    if frappe.db.exists(
-        "Sales Invoice",
-        {"remarks": ["like", f"%uber_eats_event:{event_id}%"]},
-    ):
-        frappe.logger().info(f"Duplicate webhook event {event_id}, skipping")
+    # Idempotency — skip if already processed
+    if frappe.db.exists("Channel Order", {"order_id": order_id}):
+        frappe.logger().info(f"Duplicate webhook event {event_id} for order {order_id}, skipping")
         return
 
     is_scheduled = event_type == "orders.scheduled.notification"
 
-    # Process order asynchronously
+    # Step 1: Notify staff immediately (non-blocking, short queue)
     frappe.enqueue(
-        process_uber_eats_order,
-        queue="default",
+        "excel_restaurant_pos.api.uber_eats.uber_eats._notify_staff_new_order",
+        queue="short",
         order_id=order_id,
-        store_id=store_id,
+        is_scheduled=is_scheduled,
+    )
+
+    # Step 2: Fetch full order details and create Channel Order
+    frappe.enqueue(
+        "excel_restaurant_pos.api.uber_eats.uber_eats.process_uber_eats_order",
+        queue="default",
+        resource_href=resource_href,
+        order_id=order_id,
         event_id=event_id,
         is_scheduled=is_scheduled,
     )
@@ -118,33 +133,33 @@ def _handle_order_cancel(order_id):
         return
 
     frappe.enqueue(
-        _process_order_cancel,
+        "excel_restaurant_pos.api.uber_eats.uber_eats._process_order_cancel",
         queue="default",
         order_id=order_id,
     )
 
 
 def _process_order_cancel(order_id):
-    """Background job: Mark the Sales Invoice as cancelled when Uber cancels."""
+    """Background job: Mark the Channel Order as cancelled when Uber cancels."""
     try:
-        invoice = frappe.db.get_value(
-            "Sales Invoice",
-            {"remarks": ["like", f"%uber_eats_order_id:{order_id}%"]},
+        channel_order_name = frappe.db.get_value(
+            "Channel Order",
+            {"order_id": order_id},
             "name",
         )
 
-        if not invoice:
+        if not channel_order_name:
             frappe.logger().info(
-                f"Uber Eats cancel event for order {order_id} - no matching invoice found"
+                f"Uber Eats cancel event for order {order_id} - no matching Channel Order found"
             )
             return
 
         frappe.db.set_value(
-            "Sales Invoice", invoice, "custom_order_status", "Cancelled"
+            "Channel Order", channel_order_name, "current_state", "CANCELLED"
         )
         frappe.db.commit()
         frappe.logger().info(
-            f"Uber Eats order {order_id} cancelled -> Invoice {invoice}"
+            f"Uber Eats order {order_id} cancelled -> Channel Order {channel_order_name}"
         )
 
     except Exception as e:
@@ -172,7 +187,6 @@ def _handle_report_success(data):
         f"workflow={workflow_id}, downloads={len(download_urls)}"
     )
 
-    # Store the report result for retrieval via the API
     doc = frappe.new_doc("Comment")
     doc.comment_type = "Info"
     doc.reference_doctype = "ArcPOS Settings"
@@ -188,38 +202,221 @@ def _handle_report_success(data):
     frappe.db.commit()
 
 
-def process_uber_eats_order(order_id, store_id, event_id, is_scheduled=False):
-    """Background job: Fetch order details, create invoice, accept order.
+# ---------------------------------------------------------------------------
+# Step 1 — Notify staff immediately on webhook receipt
+# ---------------------------------------------------------------------------
+
+def _notify_staff_new_order(order_id, is_scheduled=False):
+    """Background job: Send email, push, and Notification Log to restaurant staff.
+
+    Called immediately when the webhook is received, before fetching full
+    order details. Notifies users with roles 'Restaurant Chef' and
+    'Restaurant Manager'.
 
     Args:
         order_id: Uber Eats order UUID
-        store_id: Uber Eats store UUID
+        is_scheduled: True if this is a scheduled order
+    """
+    try:
+        settings = frappe.get_single("ArcPOS Settings")
+        roles = ["Restaurant Chef", "Restaurant Manager"]
+
+        # Use get_all to safely query Has Role child table (column is 'parent', not 'user')
+        user_emails = list(set(frappe.get_all(
+            "Has Role",
+            filters={
+                "role": ["in", roles],
+                "parenttype": "User",
+                "parent": ["not in", ["Administrator", "Guest"]],
+            },
+            pluck="parent",
+        )))
+
+        if not user_emails:
+            frappe.logger().info(
+                f"No users found for roles {roles} — skipping new order notification"
+            )
+            return
+
+        order_label = "Scheduled Uber Eats Order" if is_scheduled else "New Uber Eats Order"
+        title = f"{order_label} Received"
+        body = f"A new order has been received via Uber Eats.\nOrder ID: {order_id}"
+
+        # 1. Send email (use template if configured, otherwise plain fallback)
+        try:
+            if settings.online_order_email_template:
+                template = frappe.get_doc("Email Template", settings.online_order_email_template)
+                template_args = {
+                    "order_id": order_id,
+                    "is_scheduled": is_scheduled,
+                    "order_label": order_label,
+                }
+                email_subject = frappe.render_template(template.subject, template_args)
+                email_message = frappe.render_template(
+                    template.response_html or template.response, template_args
+                )
+            else:
+                email_subject = title
+                email_message = (
+                    f"<p>{order_label} has been received via Uber Eats.</p>"
+                    f"<p><strong>Order ID:</strong> {order_id}</p>"
+                )
+
+            frappe.sendmail(
+                recipients=user_emails,
+                subject=email_subject,
+                message=email_message,
+                header=None,
+                now=True,
+            )
+            frappe.logger().info(
+                f"New order email sent for {order_id} to {len(user_emails)} user(s)"
+            )
+        except Exception as e:
+            frappe.log_error(
+                f"Error sending new order email for {order_id}: {e}",
+                "Uber Eats - New Order Email Error",
+            )
+
+        # 2. Create Notification Log for each user
+        for user_email in user_emails:
+            try:
+                frappe.get_doc({
+                    "doctype": "Notification Log",
+                    "for_user": user_email,
+                    "from_user": "Administrator",
+                    "subject": title,
+                    "email_content": body,
+                    "type": "Alert",
+                    "read": 0,
+                }).insert(ignore_permissions=True)
+            except Exception as e:
+                frappe.log_error(
+                    f"Error creating Notification Log for {user_email}: {e}",
+                    "Uber Eats - Notification Log Error",
+                )
+
+            try:
+                frappe.publish_realtime(
+                    "new_uber_eats_order",
+                    message={
+                        "title": title,
+                        "body": body,
+                        "order_id": order_id,
+                    },
+                    user=user_email,
+                )
+            except Exception:
+                pass  # Realtime is best-effort; don't block on failure
+
+        frappe.db.commit()
+
+        # 3. Send Expo push notifications (if SDK available)
+        try:
+            from exponent_server_sdk import (
+                PushClient, PushMessage, PushServerError,
+                PushTicketError, DeviceNotRegisteredError,
+            )
+
+            token_docs = frappe.get_all(
+                "ArcPOS Notification Token",
+                filters={"user": ["in", user_emails]},
+                fields=["name", "user"],
+            )
+
+            push_messages = []
+            for token_doc_ref in token_docs:
+                token_doc = frappe.get_doc("ArcPOS Notification Token", token_doc_ref.name)
+                for token_row in (token_doc.token_list or []):
+                    if token_row.token and PushClient.is_exponent_push_token(token_row.token):
+                        push_messages.append(
+                            PushMessage(
+                                to=token_row.token,
+                                title=title,
+                                body=body,
+                                data={
+                                    "order_id": order_id,
+                                    "notification_type": "new_uber_eats_order",
+                                    "is_scheduled": is_scheduled,
+                                },
+                                sound="default",
+                                priority="high",
+                            )
+                        )
+
+            if push_messages:
+                push_client = PushClient()
+                chunk_size = 100
+                for i in range(0, len(push_messages), chunk_size):
+                    chunk = push_messages[i:i + chunk_size]
+                    try:
+                        responses = push_client.publish_multiple(chunk)
+                        for response, msg in zip(responses, chunk):
+                            try:
+                                response.validate_response()
+                            except DeviceNotRegisteredError:
+                                pass
+                            except PushTicketError as exc:
+                                frappe.log_error(
+                                    f"Push ticket error for token {msg.to}: {exc}",
+                                    "Uber Eats - Push Ticket Error",
+                                )
+                    except PushServerError as exc:
+                        frappe.log_error(
+                            f"Expo push server error for order {order_id}: {exc}",
+                            "Uber Eats - Push Server Error",
+                        )
+
+                frappe.logger().info(
+                    f"Expo push notifications sent for order {order_id} ({len(push_messages)} token(s))"
+                )
+
+        except ImportError:
+            frappe.logger().info("Expo SDK not available — skipping push notifications")
+        except Exception as e:
+            frappe.log_error(
+                f"Error sending push notifications for order {order_id}: {e}",
+                "Uber Eats - Push Notification Error",
+            )
+
+    except Exception as e:
+        frappe.log_error(
+            f"Error in _notify_staff_new_order for order {order_id}: {e}",
+            "Uber Eats - Staff Notification Error",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Step 2 — Fetch order details and create Channel Order
+# ---------------------------------------------------------------------------
+
+def process_uber_eats_order(resource_href, order_id, event_id, is_scheduled=False):
+    """Background job: Fetch full order via resource_href, create Channel Order, accept.
+
+    Args:
+        resource_href: Direct URL to the order from the webhook payload
+        order_id: Uber Eats order UUID
         event_id: Webhook event UUID for idempotency
         is_scheduled: True if this is a scheduled order
     """
     try:
-        # Fetch full order details from Uber Eats
-        order = get_order_details(order_id)
+        # Fetch full order details using the resource_href from the webhook
+        order = _fetch_order_from_href(resource_href, order_id)
 
-        # Get settings
-        settings = frappe.get_single("ArcPOS Settings")
+        print("Order Details ", order)
 
-        # Create the Sales Invoice
-        invoice = _create_sales_invoice(
-            order, settings, event_id, is_scheduled=is_scheduled
-        )
-
-        # Auto-accept the order on Uber Eats
-        try:
-            accept_order(order_id, external_reference_id=invoice.name)
-        except Exception as e:
+        if not isinstance(order, dict):
             frappe.log_error(
-                "Uber Eats Accept Error",
-                f"Order {order_id}, Invoice {invoice.name}: {e}",
+                "Uber Eats Order Processing Error",
+                f"Order {order_id}: unexpected response type {type(order).__name__}: {str(order)[:300]}",
             )
+            return
+
+        # Create Channel Order record (state stays CREATED until staff acts)
+        channel_order = _create_channel_order(order, event_id, is_scheduled=is_scheduled)
 
         frappe.logger().info(
-            f"Uber Eats order {order_id} processed -> Invoice {invoice.name}"
+            f"Uber Eats order {order_id} -> Channel Order {channel_order.name}"
         )
 
     except Exception as e:
@@ -229,110 +426,145 @@ def process_uber_eats_order(order_id, store_id, event_id, is_scheduled=False):
         )
 
 
-def _create_sales_invoice(order, settings, event_id, is_scheduled=False):
-    """Create a Sales Invoice from Uber Eats order data.
+def _fetch_order_from_href(resource_href, order_id):
+    """Fetch full order details using the resource_href from the webhook.
+
+    Uses the exact URL that Uber provides in the webhook payload, which
+    avoids environment URL construction issues in sandbox.
 
     Args:
-        order: Full order details from Uber Eats API
-        settings: ArcPOS Settings document
-        event_id: Webhook event ID for idempotency tracking
+        resource_href: Full order URL from webhook (e.g. https://api.uber.com/v2/eats/order/{id})
+        order_id: Order UUID (used for error logging only)
+
+    Returns:
+        Order details dict
+    """
+    import json as _json
+
+    # In sandbox mode the webhook payload contains production URLs (https://api.uber.com).
+    # Swap to the sandbox base so the sandbox token is accepted.
+    settings = frappe.get_single("ArcPOS Settings")
+    if (settings.uber_eats_environment or "Sandbox") == "Sandbox":
+        resource_href = resource_href.replace(
+            "https://api.uber.com", "https://test-api.uber.com"
+        )
+
+    response = requests.get(resource_href, headers=_api_headers(), timeout=30)
+
+    # frappe.log_error(
+    #     "Uber Eats Fetch Order - Debug",
+    #     f"Order: {order_id}\nURL: {resource_href}\nStatus: {response.status_code}\n"
+    #     f"Content-Type: {response.headers.get('Content-Type', '')}\nBody: {response.text[:500]}",
+    # )
+    # frappe.db.commit()  # Persist debug log immediately regardless of subsequent outcome
+
+    if response.status_code != 200:
+        frappe.log_error(
+            "Uber Eats Get Order Error",
+            f"Order: {order_id}, URL: {resource_href}, Status: {response.status_code}, Body: {response.text}",
+        )
+        frappe.throw(
+            f"Failed to fetch Uber Eats order {order_id}: {response.status_code} - {response.text}"
+        )
+
+    data = response.json()
+
+    # Handle double-encoded JSON string response
+    if isinstance(data, str):
+        data = _json.loads(data)
+
+    return data
+
+
+def _create_channel_order(order, event_id, is_scheduled=False):
+    """Create a Channel Order record from Uber Eats order data.
+
+    Args:
+        order: Full order details dict from Uber Eats API
+        event_id: Webhook event ID stored in raw_payload for reference
         is_scheduled: True if this is a scheduled order
 
     Returns:
-        Saved Sales Invoice document
+        Saved Channel Order document
     """
-    store = order.get("store", {})
-    eater = order.get("eater", {})
-    cart = order.get("cart", {})
-    items = cart.get("items", [])
-    payment = order.get("payment", {})
+    import json as _json
 
-    # Determine service type from order type
-    order_type = order.get("type", "DELIVERY_BY_UBER")
-    if "PICKUP" in order_type.upper():
-        service_type = "Pickup"
-    else:
-        service_type = "Delivery"
+    eater = order.get("eater", {}) or {}
+    cart = order.get("cart", {}) or {}
+    items = cart.get("items", []) or []
+    payment = order.get("payment", {}) or {}
+    charges = payment.get("charges", {}) or {}
+    store = order.get("store", {}) or {}
 
-    # Build customer name
-    first_name = eater.get("first_name", "")
-    last_name = eater.get("last_name", "")
-    customer_name = f"{first_name} {last_name}".strip() or "Uber Eats Customer"
+    # Payment totals — Uber uses minor currency units (cents)
+    sub_total_info = charges.get("sub_total", {}) or {}
+    total_info = charges.get("total", {}) or {}
+    subtotal = int(sub_total_info.get("amount", 0)) / 100.0
+    total = int(total_info.get("amount", 0)) / 100.0
+    currency = sub_total_info.get("currency_code", "") or total_info.get("currency_code", "")
 
-    # Build remarks with tracking info
-    remarks = (
-        f"Uber Eats Order ID: {order.get('id', '')}\n"
-        f"uber_eats_event:{event_id}\n"
-        f"uber_eats_order_id:{order.get('id', '')}\n"
-        f"Display ID: {order.get('display_id', '')}\n"
-        f"Customer: {customer_name}"
-    )
+    # Special instructions from the cart
+    special_instructions = cart.get("special_instructions", "") or ""
 
-    # Initial status
-    order_status = "Scheduled" if is_scheduled else "In kitchen"
+    # Phone can be a plain string or a dict {"number": "..."} depending on Uber API version
+    phone_raw = eater.get("phone", "")
+    eater_phone = phone_raw if isinstance(phone_raw, str) else (phone_raw or {}).get("number", "")
 
-    si = frappe.new_doc("Sales Invoice")
-    si.customer = settings.uber_eats_default_customer
-    si.company = settings.company
-    si.naming_series = "UE-.YY.-.#####"
-    si.posting_date = frappe.utils.today()
-    si.posting_time = get_time(now_datetime())
-    si.due_date = frappe.utils.today()
-    si.remarks = remarks
+    co = frappe.new_doc("Channel Order")
+    co.order_from = "Uber Eats"
+    co.order_id = order.get("id", "")
+    co.display_id = order.get("display_id", "")
+    co.current_state = order.get("current_state", "CREATED")
+    co.order_type = order.get("type", "")
+    # placed_at comes as ISO-8601 with timezone (e.g. "2026-02-01T14:28:49-05:00")
+    # MySQL requires a naive UTC datetime string "YYYY-MM-DD HH:MM:SS"
+    placed_at_raw = order.get("placed_at", "")
+    try:
+        dt = _dt.fromisoformat(placed_at_raw) if placed_at_raw else None
+        if dt and dt.tzinfo is not None:
+            dt = dt.astimezone(_tz.utc).replace(tzinfo=None)
+        co.placed_at = dt.strftime("%Y-%m-%d %H:%M:%S") if dt else now_datetime()
+    except Exception:
+        co.placed_at = now_datetime()
+    co.store_id = store.get("id", "")
+    co.store_name = store.get("name", "")
+    co.eater_first_name = eater.get("first_name", "")
+    co.eater_last_name = eater.get("last_name", "")
+    co.eater_phone = eater_phone
+    co.special_instructions = special_instructions
+    co.subtotal = subtotal
+    co.total = total
+    co.currency = currency
+    co.raw_payload = _json.dumps({"order": order, "event_id": event_id, "is_scheduled": is_scheduled})
 
-    # Custom fields
-    si.custom_order_from = "UberEats"
-    si.custom_order_status = order_status
-    si.custom_service_type = service_type
-    si.custom_order_type = "Pay First"
-    si.custom_customer_full_name = customer_name
-    si.custom_mobile_no = eater.get("phone", {}).get("number", "")
-
-    # Delivery address
-    dropoff = order.get("dropoff", {})
-    if dropoff:
-        si.custom_address_line1 = dropoff.get("location", {}).get("address", "")
-        si.custom_delivery_location = dropoff.get("location", {}).get("address", "")
-
-    # Add items
-    warehouse = settings.uber_eats_warehouse if settings.uber_eats_warehouse else None
+    # Add cart items
     for uber_item in items:
-        title = uber_item.get("title", "Uber Eats Item")
-        quantity = uber_item.get("quantity", 1)
-        price_info = uber_item.get("price", {})
+        price_info = uber_item.get("price", {}) or {}
+        unit_price_info = price_info.get("unit_price", {}) or {}
+        total_price_info = price_info.get("total_price", {}) or {}
 
-        # Price from Uber comes in minor units (cents)
-        unit_price = price_info.get("unit_price", {})
-        amount = int(unit_price.get("amount", 0)) / 100.0
+        unit_price = int(unit_price_info.get("amount", 0)) / 100.0
+        item_total = int(total_price_info.get("amount", 0)) / 100.0
 
-        # Build description with modifiers/special instructions
-        desc_parts = [title]
-        for modifier_group in uber_item.get("selected_modifier_groups", []):
-            for modifier in modifier_group.get("selected_items", []):
-                mod_title = modifier.get("title", "")
-                mod_qty = modifier.get("quantity", 1)
+        modifier_parts = []
+        for mg in (uber_item.get("selected_modifier_groups") or []):
+            for mod in (mg.get("selected_items") or []):
+                mod_title = mod.get("title", "")
+                mod_qty = mod.get("quantity", 1)
                 if mod_title:
-                    desc_parts.append(f"  + {mod_title} x{mod_qty}")
+                    modifier_parts.append(f"{mod_title} x{mod_qty}")
 
-        special = uber_item.get("special_instructions", "")
-        if special:
-            desc_parts.append(f"  Note: {special}")
+        co.append("items", {
+            "item_id": uber_item.get("id", ""),
+            "title": uber_item.get("title", "Uber Eats Item"),
+            "quantity": uber_item.get("quantity", 1),
+            "unit_price": unit_price,
+            "total_price": item_total,
+            "modifiers": ", ".join(modifier_parts),
+            "special_instructions": uber_item.get("special_instructions", ""),
+        })
 
-        description = "\n".join(desc_parts)
-
-        item_row = {
-            "item_code": settings.uber_eats_default_item or "Uber Eats Order Item",
-            "item_name": title,
-            "qty": quantity,
-            "rate": amount,
-            "description": description,
-        }
-        if warehouse:
-            item_row["warehouse"] = warehouse
-
-        si.append("items", item_row)
-
-    si.save(ignore_permissions=True)
+    co.save(ignore_permissions=True)
     frappe.db.commit()
 
-    return si
+    return co

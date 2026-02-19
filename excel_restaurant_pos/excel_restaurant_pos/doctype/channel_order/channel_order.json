@@ -1,0 +1,215 @@
+{
+ "actions": [],
+ "autoname": "format:CO-{YYYY}-{#####}",
+ "creation": "2026-02-19 00:00:00.000000",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "order_from",
+  "order_id",
+  "display_id",
+  "column_break_1",
+  "current_state",
+  "order_type",
+  "placed_at",
+  "section_break_store",
+  "store_id",
+  "store_name",
+  "column_break_eater",
+  "eater_first_name",
+  "eater_last_name",
+  "eater_phone",
+  "section_break_payment",
+  "currency",
+  "subtotal",
+  "column_break_payment",
+  "total",
+  "section_break_items",
+  "items",
+  "special_instructions",
+  "section_break_raw",
+  "raw_payload"
+ ],
+ "fields": [
+  {
+   "default": "Uber Eats",
+   "fieldname": "order_from",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Order From",
+   "options": "Uber Eats",
+   "reqd": 1
+  },
+  {
+   "fieldname": "order_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Order ID",
+   "unique": 1
+  },
+  {
+   "fieldname": "display_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Display ID"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "current_state",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Current State",
+   "options": "CREATED\nACCEPTED\nREJECTED"
+  },
+  {
+   "fieldname": "order_type",
+   "fieldtype": "Data",
+   "label": "Order Type"
+  },
+  {
+   "fieldname": "placed_at",
+   "fieldtype": "Datetime",
+   "label": "Placed At"
+  },
+  {
+   "fieldname": "section_break_store",
+   "fieldtype": "Section Break",
+   "label": "Store"
+  },
+  {
+   "fieldname": "store_id",
+   "fieldtype": "Data",
+   "label": "Store ID"
+  },
+  {
+   "fieldname": "store_name",
+   "fieldtype": "Data",
+   "label": "Store Name"
+  },
+  {
+   "fieldname": "column_break_eater",
+   "fieldtype": "Column Break",
+   "label": "Customer"
+  },
+  {
+   "fieldname": "eater_first_name",
+   "fieldtype": "Data",
+   "label": "First Name"
+  },
+  {
+   "fieldname": "eater_last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "eater_phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "section_break_payment",
+   "fieldtype": "Section Break",
+   "label": "Payment"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency"
+  },
+  {
+   "fieldname": "subtotal",
+   "fieldtype": "Currency",
+   "label": "Subtotal"
+  },
+  {
+   "fieldname": "column_break_payment",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "label": "Total"
+  },
+  {
+   "fieldname": "section_break_items",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Channel Order Item"
+  },
+  {
+   "fieldname": "special_instructions",
+   "fieldtype": "Small Text",
+   "label": "Special Instructions"
+  },
+  {
+   "fieldname": "section_break_raw",
+   "fieldtype": "Section Break",
+   "label": "Raw Payload"
+  },
+  {
+   "fieldname": "raw_payload",
+   "fieldtype": "Long Text",
+   "label": "Raw Payload",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-19 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Excel Restaurant Pos",
+ "name": "Channel Order",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Restaurant Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Restaurant Chef"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "placed_at",
+ "sort_order": "DESC",
+ "state_fieldname": "current_state",
+ "states": [
+  {
+   "color": "Blue",
+   "title": "CREATED"
+  },
+  {
+   "color": "Green",
+   "title": "ACCEPTED"
+  },
+  {
+   "color": "Red",
+   "title": "REJECTED"
+  }
+ ],
+ "track_changes": 1
+}

@@ -132,7 +132,9 @@
   "uber_eats_default_customer",
   "column_break_uber_eats_2",
   "uber_eats_default_item",
-  "uber_eats_warehouse"
+  "uber_eats_warehouse",
+  "uber_eats_notification_section",
+  "online_order_email_template"
  ],
  "fields": [
   {
@@ -858,6 +860,19 @@
    "fieldtype": "Link",
    "label": "Default Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "depends_on": "eval:doc.uber_eats_enabled",
+   "fieldname": "uber_eats_notification_section",
+   "fieldtype": "Section Break",
+   "label": "Notifications"
+  },
+  {
+   "depends_on": "eval:doc.uber_eats_enabled",
+   "fieldname": "online_order_email_template",
+   "fieldtype": "Link",
+   "label": "Online Order Email Template",
+   "options": "Email Template"
   }
  ],
  "index_web_pages_for_search": 1,
