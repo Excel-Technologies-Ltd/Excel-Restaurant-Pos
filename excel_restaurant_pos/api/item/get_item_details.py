@@ -35,6 +35,7 @@ def get_item_details():
     # prepare attributes
     attributes_fields = [
         "attribute",
+        "attribute_value",
         "custom_choice_type",
         "parent",
         "custom_max_choice_count",
@@ -48,9 +49,11 @@ def get_item_details():
 
     attributes_map: dict[str, list[dict]] = {}
     for attribute in attributes:
-        if attribute.parent not in attributes_map:
-            attributes_map[attribute.parent] = []
-        attributes_map[attribute.parent].append(attribute)
+        parent = attribute.parent
+        attribute_value = attribute.attribute_value
+        if parent not in attributes_map and attribute_value is not None:
+            attributes_map[parent] = []
+        attributes_map[parent].append(attribute)
 
     # prepare addons items
     addons_items = item_details.get("custom_addons_items", [])
