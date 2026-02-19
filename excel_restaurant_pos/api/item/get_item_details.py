@@ -29,29 +29,41 @@ def get_item_details():
         "Item", filters={"variant_of": item_code}, fields=variant_fields
     )
 
+    # list of variant item codes
+    regular_item_codes = [item.item_code for item in variants_items]
+
     # prepare attributes
-    attributes_fields = ["attribute", "attribute_value", "parent", "variant_of"]
+    attributes_fields = [
+        "attribute",
+        "attribute_value",
+        "custom_choice_type",
+        "parent",
+        "custom_max_choice_count",
+    ]
     attributes = frappe.get_all(
         "Item Variant Attribute",
-        filters={"variant_of": item_code},
+        filters={"parent": ["in", regular_item_codes]},
         fields=attributes_fields,
         order_by="creation",
     )
 
     attributes_map: dict[str, list[dict]] = {}
     for attribute in attributes:
-        if attribute.parent not in attributes_map:
-            attributes_map[attribute.parent] = []
-        attributes_map[attribute.parent].append(attribute)
+        parent = attribute.parent
+        # if attribute value is None, skip it
+        if attribute.attribute_value is None:
+            continue
+        # if parent not in attributes_map, create a new list
+        if parent not in attributes_map:
+            attributes_map[parent] = []
+        attributes_map[parent].append(attribute)
 
     # prepare addons items
     addons_items = item_details.get("custom_addons_items", [])
     addon_item_codes = [item.item_code for item in addons_items]
 
-    regular_item_codes = [item.item_code for item in variants_items]
-
+    # attach attributes to variants
     for variant in variants_items:
-        regular_item_codes.append(variant.item_code)
         variant.attributes = attributes_map.get(variant.item_code, [])
 
     # add docs item code
