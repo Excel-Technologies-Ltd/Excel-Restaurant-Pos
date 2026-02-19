@@ -6,6 +6,15 @@ import frappe
 
 
 @frappe.whitelist()
+def clear_token_cache():
+    """Clear the cached Uber Eats OAuth token to force a fresh one."""
+    from .uber_eats_api import clear_token_cache as _clear_token_cache
+
+    _clear_token_cache()
+    return {"status": "ok", "message": "Token cache cleared"}
+
+
+@frappe.whitelist()
 def get_stores():
     """List all stores linked to this Uber Eats app."""
     from .uber_eats_api import get_stores as _get_stores

@@ -5,6 +5,7 @@ auto-accepts orders, and handles cancellation / store events.
 """
 
 import json
+from html import unescape
 
 import frappe
 from frappe.utils import now_datetime, get_time
@@ -28,6 +29,8 @@ def webhook():
     - store.deprovisioned: Store unlinked from this app
     """
     raw_body = frappe.request.get_data()
+
+    print("\n\n order_payload: ",raw_body,"\n\n")
 
     # Verify signature
     signature = frappe.request.headers.get("X-Uber-Signature", "")
@@ -65,6 +68,9 @@ def webhook():
         frappe.logger().info(
             f"Uber Eats store provisioned: store={store_id}"
         )
+
+    elif event_type == "eats.report.success":
+        _handle_report_success(data)
 
     elif event_type == "store.deprovisioned":
         frappe.log_error(
@@ -146,6 +152,40 @@ def _process_order_cancel(order_id):
             "Uber Eats Cancel Processing Error",
             f"Order {order_id}: {e}",
         )
+
+
+def _handle_report_success(data):
+    """Handle eats.report.success - report is ready for download."""
+    report_type = data.get("report_type", "")
+    workflow_id = data.get("job_id", "") or data.get("workflow_id", "")
+    metadata = data.get("report_metadata", {})
+    sections = metadata.get("sections", [])
+
+    download_urls = []
+    for section in sections:
+        url = section.get("download_url", "")
+        if url:
+            download_urls.append(unescape(url))
+
+    frappe.logger().info(
+        f"Uber Eats report ready: type={report_type}, "
+        f"workflow={workflow_id}, downloads={len(download_urls)}"
+    )
+
+    # Store the report result for retrieval via the API
+    doc = frappe.new_doc("Comment")
+    doc.comment_type = "Info"
+    doc.reference_doctype = "ArcPOS Settings"
+    doc.reference_name = "ArcPOS Settings"
+    doc.content = json.dumps({
+        "event": "eats.report.success",
+        "report_type": report_type,
+        "workflow_id": workflow_id,
+        "download_urls": download_urls,
+        "raw": data,
+    })
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
 
 
 def process_uber_eats_order(order_id, store_id, event_id, is_scheduled=False):

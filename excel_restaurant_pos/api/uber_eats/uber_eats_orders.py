@@ -16,6 +16,18 @@ def get_orders(store_id=None):
 
 
 @frappe.whitelist()
+def get_canceled_orders(store_id=None):
+    """Get canceled orders from Uber Eats.
+
+    Args:
+        store_id: Optional store UUID, defaults to configured store
+    """
+    from .uber_eats_api import get_canceled_orders as _get_canceled_orders
+
+    return _get_canceled_orders(store_id=store_id)
+
+
+@frappe.whitelist()
 def get_order(order_id):
     """Get full order details from Uber Eats.
 
@@ -31,16 +43,25 @@ def get_order(order_id):
 
 
 @frappe.whitelist()
-def cancel_uber_eats_order(order_id, reason="CANNOT_COMPLETE", details=""):
+def cancel_uber_eats_order(order_id, reason="OTHER", details=""):
     """Cancel an accepted order on Uber Eats.
 
     Args:
         order_id: Uber Eats order UUID
-        reason: Cancel reason code
-        details: Human-readable explanation
+        reason: One of OUT_OF_ITEMS, KITCHEN_CLOSED, CUSTOMER_CALLED_TO_CANCEL,
+                RESTAURANT_TOO_BUSY, CANNOT_COMPLETE_CUSTOMER_NOTE, OTHER
+        details: Human-readable explanation (required when reason is OTHER)
     """
     if not order_id:
         frappe.throw("order_id is required")
+
+    valid_reasons = (
+        "OUT_OF_ITEMS", "KITCHEN_CLOSED", "CUSTOMER_CALLED_TO_CANCEL",
+        "RESTAURANT_TOO_BUSY", "CANNOT_COMPLETE_CUSTOMER_NOTE", "OTHER",
+    )
+    if reason and reason.upper() not in valid_reasons:
+        frappe.throw(f"Invalid cancel reason '{reason}'. Must be one of: {', '.join(valid_reasons)}")
+    reason = reason.upper() if reason else "OTHER"
 
     from .uber_eats_api import cancel_order
 
