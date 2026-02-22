@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "format:CO-{YYYY}-{#####}",
- "creation": "2026-02-19 00:00:00.000000",
+ "creation": "2026-02-19 00:00:00",
  "default_view": "List",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -10,6 +10,7 @@
   "order_from",
   "order_id",
   "display_id",
+  "estimated_ready_for_pickup_at",
   "column_break_1",
   "current_state",
   "order_type",
@@ -161,14 +162,20 @@
    "fieldtype": "Long Text",
    "label": "Raw Payload",
    "read_only": 1
+  },
+  {
+   "fieldname": "estimated_ready_for_pickup_at",
+   "fieldtype": "Datetime",
+   "label": "Estimated Ready for Pickup At"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 00:00:00.000000",
+ "modified": "2026-02-22 04:24:12.984844",
  "modified_by": "Administrator",
  "module": "Excel Restaurant Pos",
  "name": "Channel Order",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -193,10 +200,8 @@
    "role": "Restaurant Chef"
   }
  ],
- "row_format": "Dynamic",
  "sort_field": "placed_at",
  "sort_order": "DESC",
- "state_fieldname": "current_state",
  "states": [
   {
    "color": "Blue",

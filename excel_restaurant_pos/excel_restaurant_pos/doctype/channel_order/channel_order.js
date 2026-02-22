@@ -13,12 +13,29 @@ frappe.ui.form.on("Channel Order", {
 		}
 
 		if (state === "ACCEPTED") {
-			frappe.confirm(
-				__("Accept this order on Uber Eats?"),
-				function () {
+			// Suggest estimated ready time: placed_at + 15 min, or now + 15 min
+			const base = frm.doc.estimated_ready_for_pickup_at
+				? frappe.datetime.str_to_obj(frm.doc.estimated_ready_for_pickup_at)
+				: new Date();
+			const suggested = frappe.datetime.obj_to_str(new Date(base.getTime() + 15 * 60 * 1000));
+
+			frappe.prompt(
+				[
+					{
+						label: __("Estimated Ready Time"),
+						fieldname: "estimated_ready_for_pickup_at",
+						fieldtype: "Datetime",
+						default: suggested,
+						description: __("When will this order be ready for pickup? Sent to Uber Eats at acceptance."),
+					},
+				],
+				function (values) {
 					frappe.call({
 						method: "excel_restaurant_pos.api.uber_eats.uber_eats_orders.accept_uber_eats_order",
-						args: { order_id: order_id },
+						args: {
+							order_id: order_id,
+							estimated_ready_for_pickup_at: values.estimated_ready_for_pickup_at || null,
+						},
 						freeze: true,
 						freeze_message: __("Accepting order..."),
 						callback: function (r) {
@@ -32,6 +49,8 @@ frappe.ui.form.on("Channel Order", {
 						},
 					});
 				},
+				__("Accept Order"),
+				__("Accept"),
 				function () {
 					frm.reload_doc();
 				}
