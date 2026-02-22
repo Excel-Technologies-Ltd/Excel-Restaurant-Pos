@@ -1,6 +1,7 @@
 """Document event handlers for Sales Invoice after save."""
 
 import frappe
+from frappe.utils import flt
 
 from excel_restaurant_pos.doc_event.shared import handle_table_occupy
 from excel_restaurant_pos.shared.delivery_charge import get_delivery_charge
@@ -56,9 +57,9 @@ def check_delivery_and_charges_fraudulency(doc, method: str):
     # check if the delivery entry is fraudulent
     quotes = doc.get("custom_quotes", [])
     first_quote = quotes[0] if quotes else {}
-    quote_amount = first_quote.get("fee", 0) / 100
-    d_charge = get_delivery_charge(doc.total, quote_amount)
-    if d_charge != delivery_entry.get("tax_amount", 0):
+    quote_amount = flt(first_quote.get("fee", 0)) / 100
+    d_charge = get_delivery_charge(flt(doc.total), quote_amount)
+    if d_charge != flt(delivery_entry.get("tax_amount", 0)):
         msg = f"Delivery charge mismatch: {d_charge} != {delivery_entry.get('tax_amount', 0)}"
         frappe.throw(msg)
 

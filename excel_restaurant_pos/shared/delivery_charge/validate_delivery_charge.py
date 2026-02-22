@@ -43,4 +43,3 @@ def _get_fixed_charge():
     return float(val or 0)
 
 
-# def validate_delivery_charge(invoice_num, quote_amount):
