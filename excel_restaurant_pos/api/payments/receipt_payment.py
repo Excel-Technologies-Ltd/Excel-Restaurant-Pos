@@ -56,7 +56,8 @@ def receipt_payment():
 
     # enqueue payment entry creation
     args = {"sales_invoice": invoice.name, "payments": payments}
-    frappe.enqueue(create_payment_entry, queue="short", **args)
+    create_payment_entry(**args)
+    # frappe.enqueue(create_payment_entry, queue="short", **args)
 
     # return True
     return {"success": True}
