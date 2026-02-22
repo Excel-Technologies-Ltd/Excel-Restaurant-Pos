@@ -218,7 +218,7 @@ def _notify_staff_new_order(order_id, is_scheduled=False):
         is_scheduled: True if this is a scheduled order
     """
     try:
-        roles = ["Restaurant Chef", "Restaurant Manager"]
+        roles = ["ArcPOS Channel User"]
 
         # Use get_all to safely query Has Role child table (column is 'parent', not 'user')
         user_emails = list(set(frappe.get_all(

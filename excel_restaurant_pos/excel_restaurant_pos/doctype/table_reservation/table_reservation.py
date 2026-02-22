@@ -16,6 +16,14 @@ class TableReservation(Document):
             if getdate(self.reservation_date) < getdate(nowdate()):
                 frappe.throw(_("Reservation date cannot be in the past"))
 
+    def after_insert(self):
+        """Notify reservation staff when a new reservation is created."""
+        frappe.enqueue(
+            "excel_restaurant_pos.excel_restaurant_pos.doctype.table_reservation.table_reservation._notify_staff_new_reservation",
+            queue="short",
+            reservation_name=self.name,
+        )
+
     def on_update(self):
         """Handle status changes and send appropriate notifications."""
         if self.has_value_changed("status"):
@@ -57,6 +65,143 @@ class TableReservation(Document):
                 email_type="reschedule",
             )
 
+
+
+def _notify_staff_new_reservation(reservation_name):
+    """Background job: Send Notification Log + Expo push to all ArcPOS Reservation Users.
+
+    Args:
+        reservation_name: Table Reservation document name
+    """
+    try:
+        doc = frappe.get_doc("Table Reservation", reservation_name)
+
+        user_emails = list(set(frappe.get_all(
+            "Has Role",
+            filters={
+                "role": "ArcPOS Reservation User",
+                "parenttype": "User",
+                "parent": ["not in", ["Administrator", "Guest"]],
+            },
+            pluck="parent",
+        )))
+
+        if not user_emails:
+            frappe.logger().info(
+                f"No ArcPOS Reservation Users found — skipping new reservation notification"
+            )
+            return
+
+        title = f"New Table Reservation : {doc.name}"
+        body = (
+            f"#{doc.name} — {doc.guest_name} · "
+            f"{frappe.utils.format_date(doc.reservation_date, 'dd MMM yyyy')} "
+            f"at {frappe.utils.format_time(doc.reservation_time)} "
+            f"for {doc.number_of_guests} guest(s)."
+        )
+
+        # 1. Notification Log + realtime for each user
+        for user_email in user_emails:
+            try:
+                frappe.get_doc({
+                    "doctype": "Notification Log",
+                    "for_user": user_email,
+                    "from_user": "Administrator",
+                    "subject": title,
+                    "email_content": body,
+                    "document_type": "Table Reservation",
+                    "document_name": doc.name,
+                    "type": "Alert",
+                    "read": 0,
+                }).insert(ignore_permissions=True)
+            except Exception as e:
+                frappe.log_error(
+                    f"Error creating Notification Log for {user_email}: {e}",
+                    "Table Reservation - Notification Log Error",
+                )
+
+            try:
+                frappe.publish_realtime(
+                    "new_table_reservation",
+                    message={"title": title, "body": body, "reservation": doc.name},
+                    user=user_email,
+                )
+            except Exception:
+                pass
+
+        frappe.db.commit()
+
+        # 2. Expo push notifications
+        try:
+            from exponent_server_sdk import (
+                PushClient, PushMessage, PushServerError,
+                PushTicketError, DeviceNotRegisteredError,
+            )
+
+            token_docs = frappe.get_all(
+                "ArcPOS Notification Token",
+                filters={"user": ["in", user_emails]},
+                fields=["name", "user"],
+            )
+
+            push_messages = []
+            for token_doc_ref in token_docs:
+                token_doc = frappe.get_doc("ArcPOS Notification Token", token_doc_ref.name)
+                for token_row in (token_doc.token_list or []):
+                    if token_row.token and PushClient.is_exponent_push_token(token_row.token):
+                        push_messages.append(
+                            PushMessage(
+                                to=token_row.token,
+                                title=title,
+                                body=body,
+                                data={
+                                    "notification_type": "new_table_reservation",
+                                    "reservation": doc.name,
+                                },
+                                sound="default",
+                                priority="high",
+                            )
+                        )
+
+            if push_messages:
+                push_client = PushClient()
+                for i in range(0, len(push_messages), 100):
+                    chunk = push_messages[i:i + 100]
+                    try:
+                        responses = push_client.publish_multiple(chunk)
+                        for response, msg in zip(responses, chunk):
+                            try:
+                                response.validate_response()
+                            except DeviceNotRegisteredError:
+                                pass
+                            except PushTicketError as exc:
+                                frappe.log_error(
+                                    f"Push ticket error for token {msg.to}: {exc}",
+                                    "Table Reservation - Push Ticket Error",
+                                )
+                    except PushServerError as exc:
+                        frappe.log_error(
+                            f"Expo push server error for {reservation_name}: {exc}",
+                            "Table Reservation - Push Server Error",
+                        )
+
+                frappe.logger().info(
+                    f"Expo push sent for reservation {reservation_name} ({len(push_messages)} token(s))"
+                )
+
+        except ImportError:
+            frappe.logger().info("Expo SDK not available — skipping push notifications")
+        except Exception as e:
+            frappe.log_error(
+                f"Error sending push notifications for reservation {reservation_name}: {e}",
+                "Table Reservation - Push Notification Error",
+            )
+
+    except Exception as e:
+        frappe.log_error(
+            f"Error in _notify_staff_new_reservation for {reservation_name}: {e}",
+            "Table Reservation - Staff Notification Error",
+        )
 
 
 # Template setting field names per email type
