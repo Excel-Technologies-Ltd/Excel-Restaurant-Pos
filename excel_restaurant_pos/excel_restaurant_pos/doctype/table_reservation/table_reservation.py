@@ -18,11 +18,12 @@ class TableReservation(Document):
 
     def after_insert(self):
         """Notify reservation staff when a new reservation is created."""
-        frappe.enqueue(
-            "excel_restaurant_pos.excel_restaurant_pos.doctype.table_reservation.table_reservation._notify_staff_new_reservation",
-            queue="short",
-            reservation_name=self.name,
-        )
+        if self.requested_from and self.requested_from == "Website":
+            frappe.enqueue(
+                "excel_restaurant_pos.excel_restaurant_pos.doctype.table_reservation.table_reservation._notify_staff_new_reservation",
+                queue="short",
+                reservation_name=self.name,
+            )
 
     def on_update(self):
         """Handle status changes and send appropriate notifications."""
