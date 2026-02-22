@@ -550,14 +550,16 @@ def _create_channel_order(order, event_id, is_scheduled=False):
     phone_raw = eater.get("phone", "")
     eater_phone = phone_raw if isinstance(phone_raw, str) else (phone_raw or {}).get("number", "")
 
+    
+
     co = frappe.new_doc("Channel Order")
     co.order_from = "Uber Eats"
     co.order_id = order.get("id", "")
     co.display_id = order.get("display_id", "")
     co.current_state = order.get("current_state", "CREATED")
     co.order_type = order.get("type", "")
-    # placed_at comes as ISO-8601 with timezone (e.g. "2026-02-01T14:28:49-05:00")
-    # MySQL requires a naive UTC datetime string "YYYY-MM-DD HH:MM:SS"
+    # Both placed_at and estimated_ready_for_pickup_at are ISO-8601 with timezone.
+    # MySQL requires naive UTC strings "YYYY-MM-DD HH:MM:SS".
     placed_at_raw = order.get("placed_at", "")
     try:
         dt = _dt.fromisoformat(placed_at_raw) if placed_at_raw else None
@@ -566,6 +568,15 @@ def _create_channel_order(order, event_id, is_scheduled=False):
         co.placed_at = dt.strftime("%Y-%m-%d %H:%M:%S") if dt else now_datetime()
     except Exception:
         co.placed_at = now_datetime()
+
+    est_ready_raw = order.get("estimated_ready_for_pickup_at", "")
+    try:
+        dt = _dt.fromisoformat(est_ready_raw) if est_ready_raw else None
+        if dt and dt.tzinfo is not None:
+            dt = dt.astimezone(_tz.utc).replace(tzinfo=None)
+        co.estimated_ready_for_pickup_at = dt.strftime("%Y-%m-%d %H:%M:%S") if dt else None
+    except Exception:
+        co.estimated_ready_for_pickup_at = None
     co.store_id = store.get("id", "")
     co.store_name = store.get("name", "")
     co.eater_first_name = eater.get("first_name", "")

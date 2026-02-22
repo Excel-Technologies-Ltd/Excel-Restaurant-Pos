@@ -152,12 +152,15 @@ def get_order_details(order_id):
     return data
 
 
-def accept_order(order_id, external_reference_id=None):
+def accept_order(order_id, external_reference_id=None, estimated_ready_for_pickup_at=None):
     """Accept an order on Uber Eats.
 
     Args:
         order_id: Uber Eats order UUID
         external_reference_id: POS invoice name to link back
+        estimated_ready_for_pickup_at: ISO 8601 UTC string (e.g. "2026-02-22T15:00:00Z").
+            This is the only opportunity to set the prep time — Uber Eats has no
+            separate update-prep-time endpoint.
     """
     base = _get_api_base()
     url = f"{base}/v1/eats/orders/{order_id}/accept_pos_order"
@@ -167,6 +170,10 @@ def accept_order(order_id, external_reference_id=None):
     }
     if external_reference_id:
         payload["external_reference_id"] = external_reference_id
+    if estimated_ready_for_pickup_at:
+        payload["estimated_ready_for_pickup_at"] = estimated_ready_for_pickup_at
+
+    print("Accept Payload : ",str(payload))
 
     response = requests.post(
         url, json=payload, headers=_api_headers(), timeout=30
